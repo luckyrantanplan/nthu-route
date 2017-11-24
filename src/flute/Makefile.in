@@ -1,0 +1,18 @@
+# These definitions will be included by top Makefile
+flute_library = $(libdir)/libflute.a
+
+flute_library_objects =	            \
+	$(objdir)/flute/flute.o            \
+	$(objdir)/flute/flute4nthuroute.o
+
+#===========================================================
+
+flute_all:   $(flute_library) $(flute_exec)
+
+$(flute_library):   $(flute_library_objects)
+	ar rv $@ $?
+
+flute_clean:
+	rm -f $(flute_library)
+	rm -rf $(objdir)/flute;   mkdir -p $(objdir)/flute
+	cd flute;  rm -f $(StandardGarbage)

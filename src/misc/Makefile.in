@@ -1,0 +1,15 @@
+# These definitions will be included by top Makefile
+misc_library = $(libdir)/libmisc.a
+
+misc_library_objects =				\
+	$(objdir)/misc/filehandler.o
+
+misc_all:   $(misc_library)
+
+$(misc_library):   $(misc_library_objects)
+	ar rv $@ $?
+
+misc_clean:
+	rm -f $(misc_library)
+	rm -rf $(objdir)/misc;   mkdir -p $(objdir)/misc
+	cd misc;  rm -f $(StandardGarbage)

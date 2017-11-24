@@ -1,0 +1,46 @@
+# These definitions will be included by top Makefile
+router_library = $(libdir)/librouter.a
+
+router_library_objects =	            \
+	$(objdir)/router/parameter.o        \
+	$(objdir)/router/Construct_2d_tree.o\
+	$(objdir)/router/Range_router.o     \
+	$(objdir)/router/Route_2pinnets.o	\
+	$(objdir)/router/Layerassignment.o
+
+#$(objdir)/router/converter.o
+
+router_exec =	    \
+	$(bindir)/route
+
+# Libraries on which the executables in $(router_execs) depend.
+# External libraries like libz are not in this list.
+
+router_dep_libs =		\
+	$(router_library)	\
+	$(flute_library)	\
+	$(rmst_library)	\
+	$(util_library)		\
+	$(misc_library)     \
+	$(grdb_library)
+
+
+# Libraries needed to link the executables in $(router_execs)
+router_link_libs =      \
+	$(router_dep_libs)  \
+	$(Zlibrary)
+
+#===========================================================
+
+router_all:   $(router_library) $(router_exec)
+
+$(router_library):   $(router_library_objects)
+	ar rv $@ $?
+
+$(bindir)/route:   $(objdir)/router/route.o $(router_dep_libs)
+	$(LINK_CXX) $(objdir)/router/route.o $(router_link_libs) -o $@
+
+router_clean:
+	rm -f $(router_library) $(router_exec)
+	rm -rf $(objdir)/router;   mkdir -p $(objdir)/router
+	cd router;  rm -f $(StandardGarbage)

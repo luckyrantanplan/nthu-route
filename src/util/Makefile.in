@@ -1,0 +1,38 @@
+# These definitions will be included by top Makefile
+util_library = $(libdir)/libutil.a
+
+util_library_objects =	            \
+	$(objdir)/util/verifier.o       \
+	$(objdir)/util/traversemap.o
+
+util_exec =	   
+#	$(bindir)/verify
+
+# Libraries on which the executables in $(util_execs) depend.
+# External libraries like libz are not in this list.
+
+util_dep_libs =		\
+	$(util_library)	\
+	$(misc_library) \
+	$(grdb_library)
+
+# Libraries needed to link the executables in $(util_execs)
+util_link_libs =      \
+	$(util_dep_libs)  \
+	$(GDlibrary)	  \
+	$(Zlibrary)
+
+#===========================================================
+
+util_all:   $(util_library) $(util_exec)
+
+$(util_library):   $(util_library_objects)
+	ar rv $@ $?
+
+$(bindir)/verify:   $(objdir)/util/verify.o $(util_dep_libs)
+	$(LINK_CXX) $(objdir)/util/verify.o $(util_link_libs) -o $@
+
+util_clean:
+	rm -f $(util_library) $(util_exec)
+	rm -rf $(objdir)/util;   mkdir -p $(objdir)/util
+	cd util;  rm -f $(StandardGarbage)

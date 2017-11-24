@@ -1,0 +1,46 @@
+=============
+ Compilation
+=============
+Untar the source code.
+% tar -zxvf ISPD2008-NTHU-R-CodeRelease.tar.gz
+
+Change the working directory into src.
+% cd ISPD2008-NTHU-R-CodeRelease/src
+
+Use make command to compile the source code.
+% make clean all
+
+If no error occurs during compilation, the executable router will be in 
+ISPD2008-NTHU-R-CodeRelease/bin directory.
+
+
+===========
+ Execution
+===========
+./route --input=testcase_file_name --output=output_file_name [options] 
+
+Options.
+
+--p2-init-box-size=number
+Initial bounding-box size in Adaptive Multi-source Multi-sink Maze Routing in the main stage
+
+--p2-box-expand-size=number 
+Bounding-box expanding size in Adaptive Multi-source Multi-sink Maze Routing in the main stage
+
+--p2-max-iteration=number
+Maximum number of iterations in the main stage
+
+--p3-init-box-size=number
+Initial bounding-box size in Adaptive Multi-source Multi-sink Maze Routing in the refinement stage
+
+--p3-box-expand-size=number 
+Bounding-box expanding size in Adaptive Multi-source Multi-sink Maze Routing in the refinement stage
+
+--p3-max-iteration=number
+Maximum number of iterations in the refinement stage
+
+--overflow-threshold=number
+Overflow threshold in the main stage
+
+--monotonic-routing={1,0} 
+Enable/disable monotonic in each routing iteration 

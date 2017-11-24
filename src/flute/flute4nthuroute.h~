@@ -1,0 +1,30 @@
+#ifndef INC_FLUTE_4_NTHUROUTE_H
+#define INC_FLUTE_4_NTHUROUTE_H
+
+#include "flute-ds.h"           // flute data structure
+#include "flute-function.h"
+#include "grdb/RoutingComponent.h"
+#include "misc/geometry.h"
+
+class Flute {
+    public:
+                Flute ();
+                ~Flute ();
+
+    ///@brief Generate routing trees of every net that can get from accessor
+    ///@param[in] pinList Pin pointer list of a net
+    ///@param[out] routingTree The memory space to place the result
+    void        routeNet (const PinptrList& pinList, Tree& routingTree);
+
+    ///@brief Print the routing tree by flute function
+    void        printTree (Tree& routingTree);
+
+    ///@brief Calculate the routing tree by flute function
+    int         treeWireLength (Tree& routingTree);
+
+    private:
+    DTYPE*      x_;             ///< temporal integer array used by flute
+    DTYPE*      y_;             ///< temporal integer array used by flute
+};
+
+#endif //INC_FLUTE_4_NTHUROUTE_H

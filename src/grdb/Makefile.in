@@ -1,0 +1,20 @@
+# These definitions will be included by top Makefile
+grdb_library = $(libdir)/libgrdb.a
+
+grdb_library_objects =    	        \
+	$(objdir)/grdb/parser.o         \
+	$(objdir)/grdb/builder.o        \
+	$(objdir)/grdb/RoutingRegion.o  \
+	$(objdir)/grdb/RoutingComponent.o
+
+#===========================================================
+
+grdb_all:   $(grdb_library)
+
+$(grdb_library):   $(grdb_library_objects)
+	ar rv $@ $?
+
+grdb_clean:
+	rm -f $(grdb_library)
+	rm -rf $(objdir)/grdb;   mkdir -p $(objdir)/grdb
+	cd grdb;  rm -f $(StandardGarbage)
