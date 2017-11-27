@@ -3,46 +3,72 @@
 
 #include "Route_2pinnets.h"
 #include "../misc/geometry.h"
+#include "../util/traversemap.h"
 
 #define INTERVAL_NUM 10
 #define EXPAND_RANGE_SIZE 10
 #define EXPAND_RANGE_INC 1
 
-class Range_element
-{
-	public:
-		int x1;
-        int y1;
-        int x2;
-        int y2;
-		
-    public:
-		Range_element(int x1, int y1, int x2, int y2)
-            :x1(x1), y1(y1), x2(x2), y2(y2) {}
+class Range_element {
+public:
+    int x1;
+    int y1;
+    int x2;
+    int y2;
+
+public:
+    Range_element(int x1, int y1, int x2, int y2) :
+            x1(x1), y1(y1), x2(x2), y2(y2) {
+    }
 };
 
-class Grid_edge_element
-{
-	public:
-        Jm::Coordinate_2d* grid;
-		int dir;
-		
-    public:
-		Grid_edge_element(Jm::Coordinate_2d* grid, int dir)
-            :grid(grid), dir(dir) {}
+class Grid_edge_element {
+public:
+    Jm::Coordinate_2d* grid;
+    int dir;
+
+public:
+    Grid_edge_element(Jm::Coordinate_2d* grid, int dir) :
+            grid(grid), dir(dir) {
+    }
 };
 
-class Interval_element
-{
-	public:
-		double begin_value;
-		double end_value;
-		vector<Grid_edge_element*> grid_edge_vector;
+class Interval_element {
+public:
+    double begin_value;
+    double end_value;
+    vector<Grid_edge_element*> grid_edge_vector;
 };
 
-//EXTERN FUNCTIONS
-extern void define_interval();
-extern void divide_grid_edge_into_interval();
-extern void specify_all_range(void);
+struct RangeRouter {
+public:
 
+    vector<Range_element*> range_vector;
+    Interval_element interval_list[INTERVAL_NUM];
+
+    int total_twopin = 0;
+    int num_of_grid_edge = 0;
+    double min_congestion = 0.;
+    double max_congestion = 0.;
+    double avg_congestion = 0.;
+    int intervalCount;
+
+    VertexColorMap<int>* expandMap;   //This color map is used by
+    //expand_range()
+    //for recording which edges have expanded
+    //
+    VertexColorMap<int>* routeStateMap; //This color map is used by
+    //query_range_2pin()
+    //for recording if all the 2-pin nets which
+    //locate on the same tile are routed
+
+    RangeRouter() :
+            intervalCount { INTERVAL_NUM } {
+    }
+    ;
+
+    extern void define_interval();
+    extern void divide_grid_edge_into_interval();
+    extern void specify_all_range();
+}
 #endif //INC_RANGE_ROUTER_H

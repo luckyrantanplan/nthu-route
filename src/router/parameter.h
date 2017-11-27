@@ -138,6 +138,8 @@ private:
     int iteration_p3;
     int init_box_size_p3;
     int box_size_inc_p3;
+public:
+    int BOXSIZE_INC;
 };
 
 //{{{ *RoutingParameters* inline functions
@@ -254,7 +256,7 @@ public:
     //return output file name
     const char* output();
     //return parameter group NO.
-    ParameterSet* parameter();
+    ParameterSet&  parameter();
     //return the input type: 0 for IBM test cases  and 1 for the others
     int caseType();
     RoutingParameters* routing_param();

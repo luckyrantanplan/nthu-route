@@ -1,21 +1,24 @@
 #ifndef _CONSTRUCT_2D_TREE_H_
 #define _CONSTRUCT_2D_TREE_H_
 
-#include "parameter.h"
-
-#include "../grdb/RoutingRegion.h"
+#include <cassert>
+#include <cstdlib>
+#include <functional>
+#include <iostream>
+#include <map>
+#include <set>
+#include <string>
+#include <unordered_map>
+#include <vector>
+#include  <fstream>
+#include "../flute/flute-ds.h"
 #include "../grdb/plane.h"
 #include "../misc/geometry.h"
-#include "../flute/flute-ds.h"
-#include "../util/traversemap.h"
 
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <set>
-#include <map>
-#include <unordered_map>
-#include <string>
+class Net;
+class ParameterSet;
+class RoutingParameters;
+class RoutingRegion;
 
 using std::vector;
 using std::set;
@@ -43,7 +46,7 @@ enum {
 };
 
 /* Cost function Prototype */
-extern void (*pre_evaluate_congestion_cost_fp)(int i, int j, int dir);
+
 void pre_evaluate_congestion_cost_all(int i, int j, int dir);
 
 //store the information of a 2-pin net
@@ -82,8 +85,6 @@ public:
     int net_id;
     double max_cong;
 
-    Two_pin_element() {
-    }
     ;
 };
 
@@ -158,101 +159,134 @@ struct CacheEdge {
             cost(0.0), MMVisitFlag(-1) {
     }
 };
-
-extern int par_ind;
-extern ParameterSet* parameter_set;
-extern RoutingParameters* routing_parameter;
-
-extern const int dir_array[4][2]; //FRONT,BACK,LEFT,RIGHT
-extern const int Jr2JmDirArray[4];
-
-extern EdgePlane<Edge_2d>* congestionMap2d;
-extern vector<Two_pin_element_2d*> two_pin_list;
-extern int two_pin_list_size;
-extern int flute_mode;
-extern Monotonic_element **cong_monotonic; //store max congestion during monotonic path
-extern int **parent_monotonic;             //record parent (x,y) during finding monotonic path
-extern Jm::Coordinate_2d **coor_array;
-extern int via_cost;
-extern double max_congestion_factor;
-extern int fail_find_path_count;
-
-extern Vertex_3d ***cur_map_3d;
-extern vector<Two_pin_element*> all_two_pin_list;
-
-extern RoutingRegion *rr_map;
-extern int cur_iter;
-extern int done_iter;
-extern double alpha;
-extern int total_overflow;
-extern int used_cost_flag;
-extern int BOXSIZE_INC;
-extern Tree* net_flutetree;
-extern EdgePlane<CacheEdge>* cache;
-//#include "MM_mazeroute.h"
-
 class Multisource_multisink_mazeroute;
 
-extern Multisource_multisink_mazeroute* mazeroute_in_range;
+struct Construct_2d_tree {
+    std::function<void(int i, int j, int dir)> fn;
+    int par_ind;
+    ParameterSet* parameter_set;
+    RoutingParameters* routing_parameter;
 
-extern void update_congestion_map_insert_two_pin_net(Two_pin_element_2d *element);
-extern void update_congestion_map_remove_two_pin_net(Two_pin_element_2d *element);
-extern bool monotonic_pattern_route(int x1, int y1, int x2, int y2, Two_pin_element_2d* two_pin_monotonic_path, int net_id, double bound_cost, int bound_distance, int bound_via_num, bool bound_flag);
-extern void insert_all_two_pin_list(Two_pin_element_2d *mn_path_2d);
-extern double get_cost_2d(int i, int j, int dir, int net_id, int *distance);
+    const std::array<std::array<int, 2>, 4> dir_array; //FRONT,BACK,LEFT,RIGHT
+    const std::array<int, 4> Jr2JmDirArray;
 
-extern bool smaller_than_lower_bound(double total_cost, int distance, int via_num, double bound_cost, int bound_distance, int bound_via_num);
+    EdgePlane<Edge_2d>* congestionMap2d;
+    vector<Two_pin_element_2d*> two_pin_list;
+    int two_pin_list_size;
+    int flute_mode;
+    Monotonic_element **cong_monotonic; //store max congestion during monotonic path
+    int **parent_monotonic;             //record parent (x,y) during finding monotonic path
+    Jm::Coordinate_2d **coor_array;
+    int via_cost;
+    double max_congestion_factor;
+    int fail_find_path_count;
 
-inline bool comp_stn_2pin(const Two_pin_element_2d *a, const Two_pin_element_2d *b) {
-    return (a->boxSize() > b->boxSize());
-}
+    Vertex_3d ***cur_map_3d;
+    vector<Two_pin_element*> all_two_pin_list;
 
-inline int get_direction_2d_simple(const Jm::Coordinate_2d* a, const Jm::Coordinate_2d* b) {
-    assert(!(a->x != b->x && a->y != b->y));
+    RoutingRegion *rr_map;
+    int cur_iter;
+    int done_iter;
+    double alpha;
+    int total_overflow;
+    int used_cost_flag;
+    int BOXSIZE_INC;
+    Tree* net_flutetree;
+    EdgePlane<CacheEdge>* cache;
+    vector<bool> NetDirtyBit;
+//#include "MM_mazeroute.h"
 
-    if (a->x != b->x)
-        return LEFT;
-    else
-        return FRONT;
-}
+    Multisource_multisink_mazeroute* mazeroute_in_range;
 
-inline int get_direction_2d(const Jm::Coordinate_2d* a, const Jm::Coordinate_2d* b) {
-    assert(!(a->x != b->x && a->y != b->y));
+    void update_congestion_map_insert_two_pin_net(Two_pin_element_2d *element);
+    void update_congestion_map_remove_two_pin_net(Two_pin_element_2d *element);
+    bool monotonic_pattern_route(int x1, int y1, int x2, int y2, Two_pin_element_2d* two_pin_monotonic_path, int net_id, double bound_cost, int bound_distance, int bound_via_num, bool bound_flag);
+    void insert_all_two_pin_list(Two_pin_element_2d *mn_path_2d);
+    double get_cost_2d(int i, int j, int dir, int net_id, int *distance);
 
-    if (a->x != b->x) {
-        if (a->x > b->x)
+    bool smaller_than_lower_bound(double total_cost, int distance, int via_num, double bound_cost, int bound_distance, int bound_via_num);
+
+    inline bool comp_stn_2pin(const Two_pin_element_2d *a, const Two_pin_element_2d *b) {
+        return (a->boxSize() > b->boxSize());
+    }
+
+    inline int get_direction_2d_simple(const Jm::Coordinate_2d* a, const Jm::Coordinate_2d* b) {
+        assert(!(a->x != b->x && a->y != b->y));
+
+        if (a->x != b->x)
             return LEFT;
-        else
-            return RIGHT;
-    } else {
-        if (a->y > b->y)
-            return BACK;
         else
             return FRONT;
     }
-}
 
-inline
-void printMemoryUsage(const char* msg) {
-    std::cout << msg << std::endl;
-    //for print out memory usage
-    std::ifstream mem("/proc/self/status");
-    std::string memory;
-    for (unsigned i = 0; i < 13; i++) {
-        getline(mem, memory);
-        if (i > 10) {
-            std::cout << memory << std::endl;
+    inline int get_direction_2d(const Jm::Coordinate_2d* a, const Jm::Coordinate_2d* b) {
+        assert(!(a->x != b->x && a->y != b->y));
+
+        if (a->x != b->x) {
+            if (a->x > b->x)
+                return LEFT;
+            else
+                return RIGHT;
+        } else {
+            if (a->y > b->y)
+                return BACK;
+            else
+                return FRONT;
         }
     }
-}
 
-int cal_max_overflow();
+    inline
+    void printMemoryUsage(const char* msg) {
+        std::cout << msg << std::endl;
+        //for print out memory usage
+        std::ifstream mem("/proc/self/status");
+        std::string memory;
+        for (unsigned i = 0; i < 13; i++) {
+            getline(mem, memory);
+            if (i > 10) {
+                std::cout << memory << std::endl;
+            }
+        }
+    }
 
-void pre_evaluate_congestion_cost();
+    int cal_max_overflow();
 
-int cal_total_wirelength();
-void init_3d_map();
-void output_3d_map();
+    void pre_evaluate_congestion_cost();
 
-extern vector<bool> NetDirtyBit;
+    int cal_total_wirelength();
+    void init_3d_map();
+    void output_3d_map();
+    bool comp_net(const Net* a, const Net* b);
+    bool comp_2pin_net(Two_pin_element *a, Two_pin_element *b);
+    bool comp_2pin_net_from_path(Two_pin_element_2d *a, Two_pin_element_2d *b);
+    bool comp_vertex_fl(Vertex_flute_ptr a, Vertex_flute_ptr b);
+    void setup_flute_order(int *order);
+    void init_2d_map();
+    void allocate_coor_array();
+    void init_2pin_list();
+    void init_flute();
+    void free_memory_con2d();
+    void bbox_route(Two_pin_list_2d *list, const double value);
+    void pre_evaluate_congestion_cost_all(int i, int j, int dir);
+    Monotonic_element* compare_cost(Monotonic_element* m1, Monotonic_element* m2);
+    Monotonic_element L_pattern_max_cong(int x1, int y1, int x2, int y2, int dir1, int dir2, Two_pin_element_2d* two_pin_L_path, int net_id);
+    void L_pattern_route(int x1, int y1, int x2, int y2, Two_pin_element_2d* two_pin_L_path, int net_id);
+    void allocate_monotonic();
+    void compare_two_direction_congestion(int i, int j, int dir1, int pre_i, int dir2, int pre_j, int net_id, double bound_cost, int bound_distance, int bound_via_num, bool bound_flag);
+    void monotonic_routing_algorithm(int x1, int y1, int x2, int y2, int dir, int net_id, double bound_cost, int bound_distance, int bound_via_num, bool bound_flag);
+    void traverse_parent_monotonic(int x1, int y1, int x2, int y2, Two_pin_element_2d* two_pin_monotonic_path);
+    void update_congestion_map_remove_multipin_net(Two_pin_list_2d *list);
+
+    void gen_FR_congestion_map();
+    double compute_L_pattern_cost(int x1, int y1, int x2, int y2, int net_id);
+    void find_saferange(Vertex_flute_ptr a, Vertex_flute_ptr b, int *low, int *high, int dir);
+    void merge_vertex(Vertex_flute_ptr keep, Vertex_flute_ptr deleted);
+    bool move_edge(Vertex_flute_ptr a, Vertex_flute_ptr b, int best_pos, int dir);
+    void traverse_tree(double *ori_cost);
+    void dfs_output_tree(Vertex_flute_ptr node, Tree *t);
+    void edge_shifting(Tree *t);
+    void output_2_pin_list();
+    Construct_2d_tree(ParameterSet& param,RoutingRegion& rr);
+
+};
 #endif /* _CONSTRUCT_2D_TREE_H_ */

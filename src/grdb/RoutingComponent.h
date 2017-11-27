@@ -108,7 +108,7 @@ private:
     };
 
 private:
-    std::vector<Plane<Tile, RoutingEdge> >* routingSpace_;
+    std::vector<Plane<Tile, RoutingEdge> > routingSpace_;
 
 private:
     void assignTileCoordinate();
@@ -123,7 +123,7 @@ typedef std::vector<Net> NetList;
 inline
 void RoutingSpace::resize(int x, int y, int z) {
     //routingSpace_.resize(x, y , z);
-    routingSpace_->resize(z, Plane<Tile, RoutingEdge>(x, y, Tile(), RoutingEdge()));
+    routingSpace_.resize(z, Plane<Tile, RoutingEdge>(x, y, Tile(), RoutingEdge()));
     wireWidth.resize(z);
     wireSpacing.resize(z);
     viaSpacing.resize(z);
@@ -131,39 +131,39 @@ void RoutingSpace::resize(int x, int y, int z) {
 }
 
 inline RoutingSpace::Tile& RoutingSpace::tile(int x, int y, int z) {
-    return (*routingSpace_)[z].vertex(x, y);
+    return routingSpace_[z].vertex(x, y);
 }
 
 inline const RoutingSpace::Tile& RoutingSpace::tile(int x, int y, int z) const {
-    return (*routingSpace_)[z].vertex(x, y);
+    return routingSpace_[z].vertex(x, y);
 }
 
 inline RoutingSpace::RoutingEdge&
 RoutingSpace::edge(int x, int y, int z, Jm::DirectionType dir) {
-    return (*routingSpace_)[z].edge(x, y, dir);
+    return routingSpace_[z].edge(x, y, dir);
 }
 
 inline const RoutingSpace::RoutingEdge&
 RoutingSpace::edge(int x, int y, int z, Jm::DirectionType dir) const {
-    return (*routingSpace_)[z].edge(x, y, dir);
+    return routingSpace_[z].edge(x, y, dir);
 }
 
 inline
 int RoutingSpace::getXSize() const {
-    assert(routingSpace_->size() > 0);
-    return (*routingSpace_)[0].getXSize();
+    assert(routingSpace_.size() > 0);
+    return routingSpace_[0].getXSize();
 }
 
 inline
 int RoutingSpace::getYSize() const {
-    assert(routingSpace_->size() > 0);
-    return (*routingSpace_)[0].getYSize();
+    assert(routingSpace_.size() > 0);
+    return routingSpace_[0].getYSize();
 }
 
 inline
 int RoutingSpace::getZSize() const {
     //return routingSpace_.getZSize();
-    return routingSpace_->size();
+    return routingSpace_.size();
 }
 
 inline const Pin& RoutingSpace::Tile::getAnchor() {

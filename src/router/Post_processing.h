@@ -7,18 +7,23 @@
 #define error_bound 0.00000000001
 #define neg_error_bound -0.00000000001
 
-typedef struct
-{
-	int id;
-	double total_overflow;
-	int bsize;
-}COUNTER;
+struct COUNTER {
+    int id;
+    double total_overflow;
+    int bsize;
+};
 
-  bool check_path_no_overflow(std::vector<Jm::Coordinate_2d*> *path,
-                                   int net_id,
-                                   int inc_flag);
+struct Post_processing {
 
-  void compute_path_total_cost_and_distance(
-        Two_pin_element_2d *element,
-        Monotonic_element*);
+    Construct_2d_tree& construct_2d_tree;
+
+    int comp(const COUNTER& a, const COUNTER& b);
+
+    bool check_path_no_overflow(std::vector<Jm::Coordinate_2d*> *path, int net_id, int inc_flag);
+
+    void compute_path_total_cost_and_distance(Two_pin_element_2d *element, Monotonic_element*);
+    void initial_for_post_processing();
+      Post_processing(Construct_2d_tree& construct_2d_tree);
+
+};
 #endif

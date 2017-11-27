@@ -19,7 +19,7 @@ Multisource_multisink_mazeroute::Vertex_mmm::Vertex_mmm(int x, int y) :
         coor(&coor_array[x][y]), visit(-1) {
 }
 
-Multisource_multisink_mazeroute::Multisource_multisink_mazeroute() :
+Multisource_multisink_mazeroute::Multisource_multisink_mazeroute(Construct_2d_tree& construct_2d_tree) :
         gridxMinusOne(rr_map->get_gridx() - 1), gridyMinusOne(rr_map->get_gridy() - 1) {
     /*allocate space for mmm_map*/
     this->net_tree = new vector<vector<Vertex_mmm *> >(rr_map->get_netNumber(), vector<Vertex_mmm *>(0));

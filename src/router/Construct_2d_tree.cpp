@@ -18,7 +18,7 @@ using namespace Jm;
  * Global Variable Begin
  * ********************/
 int par_ind = 0;
-ParameterSet* parameter_set;
+ParameterSet& parameter_set;
 RoutingParameters* routing_parameter;
 
 const int dir_array[4][2] = { { 0, 1 }, { 0, -1 }, { -1, 0 }, { 1, 0 } }; //FRONT,BACK,LEFT,RIGHT
@@ -42,7 +42,7 @@ int done_iter;
 double alpha;
 int total_overflow;
 int used_cost_flag;
-int BOXSIZE_INC = 10;
+
 Multisource_multisink_mazeroute* mazeroute_in_range = NULL;
 
 int via_cost = 3;
@@ -80,7 +80,7 @@ Edge_3d_ptr Create_Edge_3d() {
 
 /*==================DEBUG FUNCTION================================*/
 //Obtain the max. overflow and total overflowed value of edges of every gCell
-int cal_max_overflow() {
+int Construct_2d_tree::cal_max_overflow() {
     int max_2d_of = 0;       //max. overflow (2D)
     int dif_curmax = 0;
 
@@ -112,7 +112,7 @@ int cal_max_overflow() {
 
 //Sum all demand value on every edge
 //So if demand vlaue = wire length, this function can be used
-int cal_total_wirelength() {
+int Construct_2d_tree::cal_total_wirelength() {
     int total_wl = 0;
 
     for (int i = rr_map->get_gridx() - 2; i >= 0; --i) {
@@ -130,7 +130,7 @@ int cal_total_wirelength() {
 }
 
 /*sort bbox in ascending order, then pin_num in descending order*/
-bool comp_net(const Net* a, const Net* b) {
+bool Construct_2d_tree::comp_net(const Net* a, const Net* b) {
     if (a->get_bboxSize() > b->get_bboxSize()) {
         return true;
     } else if (a->get_bboxSize() < b->get_bboxSize()) {
@@ -140,20 +140,20 @@ bool comp_net(const Net* a, const Net* b) {
     }
 }
 
-bool comp_2pin_net(Two_pin_element *a, Two_pin_element *b) {
+bool Construct_2d_tree::comp_2pin_net(Two_pin_element *a, Two_pin_element *b) {
     int a_bbox_size = abs(a->pin1.x - a->pin2.x) + abs(a->pin1.y - a->pin2.y);
     int b_bbox_size = abs(b->pin1.x - b->pin2.x) + abs(b->pin1.y - b->pin2.y);
     return (a_bbox_size < b_bbox_size);
 }
 
-bool comp_2pin_net_from_path(Two_pin_element_2d *a, Two_pin_element_2d *b) {
+bool Construct_2d_tree::comp_2pin_net_from_path(Two_pin_element_2d *a, Two_pin_element_2d *b) {
     int a_bbox_size = abs(a->pin1.x - a->pin2.x) + abs(a->pin1.y - a->pin2.y);
     int b_bbox_size = abs(b->pin1.x - b->pin2.x) + abs(b->pin1.y - b->pin2.y);
     return (a_bbox_size < b_bbox_size);
 }
 
 //sort by x,y,pin,steiner
-bool comp_vertex_fl(Vertex_flute_ptr a, Vertex_flute_ptr b) {
+bool Construct_2d_tree::comp_vertex_fl(Vertex_flute_ptr a, Vertex_flute_ptr b) {
     if (a->x < b->x)
         return true;
     else if (a->x > b->x)
@@ -168,14 +168,14 @@ bool comp_vertex_fl(Vertex_flute_ptr a, Vertex_flute_ptr b) {
         return false;
 }
 
-void setup_flute_order(int *order) {
+void Construct_2d_tree::setup_flute_order(int *order) {
     for (int i = global_flutetree.number - 1; i >= 0; --i) {
         order[i] = i;
     }
 }
 
 /*assign the estimated track# to each edge*/
-void init_2d_map() {
+void Construct_2d_tree::init_2d_map() {
     congestionMap2d = new EdgePlane<Edge_2d>(rr_map->get_gridx(), rr_map->get_gridy(), Edge_2d());
 
     for (int x = rr_map->get_gridx() - 2; x >= 0; --x) {
@@ -212,7 +212,7 @@ void init_2d_map() {
 }
 
 //Make an coordinate array which contains the (x, y) information
-void allocate_coor_array() {
+void Construct_2d_tree::allocate_coor_array() {
     int i, j;
     Coordinate_2d *tmp_data;
 
@@ -229,7 +229,7 @@ void allocate_coor_array() {
     }
 }
 
-void init_3d_map() {
+void Construct_2d_tree::init_3d_map() {
     int i, j, k;
     Vertex_3d **tmp_data, *tmp_data2;
     Edge_3d_ptr newedge;
@@ -277,7 +277,7 @@ void init_3d_map() {
             cur_map_3d[i][j][0].edge_list[DOWN] = cur_map_3d[i][j][rr_map->get_layerNumber() - 1].edge_list[UP] = NULL;
 }
 
-void init_2pin_list() {
+void Construct_2d_tree::init_2pin_list() {
     int i, netnum;
 
     netnum = rr_map->get_netNumber();
@@ -289,17 +289,17 @@ void init_2pin_list() {
     }
 }
 
-void init_flute() {
+void Construct_2d_tree::init_flute() {
     net_flutetree = (Tree *) malloc(rr_map->get_netNumber() * sizeof(Tree));
 }
 
-void free_memory_con2d() {
+void Construct_2d_tree::free_memory_con2d() {
     for (vector<Two_pin_list_2d*>::iterator it = bbox_2pin_list.begin(); it != bbox_2pin_list.end(); ++it)
         delete (*it);
     bbox_2pin_list.clear();
 }
 
-void bbox_route(Two_pin_list_2d *list, const double value) {
+void Construct_2d_tree::bbox_route(Two_pin_list_2d *list, const double value) {
     int i, x1, y1, x2, y2;
     double u_value;
 
@@ -397,7 +397,7 @@ void bbox_route(Two_pin_list_2d *list, const double value) {
 #endif
 }
 
-void insert_all_two_pin_list(Two_pin_element_2d *mn_path_2d) {
+void Construct_2d_tree::insert_all_two_pin_list(Two_pin_element_2d *mn_path_2d) {
     Two_pin_element *mn_path;
     mn_path = new Two_pin_element();
     mn_path->pin1.x = mn_path_2d->pin1.x;
@@ -409,7 +409,7 @@ void insert_all_two_pin_list(Two_pin_element_2d *mn_path_2d) {
     all_two_pin_list.push_back(mn_path);
 }
 
-bool smaller_than_lower_bound(double total_cost, int distance, int via_num, double bound_cost, int bound_distance, int bound_via_num) {
+bool Construct_2d_tree::smaller_than_lower_bound(double total_cost, int distance, int via_num, double bound_cost, int bound_distance, int bound_via_num) {
     if ((total_cost - bound_cost) < neg_error_bound)
         return true;
     else if ((total_cost - bound_cost) > error_bound)
@@ -431,7 +431,7 @@ bool smaller_than_lower_bound(double total_cost, int distance, int via_num, doub
  * function in *route/route.cpp* .                                        */
 
 void (*pre_evaluate_congestion_cost_fp)(int i, int j, int dir);
-void pre_evaluate_congestion_cost_all(int i, int j, int dir) {
+void Construct_2d_tree::pre_evaluate_congestion_cost_all(int i, int j, int dir) {
     static const int inc = 1;
     double cong;
 
@@ -449,7 +449,7 @@ void pre_evaluate_congestion_cost_all(int i, int j, int dir) {
     }
 }
 
-void pre_evaluate_congestion_cost() {
+void Construct_2d_tree::pre_evaluate_congestion_cost() {
     for (int i = rr_map->get_gridx() - 1; i >= 0; --i) {
         for (int j = rr_map->get_gridy() - 2; j >= 0; --j) {
             pre_evaluate_congestion_cost_fp(i, j, FRONT); // Function Pointer to Cost function
@@ -469,7 +469,7 @@ void pre_evaluate_congestion_cost() {
 }
 
 //get edge cost on a 2D layer
-double get_cost_2d(int i, int j, int dir, int net_id, int *distance) {
+double Construct_2d_tree::get_cost_2d(int i, int j, int dir, int net_id, int *distance) {
     DirectionType dirType = static_cast<DirectionType>(Jr2JmDirArray[dir]);
     //Check if the specified net pass the edge.
     //If it have passed the edge before, then the cost is 0.
@@ -501,7 +501,7 @@ double get_cost_2d(int i, int j, int dir, int net_id, int *distance) {
 /*
  Compare two cost and return a pointer to the Monotonici_element which has smaller cost
  */
-Monotonic_element* compare_cost(Monotonic_element* m1, Monotonic_element* m2) {
+Monotonic_element* Construct_2d_tree::compare_cost(Monotonic_element* m1, Monotonic_element* m2) {
     if ((m1->total_cost - m2->total_cost) < (neg_error_bound))
         return m1;
     else if ((m1->total_cost - m2->total_cost) > (neg_error_bound))
@@ -530,7 +530,7 @@ Monotonic_element* compare_cost(Monotonic_element* m1, Monotonic_element* m2) {
  input: start coor and end coor, and directions of L
  output: record the best L pattern into two_pin_L_path_global, and return the min max congestion value
  */
-Monotonic_element L_pattern_max_cong(int x1, int y1, int x2, int y2, int dir1, int dir2, Two_pin_element_2d* two_pin_L_path, int net_id) {
+Monotonic_element Construct_2d_tree::L_pattern_max_cong(int x1, int y1, int x2, int y2, int dir1, int dir2, Two_pin_element_2d* two_pin_L_path, int net_id) {
     int i, j;
     double temp;
     int dir[2], dir_index;
@@ -585,7 +585,7 @@ Monotonic_element L_pattern_max_cong(int x1, int y1, int x2, int y2, int dir1, i
  input: two coordinates
  output: record the L_pattern in the path, and the path is min max congestioned
  */
-void L_pattern_route(int x1, int y1, int x2, int y2, Two_pin_element_2d* two_pin_L_path, int net_id) {
+void Construct_2d_tree::L_pattern_route(int x1, int y1, int x2, int y2, Two_pin_element_2d* two_pin_L_path, int net_id) {
     Two_pin_element_2d path1, path2;
     Monotonic_element max_cong_path1, max_cong_path2;
 
@@ -627,7 +627,7 @@ void L_pattern_route(int x1, int y1, int x2, int y2, Two_pin_element_2d* two_pin
 }
 
 /*allocate space for monotonic pattern routing*/
-void allocate_monotonic() {
+void Construct_2d_tree::allocate_monotonic() {
     Monotonic_element *tmp_data;
     int *tmp_data2;
 
@@ -644,7 +644,8 @@ void allocate_monotonic() {
         parent_monotonic[i] = tmp_data2;
 }
 
-void compare_two_direction_congestion(int i, int j, int dir1, int pre_i, int dir2, int pre_j, int net_id, double bound_cost, int bound_distance, int bound_via_num, bool bound_flag) {
+void Construct_2d_tree::compare_two_direction_congestion(int i, int j, int dir1, int pre_i, int dir2, int pre_j, int net_id, double bound_cost, int bound_distance, int bound_via_num,
+        bool bound_flag) {
     Monotonic_element left_element, vertical_element, *choose_element;
     double cost;
     int distance = 1;
@@ -720,7 +721,7 @@ void compare_two_direction_congestion(int i, int j, int dir1, int pre_i, int dir
     }
 }
 
-void monotonic_routing_algorithm(int x1, int y1, int x2, int y2, int dir, int net_id, double bound_cost, int bound_distance, int bound_via_num, bool bound_flag) {
+void Construct_2d_tree::monotonic_routing_algorithm(int x1, int y1, int x2, int y2, int dir, int net_id, double bound_cost, int bound_distance, int bound_via_num, bool bound_flag) {
     int i, j;
     double cost;
     int distance = 1;
@@ -805,7 +806,7 @@ void monotonic_routing_algorithm(int x1, int y1, int x2, int y2, int dir, int ne
     }
 }
 
-void traverse_parent_monotonic(int x1, int y1, int x2, int y2, Two_pin_element_2d* two_pin_monotonic_path) {
+void Construct_2d_tree::traverse_parent_monotonic(int x1, int y1, int x2, int y2, Two_pin_element_2d* two_pin_monotonic_path) {
     int i = x2;
     int j = y2;
     //Sink != Source
@@ -828,7 +829,8 @@ void traverse_parent_monotonic(int x1, int y1, int x2, int y2, Two_pin_element_2
 
 //Try to obtain a monotonic routing path without cost over bounding cost
 //Return true if there exist one such path
-bool monotonic_pattern_route(int x1, int y1, int x2, int y2, Two_pin_element_2d* two_pin_monotonic_path, int net_id, double bound_cost, int bound_distance, int bound_via_num, bool bound_flag) {
+bool Construct_2d_tree::monotonic_pattern_route(int x1, int y1, int x2, int y2, Two_pin_element_2d* two_pin_monotonic_path, int net_id, double bound_cost, int bound_distance, int bound_via_num,
+        bool bound_flag) {
     if (x1 > x2) {
         swap(x1, x2);
         swap(y1, y2);
@@ -855,7 +857,7 @@ bool monotonic_pattern_route(int x1, int y1, int x2, int y2, Two_pin_element_2d*
 //Add the path of two pin element on to congestion map
 //The congestion map record not only which net pass which edge,
 //but also the number of a net pass through
-void update_congestion_map_insert_two_pin_net(Two_pin_element_2d *element) {
+void Construct_2d_tree::update_congestion_map_insert_two_pin_net(Two_pin_element_2d *element) {
     int dir;
 
     NetDirtyBit[element->net_id] = true;
@@ -880,7 +882,7 @@ void update_congestion_map_insert_two_pin_net(Two_pin_element_2d *element) {
 
 //Remove a net from an edge.
 //If the net pass that edge more than once, this function will only decrease the counter.
-void update_congestion_map_remove_two_pin_net(Two_pin_element_2d *element) {
+void Construct_2d_tree::update_congestion_map_remove_two_pin_net(Two_pin_element_2d *element) {
     int dir;
 
     NetDirtyBit[element->net_id] = true;
@@ -901,16 +903,16 @@ void update_congestion_map_remove_two_pin_net(Two_pin_element_2d *element) {
     }
 }
 
-void update_congestion_map_remove_multipin_net(Two_pin_list_2d *list) {
+void Construct_2d_tree::update_congestion_map_remove_multipin_net(Two_pin_list_2d *list) {
     for (vector<Two_pin_element_2d*>::iterator it = list->begin(); it != list->end(); ++it) {
         update_congestion_map_remove_two_pin_net(*it);
     }
 }
 
-void edge_shifting(Tree *t);
+void Construct_2d_tree::edge_shifting(Tree *t);
 
 //generate the congestion map by Flute with wirelength driven mode
-void gen_FR_congestion_map() {
+void Construct_2d_tree::gen_FR_congestion_map() {
     Tree *flutetree;                        //a struct, defined by Flute library
     Two_pin_element_2d *L_path, *two_pin;
     int *flute_order;
@@ -1034,7 +1036,7 @@ void gen_FR_congestion_map() {
 
 //=====================edge shifting=============================
 //Return the smaller cost of L-shape path or the only one cost of flap path
-double compute_L_pattern_cost(int x1, int y1, int x2, int y2, int net_id) {
+double Construct_2d_tree::compute_L_pattern_cost(int x1, int y1, int x2, int y2, int net_id) {
     Two_pin_element_2d path1, path2;
     Monotonic_element max_cong_path1, max_cong_path2;
 
@@ -1069,7 +1071,7 @@ double compute_L_pattern_cost(int x1, int y1, int x2, int y2, int net_id) {
     }
 }
 
-void find_saferange(Vertex_flute_ptr a, Vertex_flute_ptr b, int *low, int *high, int dir) {
+void Construct_2d_tree::find_saferange(Vertex_flute_ptr a, Vertex_flute_ptr b, int *low, int *high, int dir) {
     Vertex_flute_ptr cur, find;
 
     //Horizontal edge doing vertical shifting
@@ -1171,7 +1173,7 @@ void find_saferange(Vertex_flute_ptr a, Vertex_flute_ptr b, int *low, int *high,
     }
 }
 
-void merge_vertex(Vertex_flute_ptr keep, Vertex_flute_ptr deleted) {
+void Construct_2d_tree::merge_vertex(Vertex_flute_ptr keep, Vertex_flute_ptr deleted) {
 
     for (vector<Vertex_flute_ptr>::iterator nei = deleted->neighbor.begin(); nei != deleted->neighbor.end(); ++nei) {
         if ((*nei) != keep)	//nei is not keep itself
@@ -1195,7 +1197,7 @@ void merge_vertex(Vertex_flute_ptr keep, Vertex_flute_ptr deleted) {
     deleted->type = DELETED;
 }
 
-bool move_edge(Vertex_flute_ptr a, Vertex_flute_ptr b, int best_pos, int dir) {
+bool Construct_2d_tree::move_edge(Vertex_flute_ptr a, Vertex_flute_ptr b, int best_pos, int dir) {
     vector<Vertex_flute_ptr> st_pt;
     Vertex_flute_ptr cur, find;
     Vertex_flute_ptr overlap_a, overlap_b;
@@ -1549,7 +1551,7 @@ bool move_edge(Vertex_flute_ptr a, Vertex_flute_ptr b, int best_pos, int dir) {
     return ret;
 }
 
-void traverse_tree(double *ori_cost) {
+void Construct_2d_tree::traverse_tree(double *ori_cost) {
     double cur_cost, tmp_cost, best_cost;
     int best_pos = 0;
     Vertex_flute_ptr node;
@@ -1609,7 +1611,7 @@ void traverse_tree(double *ori_cost) {
     }
 }
 
-void dfs_output_tree(Vertex_flute_ptr node, Tree *t) {
+void Construct_2d_tree::dfs_output_tree(Vertex_flute_ptr node, Tree *t) {
     node->visit = 1;
     t->branch[t->number].x = node->x;
     t->branch[t->number].y = node->y;
@@ -1623,7 +1625,7 @@ void dfs_output_tree(Vertex_flute_ptr node, Tree *t) {
     }
 }
 
-void edge_shifting(Tree *t) {
+void Construct_2d_tree::edge_shifting(Tree *t) {
     Vertex_flute_ptr new_v;
     double ori_cost;            // the original cost without edge shifting
 
@@ -1695,7 +1697,7 @@ void edge_shifting(Tree *t) {
 //=====================end edge shifting=============================
 
 /* sort by bounding box size */
-void output_2_pin_list() {
+void Construct_2d_tree::output_2_pin_list() {
     sort(all_two_pin_list.begin(), all_two_pin_list.end(), comp_2pin_net);
     sort(two_pin_list.begin(), two_pin_list.end(), comp_2pin_net_from_path);
 }
@@ -1704,7 +1706,7 @@ void output_2_pin_list() {
  return the maximum overflow=cur_cap/max_cap
  update 0307:only assign max_cap to cur_3d_map
  */
-void output_3d_map() {
+void Construct_2d_tree::output_3d_map() {
     int i, j, k;
 
     //assign max_cap to cur_3d_map
@@ -1731,10 +1733,8 @@ void output_3d_map() {
  return max_overflow;
  */
 
-vector<bool> NetDirtyBit;
-double construct_2d_tree(RoutingRegion *rr) {
-    rr_map = rr;                    // rr_map: get the pointer point to routing date container
-
+Construct_2d_tree::Construct_2d_tree(ParameterSet& param, RoutingRegion& rr) :
+        parameter_set { param }, rr_map { rr } {
     cur_iter = -1;                  // current iteration ID.
     //edgeIterCounter = new EdgeColorMap<int>(rr_map->get_gridx(), rr_map->get_gridy(), -1);
 
@@ -1772,13 +1772,13 @@ double construct_2d_tree(RoutingRegion *rr) {
 
     reallocate_two_pin_list(true);
     cache = new EdgePlane<CacheEdge>(rr_map->get_gridx(), rr_map->get_gridy(), CacheEdge());
-    mazeroute_in_range = new Multisource_multisink_mazeroute();
+    mazeroute_in_range = new Multisource_multisink_mazeroute(&this);
 
     int cur_overflow = -1;
     used_cost_flag = HISTORY_COST;
     BOXSIZE_INC = routing_parameter->get_init_box_size_p2();
 
-    for (cur_iter = 1, done_iter = cur_iter; cur_iter <= routing_parameter->get_iteration_p2(); ++cur_iter, done_iter = cur_iter)	//do n-1 times
+    for (cur_iter = 1, done_iter = cur_iter; cur_iter <= routing_parameter->get_iteration_p2(); ++cur_iter, done_iter = cur_iter)   //do n-1 times
             {
         cout << "\033[31mIteration:\033[m " << cur_iter << endl;
 
@@ -1817,17 +1817,16 @@ double construct_2d_tree(RoutingRegion *rr) {
         BOXSIZE_INC += routing_parameter->get_box_size_inc_p2();
     }
 
-    output_2_pin_list();	//order:bbox�p
+    output_2_pin_list();    //order:bbox�p
 
 #ifdef FREE
     free_memory_con2d();
-#endif		
+#endif
 #ifdef MESSAGE
     cout<<"================================================================"<<endl;
     cout<<"===                   Enter Post Processing                  ==="<<endl;
     cout<<"================================================================"<<endl;
-#endif	
+#endif
 
-    return 0;
 }
 

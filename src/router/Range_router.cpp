@@ -5,7 +5,6 @@
 #include "MM_mazeroute.h"
 
 #include "../misc/geometry.h"
-#include "../util/traversemap.h"
 
 #include <cmath>
 #include <algorithm>
@@ -13,26 +12,7 @@
 using namespace Jm;
 using namespace std;
 
-static vector<Range_element*> range_vector;
-static Interval_element interval_list[INTERVAL_NUM];
-
-static int total_twopin = 0;
-static int num_of_grid_edge = 0;
-static double min_congestion = 0.;
-static double max_congestion = 0.;
-static double avg_congestion = 0.;
-static int intervalCount = INTERVAL_NUM;
-
-static VertexColorMap<int>* expandMap;   //This color map is used by 
-//expand_range()
-//for recording which edges have expanded
-//
-static VertexColorMap<int>* routeStateMap; //This color map is used by 
-//query_range_2pin()
-//for recording if all the 2-pin nets which
-//locate on the same tile are routed
-
-static bool double_equal(double a, double b) {
+bool double_equal(double a, double b) {
     double diff = a - b;
     if (diff > 0.00001 || diff < -0.00001)
         return false;
@@ -41,7 +21,7 @@ static bool double_equal(double a, double b) {
 }
 
 /*sort grid_edge in decending order*/
-static bool comp_grid_edge(const Grid_edge_element* a, const Grid_edge_element* b) {
+bool comp_grid_edge(const Grid_edge_element* a, const Grid_edge_element* b) {
     return congestionMap2d->edge(a->grid->x, a->grid->y, a->dir).congestion() > congestionMap2d->edge(b->grid->x, b->grid->y, b->dir).congestion();
 }
 
@@ -110,7 +90,7 @@ void define_interval() {
 #endif
 }
 
-static void insert_to_interval(double cong_value, Coordinate_2d* coor_2d, int dir) {
+void insert_to_interval(double cong_value, Coordinate_2d* coor_2d, int dir) {
     int i;
     for (i = intervalCount - 1; i >= 0; --i) {
         if (((cong_value < interval_list[i].begin_value) || (double_equal(cong_value, interval_list[i].begin_value) == true)) && cong_value > interval_list[i].end_value) {
@@ -151,7 +131,7 @@ void divide_grid_edge_into_interval() {
 #endif
 }
 
-static void expand_range(int x1, int y1, int x2, int y2, int interval_index) {
+void expand_range(int x1, int y1, int x2, int y2, int interval_index) {
     Coordinate_2d start, end, cur_start, cur_end;
     int i, j, edge_num;
     double total_cong, avg_cong;
@@ -282,7 +262,7 @@ static void expand_range(int x1, int y1, int x2, int y2, int interval_index) {
 //routing or multi-source multi-sink routing.
 //If there is no overflowed path by using the two methods above, then remain 
 //the original path.
-static void range_router(Two_pin_element_2d * two_pin) {
+void range_router(Two_pin_element_2d * two_pin) {
     if (!check_path_no_overflow(&two_pin->path, two_pin->net_id, false)) {
         ++total_twopin;
 
@@ -343,14 +323,14 @@ static void range_router(Two_pin_element_2d * two_pin) {
     }
 }
 
-static bool inside_range(int left_x, int bottom_y, int right_x, int top_y, Coordinate_2d *pt) {
+bool inside_range(int left_x, int bottom_y, int right_x, int top_y, Coordinate_2d *pt) {
     if (pt->x >= left_x && pt->x <= right_x && pt->y >= bottom_y && pt->y <= top_y)
         return true;
     else
         return false;
 }
 
-static void query_range_2pin(int left_x, int bottom_y, int right_x, int top_y, vector<Two_pin_element_2d *> *twopin_list) {
+void query_range_2pin(int left_x, int bottom_y, int right_x, int top_y, vector<Two_pin_element_2d *> *twopin_list) {
     vector<Point_fc *> cell_list;
     int len;
     static int done_counter = 0;	//only initialize once

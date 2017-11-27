@@ -14,7 +14,7 @@ static int Post_processing_iteration;
 static int inc_num;
 static bool total_no_overflow;
 
-int comp(const COUNTER& a, const COUNTER& b) {
+int Post_processing::comp(const COUNTER& a, const COUNTER& b) {
     if (a.total_overflow > b.total_overflow)
         return true;
     else if (a.total_overflow < b.total_overflow)
@@ -27,7 +27,7 @@ int comp(const COUNTER& a, const COUNTER& b) {
 
 //Check if the specified edge is not overflowed
 //Return false if the edge is overflowed
-bool check_path_no_overflow(vector<Coordinate_2d*> *path, int net_id, int inc_flag) {
+bool Post_processing::check_path_no_overflow(vector<Coordinate_2d*> *path, int net_id, int inc_flag) {
     for (int i = path->size() - 2; i >= 0; --i) {
         int dir = get_direction_2d((*path)[i], (*path)[i + 1]);
         //There are two modes:
@@ -51,7 +51,7 @@ bool check_path_no_overflow(vector<Coordinate_2d*> *path, int net_id, int inc_fl
 }
 
 //Obtain a cost of a path, including via cost.
-void compute_path_total_cost_and_distance(Two_pin_element_2d *element, Monotonic_element* mn) {
+void Post_processing::compute_path_total_cost_and_distance(Two_pin_element_2d *element, Monotonic_element* mn) {
     int distance;
     int pre_dir = -1;
 
@@ -75,7 +75,7 @@ void compute_path_total_cost_and_distance(Two_pin_element_2d *element, Monotonic
     }
 }
 
-void initial_for_post_processing() {
+void Post_processing::initial_for_post_processing() {
     int i, j, edge_idx, x_dir, y_dir, x, y, id;
     vector<COUNTER> counter(two_pin_list.size());
     bool no_overflow;
@@ -129,7 +129,7 @@ void initial_for_post_processing() {
             }
 
             NetDirtyBit[two_pin_list[id]->net_id] = true;
-            update_congestion_map_remove_two_pin_net(two_pin_list[id]);
+            update_congestion_map_remove_two_pin_net (two_pin_list[id]);
 
             bound_path = new vector<Coordinate_2d*>(two_pin_list[id]->path);
             compute_path_total_cost_and_distance(two_pin_list[id], &mn);
@@ -174,19 +174,22 @@ void initial_for_post_processing() {
     mazeroute->clear_net_tree();
 }
 
-void Post_processing(void) {
+Post_processing::Post_processing(Construct_2d_tree& construct_2d_tree) :
+        construct_2d_tree { construct_2d_tree } {
     cur_overflow = -1;
 
     //Fetch from routing_parameter 
-    BOXSIZE_INC = routing_parameter->get_init_box_size_p3();
+    RoutingParameters* routing_parameter = construct_2d_tree.routing_parameter;
+
+    routing_parameter->BOXSIZE_INC = routing_parameter->get_init_box_size_p3();
     inc_num = routing_parameter->get_box_size_inc_p3();
     Post_processing_iteration = routing_parameter->get_iteration_p3();
 #ifdef MESSAGE
     printf("size: (%d %d)\n",BOXSIZE_INC,inc_num);
 #endif
-    done_iter++;
-    used_cost_flag = MADEOF_COST;
-    cur_overflow = cal_max_overflow();
+    construct_2d_tree.done_iter++;
+    construct_2d_tree.used_cost_flag = MADEOF_COST;
+    cur_overflow = construct_2d_tree.cal_max_overflow();
     if (cur_overflow > 0) {
         //In post processing, we only need to pre-evaluate all cost once.
         //The other update will be done by update_add(remove)_edge
@@ -215,7 +218,7 @@ void Post_processing(void) {
     }
 
     for (int i = 0; i < (int) two_pin_list.size(); ++i) {
-        insert_all_two_pin_list(two_pin_list[i]);
+        insert_all_two_pin_list (two_pin_list[i]);
     }
 
     delete cache;

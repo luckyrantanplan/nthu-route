@@ -18,7 +18,7 @@ using namespace Jm;
 
 Verifier::Verifier(const char* inputFileName, const char* resultFileName) :
         inputFileName(inputFileName), resultFileName(resultFileName), delims("(,)- \n"), fh_(resultFileName, FileHandler::AutoFileType), rr(NULL), netWires(NULL), netTileNum(NULL), routingSpace_(
-                NULL), XYWireLength(0), viaWireLength(0), overflow(0), maxOverflow(0), viaOverflow(0), viaMaxOverflow(0), wireBendCount(0), netHasUnconnectedPin(0), netHasUnconnectedWire(0), netHasDuplicateWireCount(
+        NULL), XYWireLength(0), viaWireLength(0), overflow(0), maxOverflow(0), viaOverflow(0), viaMaxOverflow(0), wireBendCount(0), netHasUnconnectedPin(0), netHasUnconnectedWire(0), netHasDuplicateWireCount(
                 0) {
 }
 
@@ -35,9 +35,9 @@ void Verifier::verify() {
     cout << "\tResult file: " << resultFileName << endl;
 
     //Readin Routing data
-    rr = new RoutingRegion();
-    GRParser* parser = new Parser07(inputFileName.c_str(), FileHandler::AutoFileType);
-    parser->parse(this->rr);
+    RoutingRegion rr;
+    Parser07 parser(inputFileName, FileHandler::AutoFileType, rr);
+    parser.parse();
 
     initialVerifierMemorySpace();
 

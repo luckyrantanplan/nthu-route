@@ -205,16 +205,16 @@ class Coordinate_2d
         }
 };
 
-class Coordinate_3d
-{
-	public:
-		int x;
-        int y;
-        int z;
-		
-    public:
-		Coordinate_3d(int x = 0, int y = 0, int z = 0)
-            :x(x), y(y), z(z) {}
+class Coordinate_3d {
+public:
+    int x;
+    int y;
+    int z;
+
+public:
+    Coordinate_3d(int x = 0, int y = 0, int z = 0) :
+            x(x), y(y), z(z) {
+    }
 
 };
 

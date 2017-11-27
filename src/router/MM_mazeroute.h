@@ -1,18 +1,16 @@
 #ifndef INC_MM_MAZEROUTE_H
 #define INC_MM_MAZEROUTE_H
 
-#include "../misc/geometry.h"
-#include "../util/traversemap.h"
-#include "../grdb/plane.h"
-
-#include <set>
+#include <stddef.h>
+#include <cassert>
 #include <vector>
-#include <algorithm>
-#include <queue>
-#include <utility>
+
+#include "../grdb/plane.h"
+#include "../misc/geometry.h"
+
+#include "Construct_2d_tree.h"
 
 using namespace std;
-
 
 class Two_pin_element_2d;
 
@@ -78,6 +76,8 @@ private:
         void clear();
 
     private:
+
+        Construct_2d_tree& construct_2d_tree;
         PQStorage* storage_;
         // TroyLee
         size_t size_;
@@ -123,10 +123,6 @@ private:
     int gridxMinusOne;
     int gridyMinusOne;
 };
-
-
-
-
 
 inline
 void Multisource_multisink_mazeroute::MMMPriortyQueue::push(MMM_element* m) {

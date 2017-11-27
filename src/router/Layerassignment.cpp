@@ -1,7 +1,25 @@
+#include <sys/time.h>
+#include <unistd.h>
+#include <array>
+#include <cstdio>
+#include <cstdlib>
+#include <ctime>
+#include <deque>
+#include <memory>
+#include <set>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+#include "../grdb/plane.h"
+#include "../grdb/RoutingComponent.h"
+#include "../grdb/RoutingRegion.h"
+#include "Layerassignment.h"
+
 #define MIN(a, b) ((a < b) ? a : b)
 #define MAX(a, b) ((a > b) ? a : b)
 //#define FOLLOW_PREFER
-#define VIA_DENSITY	// new experiment 2007/09/27
+#define VIA_DENSITY	 // new experiment 2007/09/27
 //#define REDUCE_VIA_DENSITY	// new experiment 2007/09/29
 #define CHECK_PREFER
 #define MAX_OVERFLOW_CONSTRAINT
@@ -11,7 +29,7 @@
 #include <time.h>
 #include <queue>
 #include "Construct_2d_tree.h"
-#include "../misc/geometry.h"
+
 using namespace std;
 using namespace Jm;
 
@@ -23,96 +41,34 @@ char follow_prefer_direction;
 //enum {GREEDY, SHORT_PATH};
 int l_option;
 int max_xx, max_yy, max_zz, overflow_max, *prefer_idx;
-Coordinate_3d ***coord_3d_map;
+std::vector<std::vector<std::vector<Coordinate_3d>>> coord_3d_map;
 int i_router, i_test_case, i_order, i_method;
 const char temp_buf[1000] = "1000";
 
-struct {
-    int idx;
-    int val;
-} ans;
-typedef struct {
-    int val;
-    Coordinate_3d *pi;
-} DP_NODE;
-DP_NODE ***dp_map;
-typedef struct {
-    int id;
-    int val;
-} NET_NODE;
 NET_NODE *net_order;
-typedef struct {
-    int id;
-    int times;
-    int val;
-    int vo_times;
-    double average;
-    int bends;
-} AVERAGE_NODE;
-AVERAGE_NODE *average_order;
-typedef struct {
-    int xy;
-    int z;
-    double val;
-} NET_INFO_NODE;
-NET_INFO_NODE *net_info;
-void update_ans(int tar, int val) {
-    ans.idx = tar;
-    ans.val = val;
-}
-typedef struct {
-    Two_pin_list_2d two_pin_net_list;
-} MULTIPIN_NET_NODE;
-MULTIPIN_NET_NODE *multi_pin_net;
-typedef struct {
-    char val;
-    char edge[4];
-} PATH_NODE;
-PATH_NODE **path_map;
-typedef struct {
-    int val;
-    int via_cost;
-    int via_overflow;
-    int pi_z;
-} KLAT_NODE;
-KLAT_NODE ***klat_map;
-typedef struct {
-    int* edge[4];
-} OVERFLOW_NODE;
-OVERFLOW_NODE **overflow_map;
-typedef struct {
-    int pi;
-    int sx, sy, bx, by;
-    int num;
-} UNION_NODE;
-UNION_NODE *group_set;
-typedef struct {
-    int xy;
-    int z;
-} LENGTH_NODE;
-LENGTH_NODE length_count[1000];
-typedef struct {
-    int cur;
-    int max;
-} VIADENSITY_NODE;
-VIADENSITY_NODE ***viadensity_map;
-typedef struct {
-    set<int> used_net;
-} PATH_EDGE_3D;
-typedef PATH_EDGE_3D *PATH_EDGE_3D_PTR;
-typedef struct {
-    PATH_EDGE_3D_PTR edge_list[6];
-} PATH_VERTEX_3D;
-PATH_VERTEX_3D ***path_map_3d;
+DP_NODE ***dp_map;
+std::vector<AVERAGE_NODE> average_order;
+std::vector<NET_INFO_NODE> net_info;
+std::vector<MULTIPIN_NET_NODE> multi_pin_net;
+std::vector<std::vector<PATH_NODE>> path_map;
+std::vector<std::vector<std::vector<KLAT_NODE>>> klat_map;
+std::vector<std::vector<OVERFLOW_NODE>> overflow_map;
+std::vector<UNION_NODE> group_set;
+std::array<LENGTH_NODE, 1000> length_count;
+std::vector<std::vector<std::vector<VIADENSITY_NODE>>> viadensity_map;
+std::vector<std::vector<std::vector<PATH_VERTEX_3D>>> path_map_3d;
+std::vector<std::vector<LayerInfo>> layerInfo_map;
 
 const int plane_dir[4][2] = { { 0, 1 }, { 0, -1 }, { -1, 0 }, { 1, 0 } };	// F B L R
 const int cube_dir[6][3] = { { 0, 1, 0 }, { 0, -1, 0 }, { -1, 0, 0 }, { 1, 0, 0 }, { 0, 0, 1 }, { 0, 0, -1 } };	// F B L R U D
 int global_net_id, global_x, global_y, global_max_layer, global_pin_num, global_pin_cost = 0, global_xy_reduce = 0, global_BFS_xy = 0;
 int min_DP_val, min_DP_idx[4], max_DP_k, min_DP_k, min_DP_via_cost;
 int total_pin_number = 0;
-int ***BFS_color_map;
+std::vector<std::vector<std::vector<int>>> BFS_color_map;
 int temp_global_pin_cost, temp_global_xy_cost, after_xy_cost;
+
 int is_used_for_BFS[1300][1300];
+
 int global_increase_vo;
 
 void print_max_overflow(void) {
@@ -201,153 +157,73 @@ void find_overflow_max(void) {
 }
 
 void initial_3D_coordinate_map(void) {
-    int i, j, k;
 
-    coord_3d_map = (Coordinate_3d ***) malloc(sizeof(Coordinate_3d **) * max_xx);
-    for (i = 0; i < max_xx; ++i) {
-        coord_3d_map[i] = (Coordinate_3d **) malloc(sizeof(Coordinate_3d *) * max_yy);
-        for (j = 0; j < max_yy; ++j)
-            coord_3d_map[i][j] = (Coordinate_3d *) malloc(sizeof(Coordinate_3d) * max_zz);
+    layerInfo_map.resize(max_xx);
+
+    for (std::vector<LayerInfo>& vi : layerInfo_map) {
+        vi.resize(max_yy);
+        for (LayerInfo& vj : vi) {
+            vj.zLayerInfo.resize(max_zz);
+        }
     }
-    for (i = 0; i < max_xx; ++i)
-        for (j = 0; j < max_yy; ++j)
-            for (k = 0; k < max_zz; ++k) {
-                coord_3d_map[i][j][k].x = i;
-                coord_3d_map[i][j][k].y = j;
-                coord_3d_map[i][j][k].z = k;
+    for (int i = 0; i < max_xx; ++i) {
+        for (int j = 0; j < max_yy; ++j) {
+            for (int k = 0; k < max_zz; ++k) {
+                layerInfo_map[i][j].zLayerInfo[k].coord_3d = Coordinate_3d(i, j, k);
             }
-}
-
-void malloc_path_map(void) {
-    int i, j, k;
-
-    path_map = (PATH_NODE **) malloc(sizeof(PATH_NODE *) * max_xx);
-    for (i = 0; i < max_xx; ++i)
-        path_map[i] = (PATH_NODE *) malloc(sizeof(PATH_NODE) * max_yy);
-    // initial path_map
-    for (i = 0; i < max_xx; ++i)
-        for (j = 0; j < max_yy; ++j) {
-            path_map[i][j].val = 0;	// non-visited
-            for (k = 0; k < 4; ++k)
-                path_map[i][j].edge[k] = 0;
         }
-}
-
-void malloc_klat_map(void) {
-    int i, j;
-
-    klat_map = (KLAT_NODE ***) malloc(sizeof(KLAT_NODE **) * max_xx);
-    for (i = 0; i < max_xx; ++i) {
-        klat_map[i] = (KLAT_NODE **) malloc(sizeof(KLAT_NODE *) * max_yy);
-        for (j = 0; j < max_yy; ++j)
-            klat_map[i][j] = (KLAT_NODE *) malloc(sizeof(KLAT_NODE) * max_zz);
     }
 }
 
-void malloc_overflow_map(void) {
-    int i, j;
-    int *temp;
+void initial_overflow_map() {
 
-    overflow_map = (OVERFLOW_NODE **) malloc(sizeof(OVERFLOW_NODE *) * max_xx);
-    for (i = 0; i < max_xx; ++i)
-        overflow_map[i] = (OVERFLOW_NODE *) malloc(sizeof(OVERFLOW_NODE) * max_yy);
-    for (i = 1; i < max_xx; ++i)
-        for (j = 0; j < max_yy; ++j) {
-            temp = (int *) malloc(sizeof(int));
-            overflow_map[i][j].edge[LEFT] = temp;
-            overflow_map[i - 1][j].edge[RIGHT] = temp;
+    for (int i = 1; i < max_xx; ++i) {
+        for (int j = 0; j < max_yy; ++j) {
+            OVERFLOW_NODE& overflow = layerInfo_map[i][j].overflow;
+            *(overflow.edge[LEFT]) = (congestionMap2d->edge(i, j, DIR_WEST).overUsage() << 1);
+            *(overflow.edge[BACK]) = (congestionMap2d->edge(i, j, DIR_SOUTH).overUsage() << 1);
         }
-    for (i = 0; i < max_xx; ++i)
-        for (j = 1; j < max_yy; ++j) {
-            temp = (int *) malloc(sizeof(int));
-            overflow_map[i][j].edge[BACK] = temp;
-            overflow_map[i][j - 1].edge[FRONT] = temp;
-        }
-}
+    }
 
-void initial_overflow_map(void) {
-    int i, j;
-
-    for (i = 1; i < max_xx; ++i)
-        for (j = 0; j < max_yy; ++j)
-            *(overflow_map[i][j].edge[LEFT]) = (congestionMap2d->edge(i, j, DIR_WEST).overUsage() << 1);
-    for (i = 0; i < max_xx; ++i)
-        for (j = 1; j < max_yy; ++j)
-            *(overflow_map[i][j].edge[BACK]) = (congestionMap2d->edge(i, j, DIR_SOUTH).overUsage() << 1);
 }
 
 void malloc_viadensity_map(void) {
-    int i, j, k;
 
-    viadensity_map = (VIADENSITY_NODE ***) malloc(sizeof(VIADENSITY_NODE **) * max_xx);
-    for (i = 0; i < max_xx; ++i) {
-        viadensity_map[i] = (VIADENSITY_NODE **) malloc(sizeof(VIADENSITY_NODE *) * max_yy);
-        for (j = 0; j < max_yy; ++j)
-            viadensity_map[i][j] = (VIADENSITY_NODE *) malloc(sizeof(VIADENSITY_NODE) * max_zz);
-    }
-    // initial viadensity_map
-    for (i = 0; i < max_xx; ++i)
-        for (j = 0; j < max_yy; ++j)
-            for (k = 0; k < max_zz; ++k)
-                viadensity_map[i][j][k].cur = viadensity_map[i][j][k].max = 0;
 }
 
 void malloc_space(void) {
-    malloc_path_map();
-    malloc_klat_map();
-    malloc_overflow_map();
-    malloc_viadensity_map();
-}
-
-void free_path_map(void) {
-    int i;
-
-    for (i = 0; i < max_xx; ++i)
-        free(path_map[i]);
-    free(path_map);
-}
-
-void free_klat_map(void) {
-    int i, j;
-
-    for (i = 0; i < max_xx; ++i) {
-        for (j = 0; j < max_yy; ++j)
-            free(klat_map[i][j]);
-        free(klat_map[i]);
+    layerInfo_map.resize(max_xx);
+    for (std::vector<LayerInfo>& vi : layerInfo_map) {
+        vi.resize(max_yy);
+        for (LayerInfo& vj : vi) {
+            vj.zLayerInfo.resize(max_zz);
+            for (ZlayerInfo& vk : vj.zLayerInfo) {
+                vk.viadensity.cur = 0;
+                vk.viadensity.max = 0;
+            }
+            vj.path.val = 0;  // non-visited
+            for (int k = 0; k < 4; ++k) {
+                vj.path.edge[k] = 0;
+            }
+        }
     }
-    free(klat_map);
-}
 
-void free_overflow_map(void) {
-    int i, j;
-
-    for (i = 1; i < max_xx; ++i)
-        for (j = 0; j < max_yy; ++j)
-            free(overflow_map[i][j].edge[LEFT]);
-    for (i = 0; i < max_xx; ++i)
-        for (j = 1; j < max_yy; ++j)
-            free(overflow_map[i][j].edge[BACK]);
-    for (i = 0; i < max_xx; ++i)
-        free(overflow_map[i]);
-    free(overflow_map);
-}
-
-void free_viadensity_map(void) {
-    int i, j;
-
-    for (i = 0; i < max_xx; ++i) {
-        for (j = 0; j < max_yy; ++j)
-            free(viadensity_map[i][j]);
-        free(viadensity_map[i]);
+    for (int i = 1; i < max_xx; ++i) {
+        for (int j = 0; j < max_yy; ++j) {
+            OVERFLOW_NODE& overflow = layerInfo_map[i][j].overflow;
+            std::shared_ptr<int> temp = make_shared<int>();
+            overflow.edge[LEFT] = temp;
+            layerInfo_map[i - 1][j].overflow.edge[RIGHT] = temp;
+        }
     }
-    free(viadensity_map);
-}
+    for (int i = 0; i < max_xx; ++i) {
+        for (int j = 1; j < max_yy; ++j) {
+            std::shared_ptr<int> temp = make_shared<int>();
+            overflow.edge[BACK] = temp;
+            layerInfo_map[i][j - 1].overflow.edge[FRONT] = temp;
+        }
+    }
 
-void free_malloc_space(void) {
-    free_path_map();
-    free_klat_map();
-    free_overflow_map();
-    free_viadensity_map();
 }
 
 void update_cur_map_for_klat_xy(int cur_idx, Coordinate_2d *start, Coordinate_2d *end, int net_id) {
@@ -401,36 +277,35 @@ void update_cur_map_for_klat_z(int pre_idx, int cur_idx, Coordinate_2d *start, i
 
 void update_path_for_klat(Coordinate_2d *start) {
     int i, x, y, z_min, z_max, pin_num = 0;
-    queue<Coordinate_3d*> q;
-    Coordinate_3d* temp;
+    queue<std::reference_wrapper<Coordinate_3d>> q;
 
     // BFS
-    q.push(&coord_3d_map[start->x][start->y][0]);	// enqueue
+    q.push(coord_3d_map[start->x][start->y][0]);	// enqueue
     while (!q.empty()) {
-        temp = (Coordinate_3d *) q.front();
-        if (path_map[temp->x][temp->y].val == 2)	// a pin
+        Coordinate_3d& temp = q.front();
+        if (path_map[temp.x][temp.y].val == 2)	// a pin
                 {
             pin_num++;
             z_min = 0;
         } else
-            z_min = temp->z;
-        z_max = temp->z;
+            z_min = temp.z;
+        z_max = temp.z;
         for (i = 0; i < 4; ++i)
-            if (path_map[temp->x][temp->y].edge[i] == 1)	// check leagal
+            if (path_map[temp.x][temp.y].edge[i] == 1)	// check leagal
                     {
-                x = temp->x + plane_dir[i][0];
-                y = temp->y + plane_dir[i][1];
+                x = temp.x + plane_dir[i][0];
+                y = temp.y + plane_dir[i][1];
                 if (path_map[x][y].val == 0)
                     puts("ERROR");
-                if (klat_map[x][y][temp->z].pi_z > z_max)
-                    z_max = klat_map[x][y][temp->z].pi_z;
-                if (klat_map[x][y][temp->z].pi_z < z_min)
-                    z_min = klat_map[x][y][temp->z].pi_z;
-                update_cur_map_for_klat_xy(klat_map[x][y][temp->z].pi_z, &coor_array[temp->x][temp->y], &coor_array[x][y], global_net_id);
-                q.push(&coord_3d_map[x][y][klat_map[x][y][temp->z].pi_z]);	// enqueue
+                if (klat_map[x][y][temp.z].pi_z > z_max)
+                    z_max = klat_map[x][y][temp.z].pi_z;
+                if (klat_map[x][y][temp.z].pi_z < z_min)
+                    z_min = klat_map[x][y][temp.z].pi_z;
+                update_cur_map_for_klat_xy(klat_map[x][y][temp.z].pi_z, &coor_array[temp.x][temp.y], &coor_array[x][y], global_net_id);
+                q.push(coord_3d_map[x][y][klat_map[x][y][temp.z].pi_z]);	// enqueue
             }
-        update_cur_map_for_klat_z(z_min, z_max, &coor_array[temp->x][temp->y], global_net_id);
-        path_map[temp->x][temp->y].val = 0;	// visited
+        update_cur_map_for_klat_z(z_min, z_max, &coor_array[temp.x][temp.y], global_net_id);
+        path_map[temp.x][temp.y].val = 0;	// visited
         q.pop();	// dequeue
     }
     if (pin_num != global_pin_num)
@@ -467,8 +342,8 @@ void cycle_reduction(int x, int y) {
 
 int preprocess(int net_id) {
     int i, k, x, y, pin_counter = 1;
-    queue<Coordinate_2d*> q;
-    Coordinate_2d *temp;
+    queue<std::reference_wrapper<Coordinate_2d> > q;
+
     const PinptrList* pin_list = &rr_map->get_nPin(net_id);
 #ifdef POSTPROCESS
     int xy_len = 0;
@@ -488,20 +363,20 @@ int preprocess(int net_id) {
     for (k = 0; k < max_zz; ++k) {
         klat_map[x][y][k].val = -1;
     }
-    q.push(&coor_array[x][y]);	// enqueue
+    q.push(coor_array[x][y]);	// enqueue
     while (!q.empty()) {
-        temp = q.front();
+        Coordinate_2d& temp = q.front();
         for (i = 0; i < 4; ++i) {
-            x = temp->x + plane_dir[i][0];
-            y = temp->y + plane_dir[i][1];
-            if (x >= 0 && x < max_xx && y >= 0 && y < max_yy && congestionMap2d->edge(temp->x, temp->y, i).lookupNet(net_id)) {
+            x = temp.x + plane_dir[i][0];
+            y = temp.y + plane_dir[i][1];
+            if (x >= 0 && x < max_xx && y >= 0 && y < max_yy && congestionMap2d->edge(temp.x, temp.y, i).lookupNet(net_id)) {
                 if (path_map[x][y].val == 0 || path_map[x][y].val == -2) {
                     ++after_xy_cost;
 #ifdef POSTPROCESS
                     ++xy_len;
 #endif
                     global_BFS_xy++;
-                    path_map[temp->x][temp->y].edge[i] = 1;
+                    path_map[temp.x][temp.y].edge[i] = 1;
                     if (path_map[x][y].val == 0)
                         path_map[x][y].val = 1;	// visited node
                     else	// path_map[x][y].val == 2
@@ -516,12 +391,12 @@ int preprocess(int net_id) {
 #ifndef VIA_DENSITY
                     if (max_layer < max_zz)
                     {
-                        if (congestionMap2d->edge(temp->x, temp->y, i).cur_cap < congestionMap2d->edge(temp->x, temp->y, i).max_cap)
+                        if (congestionMap2d->edge(temp.x, temp.y, i).cur_cap < congestionMap2d->edge(temp.x, temp.y, i).max_cap)
                         {
-                            temp_cap = (congestionMap2d->edge(temp->x, temp->y, i).used_net.size() << 1);
+                            temp_cap = (congestionMap2d->edge(temp.x, temp.y, i).used_net.size() << 1);
                             for(k = 0; k < max_zz && temp_cap > 0; ++k)
-                            if (cur_map_3d[temp->x][temp->y][k].edge_list[i]->max_cap > 0)
-                            temp_cap -= cur_map_3d[temp->x][temp->y][k].edge_list[i]->max_cap;
+                            if (cur_map_3d[temp.x][temp.y][k].edge_list[i]->max_cap > 0)
+                            temp_cap -= cur_map_3d[temp.x][temp.y][k].edge_list[i]->max_cap;
                             if (k == max_zz)
                             max_layer = max_zz;
                             else if (k + 1 > max_layer)
@@ -531,11 +406,11 @@ int preprocess(int net_id) {
                         max_layer = max_zz;
                     }
 #endif
-                    q.push(&coor_array[x][y]);	// enqueue
+                    q.push(coor_array[x][y]);	// enqueue
                 } else
-                    path_map[temp->x][temp->y].edge[i] = 0;
+                    path_map[temp.x][temp.y].edge[i] = 0;
             } else
-                path_map[temp->x][temp->y].edge[i] = 0;
+                path_map[temp.x][temp.y].edge[i] = 0;
         }
         q.pop();	// dequeue
     }
@@ -745,9 +620,11 @@ void generate_output(int net_id) {
     int i, j;
     const PinptrList* pin_list = &rr_map->get_nPin(net_id);
     const char *p;
-    queue<Coordinate_3d*> q;
+    queue<std::reference_wrapper<Coordinate_3d>> q;
     int dir;
-    Coordinate_3d *temp, start, end;
+
+    Coordinate_3d start;
+    Coordinate_3d end;
 
     int xDetailShift = rr_map->get_llx() + (rr_map->get_tileWidth() >> 1);
     int yDetailShift = rr_map->get_lly() + (rr_map->get_tileHeight() >> 1);
@@ -759,16 +636,16 @@ void generate_output(int net_id) {
         ;
     printf(" %s\n", p + i);
     // BFS
-    q.push(&coord_3d_map[(*pin_list)[0]->get_tileX()][(*pin_list)[0]->get_tileY()][0]);	// enqueue
-    temp = q.front();
-    BFS_color_map[temp->x][temp->y][temp->z] = net_id;
+    q.push(coord_3d_map[(*pin_list)[0]->get_tileX()][(*pin_list)[0]->get_tileY()][0]);	// enqueue
+    Coordinate_3d& temp = q.front();
+    BFS_color_map[temp.x][temp.y][temp.z] = net_id;
     while (!q.empty()) {
         temp = q.front();
         for (dir = 0; dir < 6; dir += 2) {
             int dirPlusOne = dir + 1;
-            start.x = end.x = temp->x;
-            start.y = end.y = temp->y;
-            start.z = end.z = temp->z;
+            start.x = end.x = temp.x;
+            start.y = end.y = temp.y;
+            start.z = end.z = temp.z;
 
             for (i = 1;; ++i) {
                 start.x += cube_dir[dir][0];
@@ -777,7 +654,7 @@ void generate_output(int net_id) {
                 if (in_cube_and_have_edge(start.x, start.y, start.z, dir, net_id) == true && BFS_color_map[start.x][start.y][start.z] != net_id) {
                     BFS_color_map[start.x][start.y][start.z] = net_id;
                     if (have_child(start.x, start.y, start.z, dir, net_id) == true)
-                        q.push(&coord_3d_map[start.x][start.y][start.z]);	// enqueue
+                        q.push(coord_3d_map[start.x][start.y][start.z]);	// enqueue
                 } else {
                     start.x -= cube_dir[dir][0];
                     start.y -= cube_dir[dir][1];
@@ -792,7 +669,7 @@ void generate_output(int net_id) {
                 if (in_cube_and_have_edge(end.x, end.y, end.z, dirPlusOne, net_id) == true && BFS_color_map[end.x][end.y][end.z] != net_id) {
                     BFS_color_map[end.x][end.y][end.z] = net_id;
                     if (have_child(end.x, end.y, end.z, dirPlusOne, net_id) == true)
-                        q.push(&coord_3d_map[end.x][end.y][end.z]);	// enqueue
+                        q.push(coord_3d_map[end.x][end.y][end.z]);	// enqueue
                 } else {
                     end.x -= cube_dir[dirPlusOne][0];
                     end.y -= cube_dir[dirPlusOne][1];
@@ -860,23 +737,23 @@ int count_via_overflow_for_a_segment(int x, int y, int start, int end) {
 
 void greedy_layer_assignment(int x, int y, int z) {
     int dir, z_min, z_max, k;
-    queue<Coordinate_3d*> q;
-    Coordinate_3d *temp;
+    queue<std::reference_wrapper<Coordinate_3d>> q;
+
     int k_via_overflow, z_via_overflow = 0;
 
-    q.push(&coord_3d_map[x][y][z]);
+    q.push(coord_3d_map[x][y][z]);
     while (!q.empty()) {
-        temp = q.front();
-        if (path_map[temp->x][temp->y].val == 2)	// a pin
+        Coordinate_3d& temp = q.front();
+        if (path_map[temp.x][temp.y].val == 2)	// a pin
             z_min = 0;
         else
-            z_min = temp->z;
-        z_max = temp->z;
+            z_min = temp.z;
+        z_max = temp.z;
         for (dir = 0; dir < 4; ++dir)
-            if (path_map[temp->x][temp->y].edge[dir] == 1)	// check legal
+            if (path_map[temp.x][temp.y].edge[dir] == 1)	// check legal
                     {
-                x = temp->x + plane_dir[dir][0];
-                y = temp->y + plane_dir[dir][1];
+                x = temp.x + plane_dir[dir][0];
+                y = temp.y + plane_dir[dir][1];
 #ifdef FOLLOW_PREFER
                 for(k = 0; k < max_zz; ++k)
                 if ((dir == 0 || dir == 1) && prefer_direction[k][1] == 1)
@@ -886,53 +763,53 @@ void greedy_layer_assignment(int x, int y, int z) {
 #else
                 k = 0;
 #endif
-                k_via_overflow = count_via_overflow_for_a_segment(temp->x, temp->y, k, z_max);
+                k_via_overflow = count_via_overflow_for_a_segment(temp.x, temp.y, k, z_max);
                 for (z = k + 1; z < max_zz; ++z)
 #ifdef FOLLOW_PREFER
                     if (((dir == 0 || dir == 1) && prefer_direction[z][1] == 1) || ((dir == 2 || dir == 3) && prefer_direction[z][0] == 1))
                     {
 #endif
-                    if (cur_map_3d[temp->x][temp->y][z].edge_list[dir]->cur_cap < cur_map_3d[temp->x][temp->y][z].edge_list[dir]->max_cap) {
+                    if (cur_map_3d[temp.x][temp.y][z].edge_list[dir]->cur_cap < cur_map_3d[temp.x][temp.y][z].edge_list[dir]->max_cap) {
 #ifdef VIA_DENSITY
-                        if (cur_map_3d[temp->x][temp->y][k].edge_list[dir]->cur_cap < cur_map_3d[temp->x][temp->y][k].edge_list[dir]->max_cap) {
-                            z_via_overflow = count_via_overflow_for_a_segment(temp->x, temp->y, MIN(z, z_min), MAX(z, z_max));
+                        if (cur_map_3d[temp.x][temp.y][k].edge_list[dir]->cur_cap < cur_map_3d[temp.x][temp.y][k].edge_list[dir]->max_cap) {
+                            z_via_overflow = count_via_overflow_for_a_segment(temp.x, temp.y, MIN(z, z_min), MAX(z, z_max));
                             if (z_via_overflow < k_via_overflow) {
                                 k = z;
                                 k_via_overflow = z_via_overflow;
                             } else if (z_via_overflow == k_via_overflow) {
-                                if (abs(z - temp->z) < abs(k - temp->z)) {
+                                if (abs(z - temp.z) < abs(k - temp.z)) {
                                     k = z;
                                     k_via_overflow = z_via_overflow;
                                 }
                             }
-                        } else if (cur_map_3d[temp->x][temp->y][k].edge_list[dir]->cur_cap >= cur_map_3d[temp->x][temp->y][k].edge_list[dir]->max_cap) {
+                        } else if (cur_map_3d[temp.x][temp.y][k].edge_list[dir]->cur_cap >= cur_map_3d[temp.x][temp.y][k].edge_list[dir]->max_cap) {
                             k = z;
                             k_via_overflow = z_via_overflow;
                         }
 #else
-                        if ((cur_map_3d[temp->x][temp->y][k].edge_list[dir]->cur_cap < cur_map_3d[temp->x][temp->y][k].edge_list[dir]->max_cap && abs(z - temp->z) < abs(k - temp->z)) || (cur_map_3d[temp->x][temp->y][k].edge_list[dir]->cur_cap >= cur_map_3d[temp->x][temp->y][k].edge_list[dir]->max_cap))
+                        if ((cur_map_3d[temp.x][temp.y][k].edge_list[dir]->cur_cap < cur_map_3d[temp.x][temp.y][k].edge_list[dir]->max_cap && abs(z - temp.z) < abs(k - temp.z)) || (cur_map_3d[temp.x][temp.y][k].edge_list[dir]->cur_cap >= cur_map_3d[temp.x][temp.y][k].edge_list[dir]->max_cap))
                         k = z;
 #endif
                     } else {
 #ifdef VIA_DENSITY
-                        if (cur_map_3d[temp->x][temp->y][z].edge_list[dir]->cur_cap - cur_map_3d[temp->x][temp->y][z].edge_list[dir]->max_cap
-                                < cur_map_3d[temp->x][temp->y][k].edge_list[dir]->cur_cap - cur_map_3d[temp->x][temp->y][k].edge_list[dir]->max_cap)
+                        if (cur_map_3d[temp.x][temp.y][z].edge_list[dir]->cur_cap - cur_map_3d[temp.x][temp.y][z].edge_list[dir]->max_cap
+                                < cur_map_3d[temp.x][temp.y][k].edge_list[dir]->cur_cap - cur_map_3d[temp.x][temp.y][k].edge_list[dir]->max_cap)
                             k = z;
-                        else if (cur_map_3d[temp->x][temp->y][z].edge_list[dir]->cur_cap - cur_map_3d[temp->x][temp->y][z].edge_list[dir]->max_cap
-                                == cur_map_3d[temp->x][temp->y][k].edge_list[dir]->cur_cap - cur_map_3d[temp->x][temp->y][k].edge_list[dir]->max_cap) {
-                            z_via_overflow = count_via_overflow_for_a_segment(temp->x, temp->y, MIN(z, z_min), MAX(z, z_max));
+                        else if (cur_map_3d[temp.x][temp.y][z].edge_list[dir]->cur_cap - cur_map_3d[temp.x][temp.y][z].edge_list[dir]->max_cap
+                                == cur_map_3d[temp.x][temp.y][k].edge_list[dir]->cur_cap - cur_map_3d[temp.x][temp.y][k].edge_list[dir]->max_cap) {
+                            z_via_overflow = count_via_overflow_for_a_segment(temp.x, temp.y, MIN(z, z_min), MAX(z, z_max));
                             if (z_via_overflow < k_via_overflow) {
                                 k = z;
                                 k_via_overflow = z_via_overflow;
                             } else if (z_via_overflow == k_via_overflow) {
-                                if (abs(z - temp->z) < abs(k - temp->z)) {
+                                if (abs(z - temp.z) < abs(k - temp.z)) {
                                     k = z;
                                     k_via_overflow = z_via_overflow;
                                 }
                             }
                         }
 #else
-                        if ((cur_map_3d[temp->x][temp->y][z].edge_list[dir]->cur_cap - cur_map_3d[temp->x][temp->y][z].edge_list[dir]->max_cap < cur_map_3d[temp->x][temp->y][k].edge_list[dir]->cur_cap - cur_map_3d[temp->x][temp->y][k].edge_list[dir]->max_cap) || (cur_map_3d[temp->x][temp->y][z].edge_list[dir]->cur_cap - cur_map_3d[temp->x][temp->y][z].edge_list[dir]->max_cap == cur_map_3d[temp->x][temp->y][k].edge_list[dir]->cur_cap - cur_map_3d[temp->x][temp->y][k].edge_list[dir]->max_cap && abs(z - temp->z) < abs(k - temp->z)))
+                        if ((cur_map_3d[temp.x][temp.y][z].edge_list[dir]->cur_cap - cur_map_3d[temp.x][temp.y][z].edge_list[dir]->max_cap < cur_map_3d[temp.x][temp.y][k].edge_list[dir]->cur_cap - cur_map_3d[temp.x][temp.y][k].edge_list[dir]->max_cap) || (cur_map_3d[temp.x][temp.y][z].edge_list[dir]->cur_cap - cur_map_3d[temp.x][temp.y][z].edge_list[dir]->max_cap == cur_map_3d[temp.x][temp.y][k].edge_list[dir]->cur_cap - cur_map_3d[temp.x][temp.y][k].edge_list[dir]->max_cap && abs(z - temp.z) < abs(k - temp.z)))
                         k = z;
 #endif
                     }
@@ -943,11 +820,11 @@ void greedy_layer_assignment(int x, int y, int z) {
                     z_min = k;
                 if (k > z_max)
                     z_max = k;
-                update_cur_map_for_klat_xy(k, &coor_array[temp->x][temp->y], &coor_array[x][y], global_net_id);
-                q.push(&coord_3d_map[x][y][k]);
+                update_cur_map_for_klat_xy(k, &coor_array[temp.x][temp.y], &coor_array[x][y], global_net_id);
+                q.push(coord_3d_map[x][y][k]);
             }
-        update_cur_map_for_klat_z(z_min, z_max, &coor_array[temp->x][temp->y], global_net_id);
-        path_map[temp->x][temp->y].val = 0;
+        update_cur_map_for_klat_z(z_min, z_max, &coor_array[temp.x][temp.y], global_net_id);
+        path_map[temp.x][temp.y].val = 0;
         q.pop();
     }
 }
@@ -963,18 +840,11 @@ void greedy(int net_id) {
     greedy_layer_assignment(start->x, start->y, 0);
 }
 
-int comp_temp_net_order(const void *a, const void *b) {
-    int p, q;
+bool comp_temp_net_order(int p, int q) {
 
-    p = *((int *) a);
-    q = *((int *) b);
-    if (average_order[p].average > average_order[q].average)
-        return -1;
-    else if (average_order[p].average < average_order[q].average)
-        return 1;
-    else {
-        return rr_map->get_netPinNumber(p) - rr_map->get_netPinNumber(q);
-    }
+    return average_order[q].average < average_order[p].average || //
+            (!(average_order[p].average < average_order[q].average) && //
+                    rr_map->get_netPinNumber(p) < rr_map->get_netPinNumber(q));
 }
 
 int backtrace(int n) {
@@ -989,17 +859,17 @@ void find_group(int max) {
     int i, j, k;
     LRoutedNetTable::iterator iter, iter2;
     int a, b, pre_solve_counter = 0, temp_cap;
-    bool *pre_solve;
+    std::deque<bool> pre_solve(max);
     int max_layer;
 
-    group_set = (UNION_NODE *) malloc(sizeof(UNION_NODE) * max);
-    pre_solve = (bool *) malloc(sizeof(bool) * max);
-    // intitial for is_used_for_BFS
+    group_set = std::vector<UNION_NODE>(max);
+
+// intitial for is_used_for_BFS
     for (i = 0; i < max_xx; ++i)
         for (j = 0; j < max_yy; ++j)
             is_used_for_BFS[i][j] = -1;
-    // initial for average_order
-    average_order = (AVERAGE_NODE *) malloc(sizeof(AVERAGE_NODE) * max);
+// initial for average_order
+    average_order = std::vector<AVERAGE_NODE>(max);
     for (i = 0; i < max; ++i) {
         group_set[i].pi = i;
         group_set[i].sx = group_set[i].sy = 1000000;
@@ -1118,7 +988,7 @@ void find_group(int max) {
         }
     for (i = 0; i < max_xx; ++i)
         for (j = 1; j < max_yy; ++j) {
-            for (k = 0; k < max_zz && cur_map_3d[i][j][k].edge_list[BACK]->max_cap == 0; ++k){
+            for (k = 0; k < max_zz && cur_map_3d[i][j][k].edge_list[BACK]->max_cap == 0; ++k) {
             }
             if ((int) (congestionMap2d->edge(i, j, DIR_SOUTH).used_net.size() << 1) > cur_map_3d[i][j][k].edge_list[BACK]->max_cap) {
                 if (congestionMap2d->edge(i, j, DIR_SOUTH).used_net.size() > 1) {
@@ -1165,23 +1035,12 @@ void initial_BFS_color_map(void) {
 void malloc_BFS_color_map(void) {
     int i, j;
 
-    BFS_color_map = (int ***) malloc(sizeof(int **) * max_xx);
+    BFS_color_map = std::vector<std::vector<std::vector<int>>>(max_xx);
     for (i = 0; i < max_xx; ++i) {
-        BFS_color_map[i] = (int **) malloc(sizeof(int *) * max_yy);
+        BFS_color_map[i] = std::vector<std::vector<int>>(max_yy);
         for (j = 0; j < max_yy; ++j)
-            BFS_color_map[i][j] = (int *) malloc(sizeof(int) * max_zz);
+            BFS_color_map[i][j] = std::vector<int>(max_zz);
     }
-}
-
-void free_BFS_color_map(void) {
-    int i, j;
-
-    for (i = 0; i < max_xx; ++i) {
-        for (j = 0; j < max_yy; ++j)
-            free(BFS_color_map[i][j]);
-        free(BFS_color_map[i]);
-    }
-    free(BFS_color_map);
 }
 
 void calculate_wirelength(void) {
@@ -1254,22 +1113,23 @@ void sort_net_order(void) {
     LRoutedNetTable count_data;
     LRoutedNetTable::iterator iter;
     LRoutedNetTable two_pin_data;
-    //vector<Pin*>* pin_list;
+//vector<Pin*>* pin_list;
     clock_t start, finish;
 #ifdef CHANGE_VIA_DENSITY
     double times;
 #endif
-    int *temp_net_order;
 
     max = rr_map->get_netNumber();
-    // re-disturibte net
-    multi_pin_net = (MULTIPIN_NET_NODE *) malloc(sizeof(MULTIPIN_NET_NODE) * max);
+// re-disturibte net
+    multi_pin_net = std::vector<MULTIPIN_NET_NODE>(max);
     find_group(max);
     initial_overflow_map();
-    temp_net_order = (int *) malloc(sizeof(int) * max);
-    for (i = 0; i < max; ++i)
+    std::vector<int> temp_net_order(max);
+    for (i = 0; i < max; ++i) {
         temp_net_order[i] = i;
-    qsort(temp_net_order, max, sizeof(int), comp_temp_net_order);
+    }
+    std::sort(temp_net_order.begin(), temp_net_order.end(), [](int a,int b) {return comp_temp_net_order(a,b);});
+
     start = clock();
 #ifdef CHANGE_VIA_DENSITY
     for(times = 0.8; times <= 1.2; times += 0.2)
@@ -1309,7 +1169,7 @@ void sort_net_order(void) {
     printf("cost = %d\n", global_pin_cost);
     finish = clock();
     printf("time = %lf\n", (double) (finish - start) / CLOCKS_PER_SEC);
-    free(temp_net_order);
+
 }
 
 void calculate_cap(void) {
@@ -1360,7 +1220,7 @@ void Layer_assignment(const char* outputFileNamePtr) {
     puts("Layerassignment processing...");
 #ifdef FROM2D
 #ifdef POSTPROCESS
-    net_info = (NET_INFO_NODE *)malloc(sizeof(NET_INFO_NODE) * rr_map->get_netNumber());
+    net_info = std::vector<NET_INFO_NODE>(rr_map->get_netNumber());
 #endif
     sort_net_order();
     print_max_overflow();
@@ -1372,7 +1232,7 @@ void Layer_assignment(const char* outputFileNamePtr) {
 #ifdef VIA_DENSITY
     //print_via_overflow();
 #endif
-    free_malloc_space();
+
     calculate_wirelength();
 #ifdef PRINT_OVERFLOW
     print_max_overflow();
@@ -1388,7 +1248,7 @@ void Layer_assignment(const char* outputFileNamePtr) {
     fclose(outputFile);
 
     stdout = fdopen(stdout_fd, "w");
-    free_BFS_color_map();
+
 #endif
 #ifdef CHECK_PATH
     check_path();
