@@ -2,7 +2,7 @@
 #define INC_FLUTE_DS_H
 
 #define POWVFILE "POWV9.dat"    // LUT for POWV (Wirelength Vector)
-#define POSTFILE "PORT9.dat"    // LUT for POST (Steiner Tree)
+#define POSTFILE "POST9.dat"    // LUT for POST (Steiner Tree)
 #define MAXD 350    // max. degree of a net that can be handled
                     // Setting MAXD to more than 150 is not recommended
                     // jalamorm change to 350 in 12/13/2007
