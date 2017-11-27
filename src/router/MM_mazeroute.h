@@ -91,7 +91,7 @@ private:
     };
 
 public:
-    Multisource_multisink_mazeroute();
+    Multisource_multisink_mazeroute(Construct_2d_tree& construct_2d_tree);
     ~Multisource_multisink_mazeroute();
     bool mm_maze_route_p2(Two_pin_element_2d *element, double bound_cost, int bound_distance, int bound_via_num, Jm::Coordinate_2d start, Jm::Coordinate_2d end);
     bool mm_maze_route_p3(Two_pin_element_2d *element, double bound_cost, int bound_distance, int bound_via_num, Jm::Coordinate_2d start, Jm::Coordinate_2d end);
@@ -108,6 +108,7 @@ private:
     void bfsSetColorMap(int x, int y);
 
 private:
+    Construct_2d_tree& construct_2d_tree;
     VertexPlane<MMM_element> *mmm_map;
     vector<vector<Vertex_mmm*> > *net_tree;
     MMMPriortyQueue* pqueue;

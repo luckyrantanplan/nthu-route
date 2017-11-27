@@ -14,6 +14,7 @@
 #include "../flute/flute-ds.h"
 #include "../grdb/plane.h"
 #include "../misc/geometry.h"
+#include "../util/traversemap.h"
 
 class Net;
 class ParameterSet;
@@ -162,13 +163,13 @@ struct CacheEdge {
 class Multisource_multisink_mazeroute;
 
 struct Construct_2d_tree {
-    std::function<void(int i, int j, int dir)> fn;
+    std::function<void(int i, int j, int dir)> pre_evaluate_congestion_cost_fp;
     int par_ind;
-    ParameterSet* parameter_set;
-    RoutingParameters* routing_parameter;
+    ParameterSet& parameter_set;
+    RoutingParameters& routing_parameter;
 
     const std::array<std::array<int, 2>, 4> dir_array; //FRONT,BACK,LEFT,RIGHT
-    const std::array<int, 4> Jr2JmDirArray;
+    const std::array<int, 4> Jr2JmDirArray; //FRONT,BACK,LEFT,RIGHT <-> North, South, East, West
 
     EdgePlane<Edge_2d>* congestionMap2d;
     vector<Two_pin_element_2d*> two_pin_list;
@@ -184,7 +185,7 @@ struct Construct_2d_tree {
     Vertex_3d ***cur_map_3d;
     vector<Two_pin_element*> all_two_pin_list;
 
-    RoutingRegion *rr_map;
+    RoutingRegion&rr_map;
     int cur_iter;
     int done_iter;
     double alpha;
@@ -194,9 +195,22 @@ struct Construct_2d_tree {
     Tree* net_flutetree;
     EdgePlane<CacheEdge>* cache;
     vector<bool> NetDirtyBit;
-//#include "MM_mazeroute.h"
 
     Multisource_multisink_mazeroute* mazeroute_in_range;
+
+    /***********************
+     * Global Variable End
+     * ********************/
+
+    vector<Two_pin_list_2d*> net_2pin_list;      //store 2pin list of each net
+    Tree global_flutetree;
+    vector<Two_pin_list_2d*> bbox_2pin_list;    //store bbox 2pin list of each net
+    vector<Vertex_flute_ptr> vertex_fl;
+    EdgeColorMap<int>* bboxRouteStateMap;
+    double factor = 1.0;
+    double exponent = 5.0;
+    double WL_Cost = 1.0;
+    double adjust_value = 0;
 
     void update_congestion_map_insert_two_pin_net(Two_pin_element_2d *element);
     void update_congestion_map_remove_two_pin_net(Two_pin_element_2d *element);
@@ -286,7 +300,7 @@ struct Construct_2d_tree {
     void dfs_output_tree(Vertex_flute_ptr node, Tree *t);
     void edge_shifting(Tree *t);
     void output_2_pin_list();
-    Construct_2d_tree(ParameterSet& param,RoutingRegion& rr);
+    Construct_2d_tree(RoutingParameters& routingparam, ParameterSet& param, RoutingRegion& rr, std::function<void(int i, int j, int dir)> pre_evaluate_congestion_cost_fp);
 
 };
 #endif /* _CONSTRUCT_2D_TREE_H_ */

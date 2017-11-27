@@ -256,10 +256,10 @@ public:
     //return output file name
     const char* output();
     //return parameter group NO.
-    ParameterSet&  parameter();
+    ParameterSet& parameter();
     //return the input type: 0 for IBM test cases  and 1 for the others
     int caseType();
-    RoutingParameters* routing_param();
+    RoutingParameters& routing_param();
 
 private:
     int argc;
@@ -277,9 +277,9 @@ private:
     void analyzeOutput();
 };
 
-inline RoutingParameters*
+inline RoutingParameters&
 ParameterAnalyzer::routing_param() {
-    return &routingParam;
+    return routingParam;
 }
 
 #endif //INC_PARAMETER_H

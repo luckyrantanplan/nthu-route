@@ -15,6 +15,14 @@ struct COUNTER {
 
 struct Post_processing {
 
+
+    int cur_overflow;
+    int pre_overflow;
+
+    static int Post_processing_iteration;
+    static int inc_num;
+    static bool total_no_overflow;
+
     Construct_2d_tree& construct_2d_tree;
 
     int comp(const COUNTER& a, const COUNTER& b);

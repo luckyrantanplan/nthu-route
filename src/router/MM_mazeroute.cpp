@@ -6,31 +6,40 @@
 #include <climits>
 #include <stack>
 #include <queue>
+#include "../grdb/RoutingRegion.h"
 
 using namespace Jm;
 using namespace std;
 
+Multisource_multisink_mazeroute::Multisource_multisink_mazeroute(Construct_2d_tree& construct_2d_tree) :
+        construct_2d_tree { construct_2d_tree } {
+
+}
+
 void Multisource_multisink_mazeroute::MMMPriortyQueue::init() {
-    storage_ = new vector<MMM_element*>(2 * rr_map->get_gridx() * rr_map->get_gridy(), static_cast<MMM_element*>(NULL));
+    storage_ = new vector<MMM_element*>(2 * construct_2d_tree.rr_map.get_gridx() * construct_2d_tree.rr_map.get_gridy(), static_cast<MMM_element*>(NULL));
     size_ = 0;
 }
 
 Multisource_multisink_mazeroute::Vertex_mmm::Vertex_mmm(int x, int y) :
-        coor(&coor_array[x][y]), visit(-1) {
+        coor(&construct_2d_tree.coor_array[x][y]), visit(-1) {
 }
 
 Multisource_multisink_mazeroute::Multisource_multisink_mazeroute(Construct_2d_tree& construct_2d_tree) :
-        gridxMinusOne(rr_map->get_gridx() - 1), gridyMinusOne(rr_map->get_gridy() - 1) {
+        gridxMinusOne(construct_2d_tree.rr_map.get_gridx() - 1), gridyMinusOne(construct_2d_tree.rr_map.get_gridy() - 1) {
     /*allocate space for mmm_map*/
-    this->net_tree = new vector<vector<Vertex_mmm *> >(rr_map->get_netNumber(), vector<Vertex_mmm *>(0));
 
-    mmm_map = new VertexPlane<MMM_element>(rr_map->get_gridx(), rr_map->get_gridy(), MMM_element());
+    RoutingRegion& rr_map = construct_2d_tree.rr_map;
+
+    this->net_tree = new vector<vector<Vertex_mmm *> >(rr_map.get_netNumber(), vector<Vertex_mmm *>(0));
+
+    mmm_map = new VertexPlane<MMM_element>(rr_map.get_gridx(), rr_map.get_gridy(), MMM_element());
 
     pqueue = new MMMPriortyQueue();
 
     //initialization
-    for (int i = 0; i < rr_map->get_gridx(); ++i) {
-        for (int j = 0; j < rr_map->get_gridy(); ++j) {
+    for (int i = 0; i < rr_map.get_gridx(); ++i) {
+        for (int j = 0; j < rr_map.get_gridy(); ++j) {
             mmm_map->vertex(i, j).coor = &coor_array[i][j];
         }
     }
@@ -126,14 +135,14 @@ void Multisource_multisink_mazeroute::find_subtree(Vertex_mmm *v, int mode) {
 }
 
 void Multisource_multisink_mazeroute::clear_net_tree() {
-    for (int i = 0; i < rr_map->get_netNumber(); ++i) {
+    for (int i = 0; i < rr_map.get_netNumber(); ++i) {
         int length = (*this->net_tree)[i].size();
         for (int j = 0; j < length; ++j)
             delete ((*this->net_tree)[i][j]);
     }
 
     delete net_tree;
-    this->net_tree = new vector<vector<Vertex_mmm *> >(rr_map->get_netNumber(), vector<Vertex_mmm *>(0));
+    this->net_tree = new vector<vector<Vertex_mmm *> >(rr_map.get_netNumber(), vector<Vertex_mmm *>(0));
 }
 
 void Multisource_multisink_mazeroute::setup_pqueue() {

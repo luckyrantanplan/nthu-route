@@ -11,58 +11,14 @@
 #include <climits>
 #include <algorithm>
 #include "MM_mazeroute.h"
+#include "../grdb/RoutingRegion.h"
+
 using namespace std;
 using namespace Jm;
 
 /***********************
  * Global Variable Begin
  * ********************/
-int par_ind = 0;
-ParameterSet& parameter_set;
-RoutingParameters* routing_parameter;
-
-const int dir_array[4][2] = { { 0, 1 }, { 0, -1 }, { -1, 0 }, { 1, 0 } }; //FRONT,BACK,LEFT,RIGHT
-const int Jr2JmDirArray[4] = { 0, 1, 3, 2 }; //FRONT,BACK,LEFT,RIGHT <-> North, South, East, West
-
-EdgePlane<Edge_2d>* congestionMap2d;
-vector<Two_pin_element_2d*> two_pin_list;
-int two_pin_list_size;
-int flute_mode;
-
-Monotonic_element **cong_monotonic; //store max congestion during monotonic path
-int **parent_monotonic;             //record parent (x,y) during finding monotonic path
-Coordinate_2d **coor_array;
-
-Vertex_3d ***cur_map_3d;
-vector<Two_pin_element*> all_two_pin_list;
-
-RoutingRegion *rr_map;
-int cur_iter;
-int done_iter;
-double alpha;
-int total_overflow;
-int used_cost_flag;
-
-Multisource_multisink_mazeroute* mazeroute_in_range = NULL;
-
-int via_cost = 3;
-double max_congestion_factor = 1.0;
-
-Tree *net_flutetree;
-EdgePlane<CacheEdge>* cache = NULL;
-/***********************
- * Global Variable End
- * ********************/
-
-static vector<Two_pin_list_2d*> net_2pin_list;	    //store 2pin list of each net
-static Tree global_flutetree;
-static vector<Two_pin_list_2d*> bbox_2pin_list;    //store bbox 2pin list of each net
-static vector<Vertex_flute_ptr> vertex_fl;
-static EdgeColorMap<int>* bboxRouteStateMap;
-static double factor = 1.0;
-static double exponent = 5.0;
-static double WL_Cost = 1.0;
-static double adjust_value = 0;
 
 Edge_2d::Edge_2d() :
         cur_cap(0.), max_cap(0.), history(1), used_net(128) {
@@ -85,8 +41,8 @@ int Construct_2d_tree::cal_max_overflow() {
     int dif_curmax = 0;
 
     //obtain the max. overflow and total overflowed value of RIGHT edge of every gCell
-    for (int i = rr_map->get_gridx() - 2; i >= 0; --i) {
-        for (int j = rr_map->get_gridy() - 1; j >= 0; --j) {
+    for (int i = rr_map.get_gridx() - 2; i >= 0; --i) {
+        for (int j = rr_map.get_gridy() - 1; j >= 0; --j) {
             if (congestionMap2d->edge(i, j, DIR_EAST).isOverflow())	//overflow occur
             {
                 max_2d_of = max(max_2d_of, congestionMap2d->edge(i, j, DIR_EAST).overUsage());
@@ -96,8 +52,8 @@ int Construct_2d_tree::cal_max_overflow() {
     }
 
     //obtain the max. overflow and total overflowed value of FRONT edge of every gCell
-    for (int i = rr_map->get_gridx() - 1; i >= 0; --i) {
-        for (int j = rr_map->get_gridy() - 2; j >= 0; --j) {
+    for (int i = rr_map.get_gridx() - 1; i >= 0; --i) {
+        for (int j = rr_map.get_gridy() - 2; j >= 0; --j) {
             if (congestionMap2d->edge(i, j, DIR_NORTH).isOverflow())	//overflow occur
             {
                 max_2d_of = max(max_2d_of, congestionMap2d->edge(i, j, DIR_NORTH).overUsage());
@@ -115,13 +71,13 @@ int Construct_2d_tree::cal_max_overflow() {
 int Construct_2d_tree::cal_total_wirelength() {
     int total_wl = 0;
 
-    for (int i = rr_map->get_gridx() - 2; i >= 0; --i) {
-        for (int j = rr_map->get_gridy() - 1; j >= 0; --j) {
+    for (int i = rr_map.get_gridx() - 2; i >= 0; --i) {
+        for (int j = rr_map.get_gridy() - 1; j >= 0; --j) {
             total_wl += (int) congestionMap2d->edge(i, j, RIGHT).cur_cap;
         }
     }
-    for (int i = rr_map->get_gridx() - 1; i >= 0; --i) {
-        for (int j = rr_map->get_gridy() - 2; j >= 0; --j) {
+    for (int i = rr_map.get_gridx() - 1; i >= 0; --i) {
+        for (int j = rr_map.get_gridy() - 2; j >= 0; --j) {
             total_wl += (int) congestionMap2d->edge(i, j, FRONT).cur_cap;
         }
     }
@@ -176,35 +132,35 @@ void Construct_2d_tree::setup_flute_order(int *order) {
 
 /*assign the estimated track# to each edge*/
 void Construct_2d_tree::init_2d_map() {
-    congestionMap2d = new EdgePlane<Edge_2d>(rr_map->get_gridx(), rr_map->get_gridy(), Edge_2d());
+    congestionMap2d = new EdgePlane<Edge_2d>(rr_map.get_gridx(), rr_map.get_gridy(), Edge_2d());
 
-    for (int x = rr_map->get_gridx() - 2; x >= 0; --x) {
-        for (int y = rr_map->get_gridy() - 1; y >= 0; --y) {
-            for (int layer = rr_map->get_layerNumber() - 1; layer >= 0; --layer) {
+    for (int x = rr_map.get_gridx() - 2; x >= 0; --x) {
+        for (int y = rr_map.get_gridy() - 1; y >= 0; --y) {
+            for (int layer = rr_map.get_layerNumber() - 1; layer >= 0; --layer) {
 #ifdef IBM_CASE		
                 //There is no wire spacing, so
                 //the edge capacity on congestion map = edge capacity on every layer
-                congestionMap2d->edge(x, y, DIR_EAST).max_cap += rr_map->capacity(layer, x, y, x+1, y);
+                congestionMap2d->edge(x, y, DIR_EAST).max_cap += rr_map.capacity(layer, x, y, x+1, y);
 #else
                 //Because the wire width = 1 and wire spaceing = 1,
                 //the edge capacity on congestion map = edge capacity on every layer /2.
-                congestionMap2d->edge(x, y, DIR_EAST).max_cap += (rr_map->capacity(layer, x, y, x + 1, y) / 2);
+                congestionMap2d->edge(x, y, DIR_EAST).max_cap += (rr_map.capacity(layer, x, y, x + 1, y) / 2);
 #endif		
             }
         }
     }
 
-    for (int x = rr_map->get_gridx() - 1; x >= 0; --x) {
-        for (int y = rr_map->get_gridy() - 2; y >= 0; --y) {
-            for (int layer = rr_map->get_layerNumber() - 1; layer >= 0; --layer) {
+    for (int x = rr_map.get_gridx() - 1; x >= 0; --x) {
+        for (int y = rr_map.get_gridy() - 2; y >= 0; --y) {
+            for (int layer = rr_map.get_layerNumber() - 1; layer >= 0; --layer) {
 #ifdef IBM_CASE		
                 //There is no wire spacing, so
                 //the edge capacity on congestion map = edge capacity on every layer
-                congestionMap2d->edge(x, y, DIR_NORTH).max_cap += rr_map->capacity(layer, x, y, x, y+1);
+                congestionMap2d->edge(x, y, DIR_NORTH).max_cap += rr_map.capacity(layer, x, y, x, y+1);
 #else
                 //Because the wire width = 1 and wire spaceing = 1,
                 //the edge capacity on congestion map = edge capacity on every layer /2.
-                congestionMap2d->edge(x, y, DIR_NORTH).max_cap += (rr_map->capacity(layer, x, y, x, y + 1) / 2);
+                congestionMap2d->edge(x, y, DIR_NORTH).max_cap += (rr_map.capacity(layer, x, y, x, y + 1) / 2);
 #endif		
             }
         }
@@ -216,13 +172,13 @@ void Construct_2d_tree::allocate_coor_array() {
     int i, j;
     Coordinate_2d *tmp_data;
 
-    coor_array = (Coordinate_2d **) malloc(rr_map->get_gridx() * sizeof(Coordinate_2d *));
-    tmp_data = (Coordinate_2d *) malloc(rr_map->get_gridx() * rr_map->get_gridy() * sizeof(Coordinate_2d));
-    for (i = 0; i < rr_map->get_gridx(); ++i, tmp_data += rr_map->get_gridy())
+    coor_array = (Coordinate_2d **) malloc(rr_map.get_gridx() * sizeof(Coordinate_2d *));
+    tmp_data = (Coordinate_2d *) malloc(rr_map.get_gridx() * rr_map.get_gridy() * sizeof(Coordinate_2d));
+    for (i = 0; i < rr_map.get_gridx(); ++i, tmp_data += rr_map.get_gridy())
         coor_array[i] = tmp_data;
 
-    for (i = 0; i < rr_map->get_gridx(); ++i) {
-        for (j = 0; j < rr_map->get_gridy(); ++j) {
+    for (i = 0; i < rr_map.get_gridx(); ++i) {
+        for (j = 0; j < rr_map.get_gridy(); ++j) {
             coor_array[i][j].x = i;
             coor_array[i][j].y = j;
         }
@@ -235,52 +191,52 @@ void Construct_2d_tree::init_3d_map() {
     Edge_3d_ptr newedge;
 
     /*allocate space for cur_map_3d*/
-    cur_map_3d = (Vertex_3d ***) malloc(rr_map->get_gridx() * sizeof(Vertex_3d **));
-    tmp_data = (Vertex_3d **) malloc(rr_map->get_gridx() * rr_map->get_gridy() * sizeof(Vertex_3d *));
-    for (i = 0; i < rr_map->get_gridx(); ++i, tmp_data += rr_map->get_gridy())
+    cur_map_3d = (Vertex_3d ***) malloc(rr_map.get_gridx() * sizeof(Vertex_3d **));
+    tmp_data = (Vertex_3d **) malloc(rr_map.get_gridx() * rr_map.get_gridy() * sizeof(Vertex_3d *));
+    for (i = 0; i < rr_map.get_gridx(); ++i, tmp_data += rr_map.get_gridy())
         cur_map_3d[i] = tmp_data;
-    tmp_data2 = (Vertex_3d *) malloc(rr_map->get_gridx() * rr_map->get_gridy() * rr_map->get_layerNumber() * sizeof(Vertex_3d));
-    for (i = 0; i < rr_map->get_gridx(); ++i)
-        for (j = 0; j < rr_map->get_gridy(); ++j, tmp_data2 += rr_map->get_layerNumber())
+    tmp_data2 = (Vertex_3d *) malloc(rr_map.get_gridx() * rr_map.get_gridy() * rr_map.get_layerNumber() * sizeof(Vertex_3d));
+    for (i = 0; i < rr_map.get_gridx(); ++i)
+        for (j = 0; j < rr_map.get_gridy(); ++j, tmp_data2 += rr_map.get_layerNumber())
             cur_map_3d[i][j] = tmp_data2;
 
     //initialize capacity
-    for (i = 0; i < rr_map->get_gridx() - 1; ++i)
-        for (j = 0; j < rr_map->get_gridy(); ++j)
-            for (k = 0; k < rr_map->get_layerNumber(); ++k) {
+    for (i = 0; i < rr_map.get_gridx() - 1; ++i)
+        for (j = 0; j < rr_map.get_gridy(); ++j)
+            for (k = 0; k < rr_map.get_layerNumber(); ++k) {
                 newedge = Create_Edge_3d(); /*allocate space for edge_list without initialization*/
                 cur_map_3d[i][j][k].edge_list[RIGHT] = newedge;
                 cur_map_3d[i + 1][j][k].edge_list[LEFT] = newedge;
             }
-    for (i = 0; i < rr_map->get_gridx(); ++i)
-        for (j = 0; j < rr_map->get_gridy() - 1; ++j)
-            for (k = 0; k < rr_map->get_layerNumber(); ++k) {
+    for (i = 0; i < rr_map.get_gridx(); ++i)
+        for (j = 0; j < rr_map.get_gridy() - 1; ++j)
+            for (k = 0; k < rr_map.get_layerNumber(); ++k) {
                 newedge = Create_Edge_3d(); /*allocate space for edge_list without initialization*/
                 cur_map_3d[i][j][k].edge_list[FRONT] = newedge;
                 cur_map_3d[i][j + 1][k].edge_list[BACK] = newedge;
             }
-    for (i = 0; i < rr_map->get_gridx(); ++i)
-        for (j = 0; j < rr_map->get_gridy(); ++j)
-            for (k = 0; k < rr_map->get_layerNumber() - 1; ++k) {
+    for (i = 0; i < rr_map.get_gridx(); ++i)
+        for (j = 0; j < rr_map.get_gridy(); ++j)
+            for (k = 0; k < rr_map.get_layerNumber() - 1; ++k) {
                 newedge = Create_Edge_3d(); /*allocate space for edge_list without initialization*/
                 cur_map_3d[i][j][k].edge_list[UP] = newedge;
                 cur_map_3d[i][j][k + 1].edge_list[DOWN] = newedge;
             }
-    for (j = 0; j < rr_map->get_gridy(); ++j)
-        for (k = 0; k < rr_map->get_layerNumber(); ++k)
-            cur_map_3d[0][j][k].edge_list[LEFT] = cur_map_3d[rr_map->get_gridx() - 1][j][k].edge_list[RIGHT] = NULL;
-    for (i = 0; i < rr_map->get_gridx(); ++i)
-        for (k = 0; k < rr_map->get_layerNumber(); ++k)
-            cur_map_3d[i][0][k].edge_list[BACK] = cur_map_3d[i][rr_map->get_gridy() - 1][k].edge_list[FRONT] = NULL;
-    for (i = 0; i < rr_map->get_gridx(); ++i)
-        for (j = 0; j < rr_map->get_gridy(); ++j)
-            cur_map_3d[i][j][0].edge_list[DOWN] = cur_map_3d[i][j][rr_map->get_layerNumber() - 1].edge_list[UP] = NULL;
+    for (j = 0; j < rr_map.get_gridy(); ++j)
+        for (k = 0; k < rr_map.get_layerNumber(); ++k)
+            cur_map_3d[0][j][k].edge_list[LEFT] = cur_map_3d[rr_map.get_gridx() - 1][j][k].edge_list[RIGHT] = NULL;
+    for (i = 0; i < rr_map.get_gridx(); ++i)
+        for (k = 0; k < rr_map.get_layerNumber(); ++k)
+            cur_map_3d[i][0][k].edge_list[BACK] = cur_map_3d[i][rr_map.get_gridy() - 1][k].edge_list[FRONT] = NULL;
+    for (i = 0; i < rr_map.get_gridx(); ++i)
+        for (j = 0; j < rr_map.get_gridy(); ++j)
+            cur_map_3d[i][j][0].edge_list[DOWN] = cur_map_3d[i][j][rr_map.get_layerNumber() - 1].edge_list[UP] = NULL;
 }
 
 void Construct_2d_tree::init_2pin_list() {
     int i, netnum;
 
-    netnum = rr_map->get_netNumber();
+    netnum = rr_map.get_netNumber();
     for (i = 0; i < netnum; ++i) {
         //Two pin nets group by net id. So for fetching the 2nd net's 2-pin net,
         //you can fetch by net_2pin_list[2][i], where i is the id of 2-pin net.
@@ -290,7 +246,7 @@ void Construct_2d_tree::init_2pin_list() {
 }
 
 void Construct_2d_tree::init_flute() {
-    net_flutetree = (Tree *) malloc(rr_map->get_netNumber() * sizeof(Tree));
+    net_flutetree = (Tree *) malloc(rr_map.get_netNumber() * sizeof(Tree));
 }
 
 void Construct_2d_tree::free_memory_con2d() {
@@ -450,16 +406,16 @@ void Construct_2d_tree::pre_evaluate_congestion_cost_all(int i, int j, int dir) 
 }
 
 void Construct_2d_tree::pre_evaluate_congestion_cost() {
-    for (int i = rr_map->get_gridx() - 1; i >= 0; --i) {
-        for (int j = rr_map->get_gridy() - 2; j >= 0; --j) {
+    for (int i = rr_map.get_gridx() - 1; i >= 0; --i) {
+        for (int j = rr_map.get_gridy() - 2; j >= 0; --j) {
             pre_evaluate_congestion_cost_fp(i, j, FRONT); // Function Pointer to Cost function
             if (congestionMap2d->edge(i, j, DIR_NORTH).isOverflow()) {
                 ++congestionMap2d->edge(i, j, DIR_NORTH).history;
             }
         }
     }
-    for (int i = rr_map->get_gridx() - 2; i >= 0; --i) {
-        for (int j = rr_map->get_gridy() - 1; j >= 0; --j) {
+    for (int i = rr_map.get_gridx() - 2; i >= 0; --i) {
+        for (int j = rr_map.get_gridy() - 1; j >= 0; --j) {
             pre_evaluate_congestion_cost_fp(i, j, RIGHT);
             if (congestionMap2d->edge(i, j, DIR_EAST).isOverflow()) {
                 ++congestionMap2d->edge(i, j, DIR_EAST).history;
@@ -632,15 +588,15 @@ void Construct_2d_tree::allocate_monotonic() {
     int *tmp_data2;
 
     /*allocate space for cong_monotonic*/
-    cong_monotonic = (Monotonic_element **) malloc(rr_map->get_gridx() * sizeof(Monotonic_element *));
-    tmp_data = (Monotonic_element *) malloc(rr_map->get_gridx() * rr_map->get_gridy() * sizeof(Monotonic_element));
-    for (int i = 0; i < rr_map->get_gridx(); ++i, tmp_data += rr_map->get_gridy())
+    cong_monotonic = (Monotonic_element **) malloc(rr_map.get_gridx() * sizeof(Monotonic_element *));
+    tmp_data = (Monotonic_element *) malloc(rr_map.get_gridx() * rr_map.get_gridy() * sizeof(Monotonic_element));
+    for (int i = 0; i < rr_map.get_gridx(); ++i, tmp_data += rr_map.get_gridy())
         cong_monotonic[i] = tmp_data;
 
     /*allocate space for parent_monotonic*/
-    parent_monotonic = (int **) malloc(rr_map->get_gridx() * sizeof(int *));
-    tmp_data2 = (int *) malloc(rr_map->get_gridx() * rr_map->get_gridy() * sizeof(int));
-    for (int i = 0; i < rr_map->get_gridx(); ++i, tmp_data2 += rr_map->get_gridy())
+    parent_monotonic = (int **) malloc(rr_map.get_gridx() * sizeof(int *));
+    tmp_data2 = (int *) malloc(rr_map.get_gridx() * rr_map.get_gridy() * sizeof(int));
+    for (int i = 0; i < rr_map.get_gridx(); ++i, tmp_data2 += rr_map.get_gridy())
         parent_monotonic[i] = tmp_data2;
 }
 
@@ -909,18 +865,16 @@ void Construct_2d_tree::update_congestion_map_remove_multipin_net(Two_pin_list_2
     }
 }
 
-void Construct_2d_tree::edge_shifting(Tree *t);
-
 //generate the congestion map by Flute with wirelength driven mode
 void Construct_2d_tree::gen_FR_congestion_map() {
     Tree *flutetree;                        //a struct, defined by Flute library
     Two_pin_element_2d *L_path, *two_pin;
     int *flute_order;
-    bboxRouteStateMap = new EdgeColorMap<int>(rr_map->get_gridx(), rr_map->get_gridy(), -1);
+    bboxRouteStateMap = new EdgeColorMap<int>(rr_map.get_gridx(), rr_map.get_gridy(), -1);
 
     init_2d_map();          //initial congestion map: calculating every edge's capacity
     init_2pin_list();       //initial 2-pin net container
-    init_flute();           //initial the information of pin's coordinte and group by net for flute
+    init_flute();           //initial the information of pin's coordinate and group by net for flute
     flute_mode = NORMAL;	//wirelength driven	mode
 
     /*assign 0.5 demand to each net*/
@@ -928,22 +882,22 @@ void Construct_2d_tree::gen_FR_congestion_map() {
     printf("bbox routing start...\n");
 #endif	
 
-    //for storing the RSMT which retruned by flute
+    //for storing the RSMT which returned by flute
     Flute netRoutingTreeRouter;
-    flutetree = (Tree*) calloc(rr_map->get_netNumber(), sizeof(Tree));
+    flutetree = (Tree*) calloc(rr_map.get_netNumber(), sizeof(Tree));
 
     //Get every net's possible RSMT by flute, then use it to calculate the possible congestion
     //In this section, we won't get a real routing result, but a possible congestion information.
-    for (int i = 0; i < rr_map->get_netNumber(); ++i)	//i:net id
+    for (int i = 0; i < rr_map.get_netNumber(); ++i)	//i:net id
             {
 #ifdef DEBUG_BBOX
-        printf("bbox route net %d start...pin_num=%d\n",i,rr_map->get_netPinNumber(i));
+        printf("bbox route net %d start...pin_num=%d\n",i,rr_map.get_netPinNumber(i));
 #endif
 
         //call flute to gen steiner tree and put the result in flutetree[]
-        netRoutingTreeRouter.routeNet(rr_map->get_nPin(i), flutetree[i]);
+        netRoutingTreeRouter.routeNet(rr_map.get_nPin(i), flutetree[i]);
 
-        //The total node # in a tree, thoes nodes include pin and steinor point
+        //The total node # in a tree, those nodes include pin and steinor point
         //And it is defined as ((2 * degree of a tree) - 2) by the authors of flute
         flutetree[i].number = 2 * flutetree[i].deg - 2;	//add 0403
 
@@ -979,13 +933,13 @@ void Construct_2d_tree::gen_FR_congestion_map() {
 
     //sort net by their bounding box size, then by their pin number
     vector<const Net*> sort_net;
-    for (int i = 0; i < rr_map->get_netNumber(); ++i) {
-        sort_net.push_back(&rr_map->get_netList()[i]);
+    for (int i = 0; i < rr_map.get_netNumber(); ++i) {
+        sort_net.push_back(&rr_map.get_netList()[i]);
     }
-    sort(sort_net.begin(), sort_net.end(), comp_net);
+    sort(sort_net.begin(), sort_net.end(), [&]( const Net* a, const Net* b ) {comp_net(a,b);});
 
     //Now begins the initial routing by pattern routing
-    //Edge shifting will also be applyed to the routing.
+    //Edge shifting will also be applied to the routing.
     for (vector<const Net*>::iterator it = sort_net.begin(); it != sort_net.end(); ++it) {
         int netId = (*it)->id;
 
@@ -1006,7 +960,7 @@ void Construct_2d_tree::gen_FR_congestion_map() {
             int x2 = (int) flutetree[netId].branch[flutetree[netId].branch[j].n].x;
             int y2 = (int) flutetree[netId].branch[flutetree[netId].branch[j].n].y;
             if (!(x1 == x2 && y1 == y2)) {
-                /*choose the L-shpae with lower congestion to assing new demand 1*/
+                /*choose the L-shape with lower congestion to assign new demand 1*/
                 L_path = new Two_pin_element_2d();
                 L_pattern_route(x1, y1, x2, y2, L_path, netId);
 
@@ -1652,7 +1606,7 @@ void Construct_2d_tree::edge_shifting(Tree *t) {
         //compute original tree cost
         ori_cost += compute_L_pattern_cost(vertex_fl[i]->x, vertex_fl[i]->y, vertex_fl[t->branch[i].n]->x, vertex_fl[t->branch[i].n]->y, -1);
     }
-    sort(vertex_fl.begin(), vertex_fl.end(), comp_vertex_fl);
+    std::sort(vertex_fl.begin(), vertex_fl.end(), [&](Vertex_flute_ptr a, Vertex_flute_ptr b) {comp_vertex_fl(a,b);});
 
     for (int i = 0, j = 1; j < 2 * (t->deg) - 2; ++j) {
         if ((vertex_fl[i]->x == vertex_fl[j]->x) && (vertex_fl[i]->y == vertex_fl[j]->y))	//j is redundant
@@ -1698,8 +1652,12 @@ void Construct_2d_tree::edge_shifting(Tree *t) {
 
 /* sort by bounding box size */
 void Construct_2d_tree::output_2_pin_list() {
-    sort(all_two_pin_list.begin(), all_two_pin_list.end(), comp_2pin_net);
-    sort(two_pin_list.begin(), two_pin_list.end(), comp_2pin_net_from_path);
+    std::sort(all_two_pin_list.begin(), all_two_pin_list.end(), [&](Two_pin_element *a, Two_pin_element *b) {
+        return comp_2pin_net(a,b);
+    });
+    std::sort(two_pin_list.begin(), two_pin_list.end(), [&](Two_pin_element_2d *a, Two_pin_element_2d *b) {
+        return comp_2pin_net_from_path(a,b);
+    });
 }
 
 /*used for stage2
@@ -1710,15 +1668,15 @@ void Construct_2d_tree::output_3d_map() {
     int i, j, k;
 
     //assign max_cap to cur_3d_map
-    for (i = 0; i < rr_map->get_gridx() - 1; ++i)
-        for (j = 0; j < rr_map->get_gridy(); ++j)
-            for (k = 0; k < rr_map->get_layerNumber(); ++k) {
-                cur_map_3d[i][j][k].edge_list[RIGHT]->max_cap = rr_map->capacity(k, i, j, i + 1, j);
+    for (i = 0; i < rr_map.get_gridx() - 1; ++i)
+        for (j = 0; j < rr_map.get_gridy(); ++j)
+            for (k = 0; k < rr_map.get_layerNumber(); ++k) {
+                cur_map_3d[i][j][k].edge_list[RIGHT]->max_cap = rr_map.capacity(k, i, j, i + 1, j);
             }
-    for (i = 0; i < rr_map->get_gridx(); ++i)
-        for (j = 0; j < rr_map->get_gridy() - 1; ++j)
-            for (k = 0; k < rr_map->get_layerNumber(); ++k) {
-                cur_map_3d[i][j][k].edge_list[FRONT]->max_cap = rr_map->capacity(k, i, j, i, j + 1);
+    for (i = 0; i < rr_map.get_gridx(); ++i)
+        for (j = 0; j < rr_map.get_gridy() - 1; ++j)
+            for (k = 0; k < rr_map.get_layerNumber(); ++k) {
+                cur_map_3d[i][j][k].edge_list[FRONT]->max_cap = rr_map.capacity(k, i, j, i, j + 1);
             }
 
 #ifdef DEBUG1
@@ -1733,10 +1691,31 @@ void Construct_2d_tree::output_3d_map() {
  return max_overflow;
  */
 
-Construct_2d_tree::Construct_2d_tree(ParameterSet& param, RoutingRegion& rr) :
-        parameter_set { param }, rr_map { rr } {
+Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterSet& param, RoutingRegion& rr, std::function<void(int i, int j, int dir)> pre_evaluate_congestion_cost_fp) :
+        pre_evaluate_congestion_cost_fp { pre_evaluate_congestion_cost_fp }, parameter_set { param }, routing_parameter { routingparam }, rr_map { rr } {
+
+    par_ind = 0;
+
+    dir_array[4][2] = { {0, 1}, {0, -1}, {-1, 0}, {1, 0}}; //FRONT,BACK,LEFT,RIGHT
+    Jr2JmDirArray[4] = {0, 1, 3, 2}; //FRONT,BACK,LEFT,RIGHT <-> North, South, East, West
+
+    Multisource_multisink_mazeroute* mazeroute_in_range = NULL;
+
+    int via_cost = 3;
+    double max_congestion_factor = 1.0;
+
+    cache = nullptr;
+    /***********************
+     * Global Variable End
+     * ********************/
+
+    factor = 1.0;
+    exponent = 5.0;
+    WL_Cost = 1.0;
+    adjust_value = 0;
+
     cur_iter = -1;                  // current iteration ID.
-    //edgeIterCounter = new EdgeColorMap<int>(rr_map->get_gridx(), rr_map->get_gridy(), -1);
+    //edgeIterCounter = new EdgeColorMap<int>(rr_map.get_gridx(), rr_map.get_gridy(), -1);
 
     used_cost_flag = FASTROUTE_COST;    // cost function type, i.e., HISTORY_COST, HISTORY_MADEOF_COST, MADEOF_COST, FASTROUTE_COST
     total_overflow = 0;             // used by post-processing
@@ -1744,12 +1723,12 @@ Construct_2d_tree::Construct_2d_tree(ParameterSet& param, RoutingRegion& rr) :
     readLUT();                      // Function in flute, functino: unknown
 
     /* TroyLee: NetDirtyBit Counter */
-    NetDirtyBit = vector<bool>(rr_map->get_netNumber(), true);
+    NetDirtyBit = vector<bool>(rr_map.get_netNumber(), true);
     /* TroyLee: End */
 
     allocate_coor_array();          // Make an 2D coordinate array which contains the (x, y) information
 
-    if (routing_parameter->get_monotonic_en()) {
+    if (routing_parameter.get_monotonic_en()) {
         allocate_monotonic();           // Allocate the memory for storing the data while searching monotonic path
                                         // 1. A 2D array that stores max congestion
                                         // 2. A 2D array that stores parent (x,y) during finding monotonic path
@@ -1764,14 +1743,14 @@ Construct_2d_tree::Construct_2d_tree(ParameterSet& param, RoutingRegion& rr) :
     allocate_gridcell();            //question: I don't know what this for. (jalamorm, 07/10/31)
 
     //Make a 2-pin net list without group by net
-    for (int i = 0; i < rr_map->get_netNumber(); ++i) {
+    for (int i = 0; i < rr_map.get_netNumber(); ++i) {
         for (int j = 0; j < (int) net_2pin_list[i]->size(); ++j) {
             two_pin_list.push_back((*net_2pin_list[i])[j]);
         }
     }
 
     reallocate_two_pin_list(true);
-    cache = new EdgePlane<CacheEdge>(rr_map->get_gridx(), rr_map->get_gridy(), CacheEdge());
+    cache = new EdgePlane<CacheEdge>(rr_map.get_gridx(), rr_map.get_gridy(), CacheEdge());
     mazeroute_in_range = new Multisource_multisink_mazeroute(&this);
 
     int cur_overflow = -1;
