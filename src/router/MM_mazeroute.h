@@ -55,7 +55,7 @@ private:
         };
 
     public:
-        MMMPriortyQueue();
+        MMMPriortyQueue( Construct_2d_tree& construct_2d_tree);
 
         ~MMMPriortyQueue();
 

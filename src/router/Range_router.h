@@ -3,8 +3,12 @@
 
 //#include "Route_2pinnets.h"
 
+#include <vector>
+
+#include "../grdb/plane.h"
 #include "../util/traversemap.h"
 #include "Construct_2d_tree.h"
+#include "Route_2pinnets.h"
 
 #define INTERVAL_NUM 10
 #define EXPAND_RANGE_SIZE 10
@@ -68,7 +72,7 @@ public:
 
     void define_interval();
     void divide_grid_edge_into_interval();
-    void specify_all_range();
+    void specify_all_range(VertexPlane<Point_fc>*& gridCell);
 
     bool double_equal(double a, double b);
     bool comp_grid_edge(const Grid_edge_element* a, const Grid_edge_element* b);
@@ -78,7 +82,8 @@ public:
     void expand_range(int x1, int y1, int x2, int y2, int interval_index);
     void range_router(Two_pin_element_2d * two_pin);
     bool inside_range(int left_x, int bottom_y, int right_x, int top_y, Jm::Coordinate_2d *pt);
-    void query_range_2pin(int left_x, int bottom_y, int right_x, int top_y, vector<Two_pin_element_2d *> *twopin_list);
+    void query_range_2pin(int left_x, int bottom_y, int right_x, int top_y, //
+            vector<Two_pin_element_2d *> *twopin_list, VertexPlane<Point_fc>* gridCell);
 
 };
 

@@ -939,7 +939,7 @@ void Construct_2d_tree::gen_FR_congestion_map() {
     for (int i = 0; i < rr_map.get_netNumber(); ++i) {
         sort_net.push_back(&rr_map.get_netList()[i]);
     }
-    sort(sort_net.begin(), sort_net.end(), [&]( const Net* a, const Net* b ) {comp_net(a,b);});
+    sort(sort_net.begin(), sort_net.end(), [&]( const Net* a, const Net* b ) {return comp_net(a,b);});
 
     //Now begins the initial routing by pattern routing
     //Edge shifting will also be applied to the routing.
@@ -1609,7 +1609,7 @@ void Construct_2d_tree::edge_shifting(Tree *t) {
         //compute original tree cost
         ori_cost += compute_L_pattern_cost(vertex_fl[i]->x, vertex_fl[i]->y, vertex_fl[t->branch[i].n]->x, vertex_fl[t->branch[i].n]->y, -1);
     }
-    std::sort(vertex_fl.begin(), vertex_fl.end(), [&](Vertex_flute_ptr a, Vertex_flute_ptr b) {comp_vertex_fl(a,b);});
+    std::sort(vertex_fl.begin(), vertex_fl.end(), [&](Vertex_flute_ptr a, Vertex_flute_ptr b) {return comp_vertex_fl(a,b);});
 
     for (int i = 0, j = 1; j < 2 * (t->deg) - 2; ++j) {
         if ((vertex_fl[i]->x == vertex_fl[j]->x) && (vertex_fl[i]->y == vertex_fl[j]->y))	//j is redundant
@@ -1705,10 +1705,10 @@ Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterS
 
     par_ind = 0;
 
-    Multisource_multisink_mazeroute* mazeroute_in_range = NULL;
+    mazeroute_in_range = NULL;
 
-    int via_cost = 3;
-    double max_congestion_factor = 1.0;
+    via_cost = 3;
+    max_congestion_factor = 1.0;
 
     cache = nullptr;
     /***********************
@@ -1761,7 +1761,7 @@ Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterS
 
     route_2pinnets.reallocate_two_pin_list(true);
     cache = new EdgePlane<CacheEdge>(rr_map.get_gridx(), rr_map.get_gridy(), CacheEdge());
-    mazeroute_in_range = new Multisource_multisink_mazeroute(&this);
+    mazeroute_in_range = new Multisource_multisink_mazeroute(*this);
 
     int cur_overflow = -1;
     used_cost_flag = HISTORY_COST;

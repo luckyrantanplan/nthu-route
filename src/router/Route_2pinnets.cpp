@@ -60,7 +60,7 @@ void Route_2pinnets::route_all_2pin_net() {
     rangerouter.define_interval();
     rangerouter.divide_grid_edge_into_interval();
 
-    rangerouter.specify_all_range();
+    rangerouter.specify_all_range(gridcell);
 }
 
 void Route_2pinnets::reset_c_map_used_net_to_one() {

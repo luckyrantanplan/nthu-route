@@ -6,7 +6,6 @@
 #include "../grdb/plane.h"
 #include "../util/traversemap.h"
 #include "Construct_2d_tree.h"
-#include "Range_router.h"
 
 class Point_fc {
 public:
@@ -19,6 +18,8 @@ public:
     int y;
     vector<Two_pin_element_2d*> points;
 };
+
+struct RangeRouter;
 
 struct Route_2pinnets {
 

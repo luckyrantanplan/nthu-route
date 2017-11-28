@@ -53,7 +53,7 @@ int main(int argc, char* argv[]) {
         //IBM Cases
     } else {
         //ISPD'07 Cases
-        Layer_assignment(ap.output());
+        Layer_assignment(ap.output(), tree);
         clock_t t4 = clock();
         printf("time: %.2f %.2f\n", (double) (t4 - t3) / CLOCKS_PER_SEC, (double) (t4 - t0) / CLOCKS_PER_SEC);
     }

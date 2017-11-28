@@ -1,11 +1,13 @@
 #include "Range_router.h"
-#include "Construct_2d_tree.h"
 
-#include "Post_processing.h"
-#include "MM_mazeroute.h"
-#include "../grdb/RoutingRegion.h"
-#include <cmath>
 #include <algorithm>
+#include <iterator>
+
+#include "../grdb/RoutingRegion.h"
+#include "../misc/geometry.h"
+#include "MM_mazeroute.h"
+#include "parameter.h"
+#include "Post_processing.h"
 
 using namespace Jm;
 using namespace std;
@@ -189,7 +191,7 @@ void RangeRouter::expand_range(int x1, int y1, int x2, int y2, int interval_inde
             end = cur_end;
             break;
         }
-        EdgePlane<Edge_2d>*& congestionMap2d= construct_2d_tree.congestionMap2d;
+        EdgePlane<Edge_2d>*& congestionMap2d = construct_2d_tree.congestionMap2d;
         //Below here are four for loops, those for loops update the congestion condition
         for (i = cur_start.x; i < cur_end.x; ++i) {
             if (cur_start.y != start.y) {
@@ -265,17 +267,17 @@ void RangeRouter::expand_range(int x1, int y1, int x2, int y2, int interval_inde
 //If there is no overflowed path by using the two methods above, then remain 
 //the original path.
 void RangeRouter::range_router(Two_pin_element_2d * two_pin) {
-    if (! check_path_no_overflow(&two_pin->path, two_pin->net_id, false)) {
+    if (!construct_2d_tree.post_processing.check_path_no_overflow(&two_pin->path, two_pin->net_id, false)) {
         ++total_twopin;
 
-        NetDirtyBit[two_pin->net_id] = true;
+        construct_2d_tree.NetDirtyBit[two_pin->net_id] = true;
 
-        update_congestion_map_remove_two_pin_net(two_pin);
+        construct_2d_tree.update_congestion_map_remove_two_pin_net(two_pin);
 
         vector<Coordinate_2d*>* bound_path = new vector<Coordinate_2d*>(two_pin->path);
 
         Monotonic_element mn;
-        compute_path_total_cost_and_distance(two_pin, &mn);
+        construct_2d_tree.post_processing.compute_path_total_cost_and_distance(two_pin, &mn);
         double bound_cost = mn.total_cost;
         int bound_distance = mn.distance;
         int bound_via_num = mn.via_num;
@@ -284,22 +286,22 @@ void RangeRouter::range_router(Two_pin_element_2d * two_pin) {
 
         bool find_path_flag = false;
 
-        if (routing_parameter->get_monotonic_en()) {
-            bool find_path_flag = monotonic_pattern_route(two_pin->pin1.x, two_pin->pin1.y, two_pin->pin2.x, two_pin->pin2.y, two_pin, two_pin->net_id, bound_cost, bound_distance, bound_via_num,
-                    true);
+        if (construct_2d_tree.routing_parameter.get_monotonic_en()) {
+            bool find_path_flag = construct_2d_tree.monotonic_pattern_route(two_pin->pin1.x, two_pin->pin1.y, two_pin->pin2.x, two_pin->pin2.y, two_pin, two_pin->net_id, bound_cost, bound_distance,
+                    bound_via_num, true);
 
             if (find_path_flag) {
                 delete bound_path;
                 bound_path = new vector<Coordinate_2d*>(two_pin->path);
-                bound_cost = cong_monotonic[two_pin->path[0]->x][two_pin->path[0]->y].total_cost;
-                bound_distance = cong_monotonic[two_pin->path[0]->x][two_pin->path[0]->y].distance;
-                bound_via_num = cong_monotonic[two_pin->path[0]->x][two_pin->path[0]->y].via_num;
+                bound_cost = construct_2d_tree.cong_monotonic[two_pin->path[0]->x][two_pin->path[0]->y].total_cost;
+                bound_distance = construct_2d_tree.cong_monotonic[two_pin->path[0]->x][two_pin->path[0]->y].distance;
+                bound_via_num = construct_2d_tree.cong_monotonic[two_pin->path[0]->x][two_pin->path[0]->y].via_num;
             }
         }
 
-        two_pin->done = done_iter;
+        two_pin->done = construct_2d_tree.done_iter;
 
-        if ((find_path_flag == false) || !check_path_no_overflow(bound_path, two_pin->net_id, true)) {
+        if ((find_path_flag == false) || !construct_2d_tree.post_processing.check_path_no_overflow(bound_path, two_pin->net_id, true)) {
             Coordinate_2d start, end;
 
             start.x = min(two_pin->pin1.x, two_pin->pin2.x);
@@ -307,20 +309,20 @@ void RangeRouter::range_router(Two_pin_element_2d * two_pin) {
             start.y = min(two_pin->pin1.y, two_pin->pin2.y);
             end.y = max(two_pin->pin1.y, two_pin->pin2.y);
 
-            int size = BOXSIZE_INC;
+            int size = construct_2d_tree.BOXSIZE_INC;
             start.x = max(0, start.x - size);
             start.y = max(0, start.y - size);
-            end.x = min(rr_map.get_gridx() - 1, end.x + size);
-            end.y = min(rr_map.get_gridy() - 1, end.y + size);
+            end.x = min(construct_2d_tree.rr_map.get_gridx() - 1, end.x + size);
+            end.y = min(construct_2d_tree.rr_map.get_gridy() - 1, end.y + size);
 
-            find_path_flag = mazeroute_in_range->mm_maze_route_p2(two_pin, bound_cost, bound_distance, bound_via_num, start, end);
+            find_path_flag = construct_2d_tree.mazeroute_in_range->mm_maze_route_p2(two_pin, bound_cost, bound_distance, bound_via_num, start, end);
 
             if (find_path_flag == false) {
                 two_pin->path.insert(two_pin->path.begin(), bound_path->begin(), bound_path->end());
             }
         }
 
-        update_congestion_map_insert_two_pin_net(two_pin);
+        construct_2d_tree.update_congestion_map_insert_two_pin_net(two_pin);
         delete (bound_path);
     }
 }
@@ -332,7 +334,9 @@ bool RangeRouter::inside_range(int left_x, int bottom_y, int right_x, int top_y,
         return false;
 }
 
-void RangeRouter::query_range_2pin(int left_x, int bottom_y, int right_x, int top_y, vector<Two_pin_element_2d *> *twopin_list) {
+void RangeRouter::query_range_2pin(int left_x, int bottom_y, int right_x, int top_y,                                //
+        vector<Two_pin_element_2d *> *twopin_list, VertexPlane<Point_fc>* gridCell) {
+
     vector<Point_fc *> cell_list;
     int len;
     static int done_counter = 0;	//only initialize once
@@ -340,7 +344,7 @@ void RangeRouter::query_range_2pin(int left_x, int bottom_y, int right_x, int to
 
     for (int i = left_x; i <= right_x; ++i)
         for (int j = bottom_y; j <= top_y; ++j) {
-            cell_list.push_back(&(gridcell->vertex(i, j)));
+            cell_list.push_back(&(gridCell->vertex(i, j)));
         }
 
     len = cell_list.size();
@@ -348,10 +352,10 @@ void RangeRouter::query_range_2pin(int left_x, int bottom_y, int right_x, int to
             {
         for (vector<Two_pin_element_2d*>::iterator it = cell_list[i]->points.begin(); it != cell_list[i]->points.end(); ++it)	//for each pin or steiner point
                 {
-            if ((*it)->done != done_iter) {
+            if ((*it)->done != construct_2d_tree.done_iter) {
                 if (routeStateMap->color((*it)->pin1.x, (*it)->pin1.y) != done_counter && routeStateMap->color((*it)->pin2.x, (*it)->pin2.y) != done_counter) {
                     if (inside_range(left_x, bottom_y, right_x, top_y, &((*it)->pin1)) || inside_range(left_x, bottom_y, right_x, top_y, &((*it)->pin2))) {
-                        (*it)->done = done_iter;
+                        (*it)->done = construct_2d_tree.done_iter;
                         twopin_list->push_back(*it);
                         query_twopin_num++;
                     }
@@ -363,12 +367,12 @@ void RangeRouter::query_range_2pin(int left_x, int bottom_y, int right_x, int to
     ++done_counter;
 }
 
-void RangeRouter::specify_all_range( ) {
+void RangeRouter::specify_all_range(VertexPlane<Point_fc>*& gridCell) {
     vector<Two_pin_element_2d *> twopin_list;
     vector<int> twopin_range_index_list;
 
-    expandMap = new VertexColorMap<int>(rr_map.get_gridx(), rr_map.get_gridy(), -1);
-    routeStateMap = new VertexColorMap<int>(rr_map.get_gridx(), rr_map.get_gridy(), -1);
+    expandMap = new VertexColorMap<int>(construct_2d_tree.rr_map.get_gridx(), construct_2d_tree.rr_map.get_gridy(), -1);
+    routeStateMap = new VertexColorMap<int>(construct_2d_tree.rr_map.get_gridx(), construct_2d_tree.rr_map.get_gridy(), -1);
 
     total_twopin = 0;
     for (int i = intervalCount - 1; i >= 0; --i) {
@@ -376,7 +380,9 @@ void RangeRouter::specify_all_range( ) {
             delete range_vector[s];
         }
         range_vector.clear();
-        sort(interval_list[i].grid_edge_vector.begin(), interval_list[i].grid_edge_vector.end(), comp_grid_edge);
+        sort(interval_list[i].grid_edge_vector.begin(), interval_list[i].grid_edge_vector.end(), [&](const Grid_edge_element* a, const Grid_edge_element* b) {
+            return comp_grid_edge(a,b);
+        });
 
         for (int j = 0; j < (int) interval_list[i].grid_edge_vector.size(); ++j) {
             int x = interval_list[i].grid_edge_vector[j]->grid->x;
@@ -401,10 +407,12 @@ void RangeRouter::specify_all_range( ) {
         twopin_list.clear();
         twopin_range_index_list.clear();
         for (int j = 0; j < (int) range_vector.size(); ++j) {
-            query_range_2pin(range_vector[j]->x1, range_vector[j]->y1, range_vector[j]->x2, range_vector[j]->y2, &twopin_list);
+            query_range_2pin(range_vector[j]->x1, range_vector[j]->y1, range_vector[j]->x2, range_vector[j]->y2,	//
+                    &twopin_list, gridCell);
         }
 
-        sort(twopin_list.begin(), twopin_list.end(), comp_stn_2pin);
+        sort(twopin_list.begin(), twopin_list.end(), [&](const Two_pin_element_2d *a, const Two_pin_element_2d *b) {
+            return construct_2d_tree.comp_stn_2pin(a,b);});
 
         for (int j = 0; j < (int) twopin_list.size(); ++j) {
             range_router(twopin_list[j]);
@@ -415,20 +423,21 @@ void RangeRouter::specify_all_range( ) {
     delete routeStateMap;
 
     twopin_list.clear();
-    int length = two_pin_list.size();
+    int length = construct_2d_tree.two_pin_list.size();
     for (int i = 0; i < length; ++i) {
-        if (two_pin_list[i]->done != done_iter) {
-            twopin_list.push_back(two_pin_list[i]);
+        if (construct_2d_tree.two_pin_list[i]->done != construct_2d_tree.done_iter) {
+            twopin_list.push_back(construct_2d_tree.two_pin_list[i]);
         }
     }
 
-    sort(twopin_list.begin(), twopin_list.end(), comp_stn_2pin);
+    sort(twopin_list.begin(), twopin_list.end(), [&](const Two_pin_element_2d *a, const Two_pin_element_2d *b) {
+        return construct_2d_tree.comp_stn_2pin(a,b);});
     for (int i = 0; i < (int) twopin_list.size(); ++i) {
         if (twopin_list[i]->boxSize() == 1)
             break;
         range_router(twopin_list[i]);
     }
-    mazeroute_in_range->clear_net_tree();
+    construct_2d_tree.mazeroute_in_range->clear_net_tree();
 }
 
 RangeRouter::RangeRouter(Construct_2d_tree& construct2dTree) :
