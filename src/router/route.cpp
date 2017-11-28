@@ -43,7 +43,7 @@ int main(int argc, char* argv[]) {
     dataPreparation(ap, routingData);
 
     clock_t t1 = clock();
-    Construct_2d_tree tree(ap.routing_param(), ap.parameter(), routingData, pre_evaluate_congestion_cost_all);
+    Construct_2d_tree tree(ap.routing_param(), ap.parameter(), routingData);
     clock_t t2 = clock();
     // now the post processing is handle by Construct_2d_tree
     clock_t t3 = clock();

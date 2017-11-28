@@ -7,14 +7,13 @@
 #include <cstdio>
 #include <iterator>
 #include <utility>
-
+#include "Route_2pinnets.h"
 #include "../flute/flute-function.h"
 #include "../flute/flute4nthuroute.h"
 #include "../grdb/RoutingComponent.h"
 #include "../grdb/RoutingRegion.h"
 #include "MM_mazeroute.h"
 #include "Range_router.h"
-#include "Route_2pinnets.h"
 
 using namespace std;
 using namespace Jm;
@@ -389,7 +388,6 @@ bool Construct_2d_tree::smaller_than_lower_bound(double total_cost, int distance
  * just reassign function ponter pre_evaluate_congestion_cost_fp to your 
  * function in *route/route.cpp* .                                        */
 
-void (*pre_evaluate_congestion_cost_fp)(int i, int j, int dir);
 void Construct_2d_tree::pre_evaluate_congestion_cost_all(int i, int j, int dir) {
     static const int inc = 1;
     double cong;
@@ -1694,14 +1692,16 @@ void Construct_2d_tree::output_3d_map() {
  return max_overflow;
  */
 
-Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterSet& param, RoutingRegion& rr, std::function<void(int i, int j, int dir)> pre_evaluate_congestion_cost_fp) :
-        pre_evaluate_congestion_cost_fp { pre_evaluate_congestion_cost_fp },	//
+Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterSet& param, RoutingRegion& rr) :
+        //
         parameter_set { param }, //
         routing_parameter { routingparam }, //
         dir_array { { { 0, 1 }, { 0, -1 }, { -1, 0 }, { 1, 0 } } }, ////FRONT,BACK,LEFT,RIGHT
         Jr2JmDirArray { { 0, 1, 3, 2 } }, //FRONT,BACK,LEFT,RIGHT <-> North, South, East, West
         rr_map { rr }, //
         post_processing { *this } {
+
+    pre_evaluate_congestion_cost_fp = [&](int i, int j, int dir) {pre_evaluate_congestion_cost_all( i, j, dir);};
 
     par_ind = 0;
 

@@ -5,7 +5,11 @@
 
 #include "../grdb/plane.h"
 #include "../util/traversemap.h"
-#include "Construct_2d_tree.h"
+
+class Two_pin_element_2d;
+struct Construct_2d_tree;
+class RoutingRegion;
+struct RangeRouter;
 
 class Point_fc {
 public:
@@ -16,10 +20,8 @@ public:
 public:
     int x;
     int y;
-    vector<Two_pin_element_2d*> points;
+    std::vector<Two_pin_element_2d*> points;
 };
-
-struct RangeRouter;
 
 struct Route_2pinnets {
 

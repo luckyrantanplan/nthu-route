@@ -11,9 +11,12 @@
 using namespace Jm;
 using namespace std;
 
-inline Route_2pinnets::Route_2pinnets(Construct_2d_tree& construct_2d_tree, RangeRouter& rangerouter) :
-        gridcell { nullptr }, traverseMap { nullptr }, terminalMap { nullptr }, dirTransferTable { 1, 0, 3, 2 }, construct_2d_tree { construct_2d_tree }, rr_map { construct_2d_tree.rr_map }, rangerouter {
-                rangerouter } {
+Route_2pinnets::Route_2pinnets(Construct_2d_tree& construct_2d_tree, RangeRouter& rangerouter) :
+        gridcell { nullptr }, traverseMap { nullptr }, //
+        terminalMap { nullptr }, dirTransferTable { 1, 0, 3, 2 }, //
+        construct_2d_tree { construct_2d_tree }, //
+        rr_map { construct_2d_tree.rr_map }, //
+        rangerouter { rangerouter } {
     ;
 }
 

@@ -7,13 +7,14 @@
 
 #include "../grdb/plane.h"
 #include "../util/traversemap.h"
-#include "Construct_2d_tree.h"
-#include "Route_2pinnets.h"
 
 #define INTERVAL_NUM 10
 #define EXPAND_RANGE_SIZE 10
 #define EXPAND_RANGE_INC 1
 
+class Point_fc;
+struct Construct_2d_tree;
+struct Two_pin_element_2d;
 class Range_element {
 public:
     int x1;
@@ -42,12 +43,12 @@ class Interval_element {
 public:
     double begin_value;
     double end_value;
-    vector<Grid_edge_element*> grid_edge_vector;
+    std::vector<Grid_edge_element*> grid_edge_vector;
 };
 struct RangeRouter {
 public:
 
-    vector<Range_element*> range_vector;
+    std::vector<Range_element*> range_vector;
     Interval_element interval_list[INTERVAL_NUM];
 
     int total_twopin = 0;
@@ -83,7 +84,7 @@ public:
     void range_router(Two_pin_element_2d * two_pin);
     bool inside_range(int left_x, int bottom_y, int right_x, int top_y, Jm::Coordinate_2d *pt);
     void query_range_2pin(int left_x, int bottom_y, int right_x, int top_y, //
-            vector<Two_pin_element_2d *> *twopin_list, VertexPlane<Point_fc>* gridCell);
+            std::vector<Two_pin_element_2d *> *twopin_list, VertexPlane<Point_fc>* gridCell);
 
 };
 

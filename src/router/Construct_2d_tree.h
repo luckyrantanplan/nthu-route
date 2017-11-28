@@ -51,8 +51,6 @@ enum {
 
 /* Cost function Prototype */
 
-void pre_evaluate_congestion_cost_all(int i, int j, int dir);
-
 //store the information of a 2-pin net
 class Two_pin_element_2d {
 public:
@@ -167,6 +165,7 @@ class Multisource_multisink_mazeroute;
 
 struct Construct_2d_tree {
     std::function<void(int i, int j, int dir)> pre_evaluate_congestion_cost_fp;
+
     int par_ind;
     ParameterSet& parameter_set;
     RoutingParameters& routing_parameter;
@@ -303,7 +302,7 @@ struct Construct_2d_tree {
     void dfs_output_tree(Vertex_flute_ptr node, Tree *t);
     void edge_shifting(Tree *t);
     void output_2_pin_list();
-    Construct_2d_tree(RoutingParameters& routingparam, ParameterSet& param, RoutingRegion& rr, std::function<void(int i, int j, int dir)> pre_evaluate_congestion_cost_fp);
+    Construct_2d_tree(RoutingParameters& routingparam, ParameterSet& param, RoutingRegion& rr);
 
 };
 #endif /* _CONSTRUCT_2D_TREE_H_ */

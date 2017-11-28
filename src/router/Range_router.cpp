@@ -5,9 +5,11 @@
 
 #include "../grdb/RoutingRegion.h"
 #include "../misc/geometry.h"
+#include "Construct_2d_tree.h"
 #include "MM_mazeroute.h"
 #include "parameter.h"
 #include "Post_processing.h"
+#include "Route_2pinnets.h"
 
 using namespace Jm;
 using namespace std;
@@ -274,7 +276,7 @@ void RangeRouter::range_router(Two_pin_element_2d * two_pin) {
 
         construct_2d_tree.update_congestion_map_remove_two_pin_net(two_pin);
 
-        vector<Coordinate_2d*>* bound_path = new vector<Coordinate_2d*>(two_pin->path);
+        std::vector<Coordinate_2d*>* bound_path = new std::vector<Coordinate_2d*>(two_pin->path);
 
         Monotonic_element mn;
         construct_2d_tree.post_processing.compute_path_total_cost_and_distance(two_pin, &mn);
@@ -292,7 +294,7 @@ void RangeRouter::range_router(Two_pin_element_2d * two_pin) {
 
             if (find_path_flag) {
                 delete bound_path;
-                bound_path = new vector<Coordinate_2d*>(two_pin->path);
+                bound_path = new std::vector<Coordinate_2d*>(two_pin->path);
                 bound_cost = construct_2d_tree.cong_monotonic[two_pin->path[0]->x][two_pin->path[0]->y].total_cost;
                 bound_distance = construct_2d_tree.cong_monotonic[two_pin->path[0]->x][two_pin->path[0]->y].distance;
                 bound_via_num = construct_2d_tree.cong_monotonic[two_pin->path[0]->x][two_pin->path[0]->y].via_num;
@@ -335,9 +337,9 @@ bool RangeRouter::inside_range(int left_x, int bottom_y, int right_x, int top_y,
 }
 
 void RangeRouter::query_range_2pin(int left_x, int bottom_y, int right_x, int top_y,                                //
-        vector<Two_pin_element_2d *> *twopin_list, VertexPlane<Point_fc>* gridCell) {
+        std::vector<Two_pin_element_2d *> *twopin_list, VertexPlane<Point_fc>* gridCell) {
 
-    vector<Point_fc *> cell_list;
+    std::vector<Point_fc *> cell_list;
     int len;
     static int done_counter = 0;	//only initialize once
     int query_twopin_num = 0; // added by grey
@@ -350,7 +352,7 @@ void RangeRouter::query_range_2pin(int left_x, int bottom_y, int right_x, int to
     len = cell_list.size();
     for (int i = 0; i < len; ++i)	//for each gCell
             {
-        for (vector<Two_pin_element_2d*>::iterator it = cell_list[i]->points.begin(); it != cell_list[i]->points.end(); ++it)	//for each pin or steiner point
+        for (std::vector<Two_pin_element_2d*>::iterator it = cell_list[i]->points.begin(); it != cell_list[i]->points.end(); ++it)	//for each pin or steiner point
                 {
             if ((*it)->done != construct_2d_tree.done_iter) {
                 if (routeStateMap->color((*it)->pin1.x, (*it)->pin1.y) != done_counter && routeStateMap->color((*it)->pin2.x, (*it)->pin2.y) != done_counter) {
@@ -368,8 +370,8 @@ void RangeRouter::query_range_2pin(int left_x, int bottom_y, int right_x, int to
 }
 
 void RangeRouter::specify_all_range(VertexPlane<Point_fc>*& gridCell) {
-    vector<Two_pin_element_2d *> twopin_list;
-    vector<int> twopin_range_index_list;
+    std::vector<Two_pin_element_2d *> twopin_list;
+    std::vector<int> twopin_range_index_list;
 
     expandMap = new VertexColorMap<int>(construct_2d_tree.rr_map.get_gridx(), construct_2d_tree.rr_map.get_gridy(), -1);
     routeStateMap = new VertexColorMap<int>(construct_2d_tree.rr_map.get_gridx(), construct_2d_tree.rr_map.get_gridy(), -1);
