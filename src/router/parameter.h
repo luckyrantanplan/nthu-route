@@ -254,7 +254,7 @@ public:
     //return input file name
     const char* input();
     //return output file name
-    const char* output();
+    const std::string& output();
     //return parameter group NO.
     ParameterSet& parameter();
     //return the input type: 0 for IBM test cases  and 1 for the others

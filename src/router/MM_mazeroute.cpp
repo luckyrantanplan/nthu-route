@@ -11,22 +11,17 @@
 using namespace Jm;
 using namespace std;
 
-Multisource_multisink_mazeroute::Multisource_multisink_mazeroute(Construct_2d_tree& construct_2d_tree) :
-        construct_2d_tree { construct_2d_tree } {
-
-}
-
 void Multisource_multisink_mazeroute::MMMPriortyQueue::init() {
     storage_ = new vector<MMM_element*>(2 * construct_2d_tree.rr_map.get_gridx() * construct_2d_tree.rr_map.get_gridy(), static_cast<MMM_element*>(NULL));
     size_ = 0;
 }
 
-Multisource_multisink_mazeroute::Vertex_mmm::Vertex_mmm(int x, int y) :
-        coor(&construct_2d_tree.coor_array[x][y]), visit(-1) {
+Multisource_multisink_mazeroute::Vertex_mmm::Vertex_mmm(Jm::Coordinate_2d& xy) :
+        coor(&xy), visit(-1) {
 }
 
 Multisource_multisink_mazeroute::Multisource_multisink_mazeroute(Construct_2d_tree& construct_2d_tree) :
-        gridxMinusOne(construct_2d_tree.rr_map.get_gridx() - 1), gridyMinusOne(construct_2d_tree.rr_map.get_gridy() - 1) {
+        construct_2d_tree { construct_2d_tree }, gridxMinusOne(construct_2d_tree.rr_map.get_gridx() - 1), gridyMinusOne(construct_2d_tree.rr_map.get_gridy() - 1) {
     /*allocate space for mmm_map*/
 
     RoutingRegion& rr_map = construct_2d_tree.rr_map;
@@ -40,7 +35,7 @@ Multisource_multisink_mazeroute::Multisource_multisink_mazeroute(Construct_2d_tr
     //initialization
     for (int i = 0; i < rr_map.get_gridx(); ++i) {
         for (int j = 0; j < rr_map.get_gridy(); ++j) {
-            mmm_map->vertex(i, j).coor = &coor_array[i][j];
+            mmm_map->vertex(i, j).coor = &construct_2d_tree.coor_array[i][j];
         }
     }
 
@@ -72,8 +67,8 @@ void Multisource_multisink_mazeroute::adjust_twopin_element() {
 
     Coordinate_2d* new_pin1 = this->element->path.front();
     Coordinate_2d* new_pin2 = this->element->path.back();
-    this->element->pin1 = coor_array[new_pin1->x][new_pin1->y];
-    this->element->pin2 = coor_array[new_pin2->x][new_pin2->y];
+    this->element->pin1 = construct_2d_tree.coor_array[new_pin1->x][new_pin1->y];
+    this->element->pin2 = construct_2d_tree.coor_array[new_pin2->x][new_pin2->y];
 
     vector<Vertex_mmm *>::iterator it;
     int flag = 0;
@@ -135,23 +130,25 @@ void Multisource_multisink_mazeroute::find_subtree(Vertex_mmm *v, int mode) {
 }
 
 void Multisource_multisink_mazeroute::clear_net_tree() {
-    for (int i = 0; i < rr_map.get_netNumber(); ++i) {
+    for (int i = 0; i < construct_2d_tree.rr_map.get_netNumber(); ++i) {
         int length = (*this->net_tree)[i].size();
         for (int j = 0; j < length; ++j)
             delete ((*this->net_tree)[i][j]);
     }
 
     delete net_tree;
-    this->net_tree = new vector<vector<Vertex_mmm *> >(rr_map.get_netNumber(), vector<Vertex_mmm *>(0));
+    this->net_tree = new vector<vector<Vertex_mmm *> >(construct_2d_tree.rr_map.get_netNumber(), vector<Vertex_mmm *>(0));
 }
 
 void Multisource_multisink_mazeroute::setup_pqueue() {
 
     int cur_net = this->element->net_id;
     if ((*this->net_tree)[cur_net].empty()) {
-        Tree* t = &net_flutetree[cur_net];
+        Tree* t = &construct_2d_tree.net_flutetree[cur_net];
         for (int i = 0; i < t->number; ++i) {
-            (*this->net_tree)[cur_net].push_back(new Vertex_mmm((int) t->branch[i].x, (int) t->branch[i].y));
+            Branch& branch = t->branch[i];
+
+            net_tree[cur_net].push_back(new Vertex_mmm(construct_2d_tree.coor_array[(int) branch.x][(int) branch.y]));
         }
         for (int i = 0; i < t->number; ++i) {
             Vertex_mmm* a = (*this->net_tree)[cur_net][i];
@@ -165,7 +162,7 @@ void Multisource_multisink_mazeroute::setup_pqueue() {
 
     pqueue->clear();
 
-    //find pin1 and pin2 in tree
+//find pin1 and pin2 in tree
     this->pin1_v = this->pin2_v = NULL;
     for (vector<Vertex_mmm *>::iterator it = (*this->net_tree)[cur_net].begin(); (it != (*this->net_tree)[cur_net].end()) && (this->pin1_v == NULL || this->pin2_v == NULL); ++it) {
         if ((*it)->coor->x == this->element->pin1.x && (*it)->coor->y == this->element->pin1.y) {
@@ -469,7 +466,7 @@ void Multisource_multisink_mazeroute::MMMPriortyQueue::pop() {
         parentIndex = updateIndex;
     }
 
-    //Remove the last node from the array
+//Remove the last node from the array
     --size_;
 }
 
@@ -486,7 +483,7 @@ void Multisource_multisink_mazeroute::MMMPriortyQueue::update(int indexToUpdate)
 }
 
 bool Multisource_multisink_mazeroute::MMMPriortyQueue::comp_mmm_element::operator()(const MMM_element* a, const MMM_element* b) const {
-    //If A has lower cost, return true, else return false
+//If A has lower cost, return true, else return false
 
     if ((a->reachCost - b->reachCost) < neg_error_bound) {
         return true;

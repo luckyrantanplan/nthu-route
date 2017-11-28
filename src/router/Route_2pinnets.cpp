@@ -11,8 +11,9 @@
 using namespace Jm;
 using namespace std;
 
-inline Route_2pinnets::Route_2pinnets(Construct_2d_tree& construct_2d_tree) :
-        gridcell { nullptr }, traverseMap { nullptr }, terminalMap { nullptr }, dirTransferTable { 1, 0, 3, 2 }, construct_2d_tree { construct_2d_tree }, rr_map { construct_2d_tree.rr_map } {
+inline Route_2pinnets::Route_2pinnets(Construct_2d_tree& construct_2d_tree, RangeRouter& rangerouter) :
+        gridcell { nullptr }, traverseMap { nullptr }, terminalMap { nullptr }, dirTransferTable { 1, 0, 3, 2 }, construct_2d_tree { construct_2d_tree }, rr_map { construct_2d_tree.rr_map }, rangerouter {
+                rangerouter } {
     ;
 }
 
@@ -37,16 +38,17 @@ void Route_2pinnets::init_gridcell() {
             gridcell->vertex(i, j).points.clear();
         }
     }
-    int length = two_pin_list.size();
+    int length = construct_2d_tree.two_pin_list.size();
     for (int i = 0; i < length; ++i) {
         //add pin1
-        int cur_x = two_pin_list[i]->pin1.x;
-        int cur_y = two_pin_list[i]->pin1.y;
-        gridcell->vertex(cur_x, cur_y).points.push_back(two_pin_list[i]);
+        Two_pin_element_2d* two_pin = construct_2d_tree.two_pin_list[i];
+        int cur_x = two_pin->pin1.x;
+        int cur_y = two_pin->pin1.y;
+        gridcell->vertex(cur_x, cur_y).points.push_back(two_pin);
         //add pin2
-        cur_x = two_pin_list[i]->pin2.x;
-        cur_y = two_pin_list[i]->pin2.y;
-        gridcell->vertex(cur_x, cur_y).points.push_back(two_pin_list[i]);
+        cur_x = two_pin->pin2.x;
+        cur_y = two_pin->pin2.y;
+        gridcell->vertex(cur_x, cur_y).points.push_back(two_pin);
     }
 }
 
@@ -55,10 +57,10 @@ void Route_2pinnets::route_all_2pin_net() {
 
     init_gridcell();
 
-    define_interval();
-    divide_grid_edge_into_interval();
+    rangerouter.define_interval();
+    rangerouter.divide_grid_edge_into_interval();
 
-    specify_all_range();
+    rangerouter.specify_all_range();
 }
 
 void Route_2pinnets::reset_c_map_used_net_to_one() {
@@ -66,7 +68,7 @@ void Route_2pinnets::reset_c_map_used_net_to_one() {
 
     for (int i = rr_map.get_gridx() - 2; i >= 0; --i) {
         for (int j = rr_map.get_gridy() - 1; j >= 0; --j) {
-            RoutedNetTable* table = &(congestionMap2d->edge(i, j, DIR_EAST).used_net);
+            RoutedNetTable* table = &(construct_2d_tree.congestionMap2d->edge(i, j, DIR_EAST).used_net);
             for (iter = table->begin(); iter != table->end(); ++iter) {
                 (*table)[iter->first] = 1;
             }
@@ -75,7 +77,7 @@ void Route_2pinnets::reset_c_map_used_net_to_one() {
 
     for (int i = rr_map.get_gridx() - 1; i >= 0; --i) {
         for (int j = rr_map.get_gridy() - 2; j >= 0; --j) {
-            RoutedNetTable* table = &(congestionMap2d->edge(i, j, DIR_NORTH).used_net);
+            RoutedNetTable* table = &(construct_2d_tree.congestionMap2d->edge(i, j, DIR_NORTH).used_net);
             for (iter = table->begin(); iter != table->end(); ++iter) {
                 (*table)[iter->first] = 1;
             }
@@ -107,7 +109,7 @@ int Route_2pinnets::determine_is_terminal_or_steiner_point(int xx, int yy, int d
                 if ((i == 3 && xx >= gridxMinusOne) || (i == 2 && xx <= 0) || (i == 1 && yy <= 0) || (i == 0 && yy >= gridyMinusOne))
                     continue;
                 else {
-                    if (congestionMap2d->edge(xx, yy, i).lookupNet(net_id)) {
+                    if (construct_2d_tree.congestionMap2d->edge(xx, yy, i).lookupNet(net_id)) {
                         return -3;
                     }
                 }
@@ -121,7 +123,7 @@ int Route_2pinnets::determine_is_terminal_or_steiner_point(int xx, int yy, int d
                 if ((i == 3 && xx >= gridxMinusOne) || (i == 2 && xx <= 0) || (i == 1 && yy <= 0) || (i == 0 && yy >= gridyMinusOne))
                     continue;
                 else {
-                    if (congestionMap2d->edge(xx, yy, i).lookupNet(net_id)) {
+                    if (construct_2d_tree.congestionMap2d->edge(xx, yy, i).lookupNet(net_id)) {
                         ++other_passed_edge;
                         find_dir = i;
                         if ((other_passed_edge & 0x02) != 0)
@@ -165,13 +167,15 @@ void Route_2pinnets::bfs_for_find_two_pin_list(Coordinate_2d *start_coor, int ne
             x = queue[head_index]->x;
             y = queue[head_index]->y;
             dir = i;
-            if (x + dir_array[dir][0] >= 0 && x + dir_array[dir][0] < rr_map.get_gridx() && y + dir_array[dir][1] >= 0 && y + dir_array[dir][1] < rr_map.get_gridy()) {
-                if (congestionMap2d->edge(x, y, dir).lookupNet(net_id)) {
+            const std::array<int, 2>& dira = construct_2d_tree.dir_array[dir];
+            if (x + dira[0] >= 0 && x + dira[0] < rr_map.get_gridx() && //
+                    y + dira[1] >= 0 && y + dira[1] < rr_map.get_gridy()) {
+                if (construct_2d_tree.congestionMap2d->edge(x, y, dir).lookupNet(net_id)) {
                     Two_pin_element_2d* two_pin;
-                    if (two_pin_list_size >= (int) two_pin_list.size()) {
+                    if (construct_2d_tree.two_pin_list_size >= (int) construct_2d_tree.two_pin_list.size()) {
                         two_pin = new Two_pin_element_2d();
                     } else {
-                        two_pin = two_pin_list[two_pin_list_size];
+                        two_pin = construct_2d_tree.two_pin_list[construct_2d_tree.two_pin_list_size];
                     }
                     two_pin->pin1.x = queue[head_index]->x;
                     two_pin->pin1.y = queue[head_index]->y;
@@ -180,26 +184,26 @@ void Route_2pinnets::bfs_for_find_two_pin_list(Coordinate_2d *start_coor, int ne
                     two_pin->path.push_back(queue[head_index]);
                     while (1) {
                         traverseMap->color(x, y) = net_id;
-                        xx = x + dir_array[dir][0];
-                        yy = y + dir_array[dir][1];
+                        xx = x + dira[0];
+                        yy = y + dira[1];
                         ori_dir = dir;
                         dir = determine_is_terminal_or_steiner_point(xx, yy, dir, net_id);
-                        two_pin->path.push_back(&coor_array[xx][yy]);
+                        two_pin->path.push_back(&construct_2d_tree.coor_array[xx][yy]);
                         if (dir < 0 && dir != -2) {
                             if (traverseMap->color(xx, yy) != net_id) {
                                 two_pin->pin2.x = xx;
                                 two_pin->pin2.y = yy;
-                                if (two_pin_list_size >= (int) two_pin_list.size())
-                                    two_pin_list.push_back(two_pin);
-                                two_pin_list_size++;
+                                if (construct_2d_tree.two_pin_list_size >= (int) construct_2d_tree.two_pin_list.size())
+                                    construct_2d_tree.two_pin_list.push_back(two_pin);
+                                construct_2d_tree.two_pin_list_size++;
 
                                 if (insert_to_branch) {
-                                    branch_xy.push_back(&coor_array[xx][yy]);
+                                    branch_xy.push_back(&construct_2d_tree.coor_array[xx][yy]);
                                     branch_n.push_back(branch_ind[head_index]);
                                 }
 
                                 if (dir != -4) {
-                                    queue.push_back(&coor_array[xx][yy]);
+                                    queue.push_back(&construct_2d_tree.coor_array[xx][yy]);
                                     if (ori_dir == FRONT)
                                         parent.push_back(BACK);
                                     else if (ori_dir == BACK)
@@ -216,18 +220,18 @@ void Route_2pinnets::bfs_for_find_two_pin_list(Coordinate_2d *start_coor, int ne
                                 }
                                 traverseMap->color(xx, yy) = net_id;
                             } else {
-                                update_congestion_map_remove_two_pin_net(two_pin);
-                                NetDirtyBit[two_pin->net_id] = true;
-                                if (two_pin_list_size >= (int) two_pin_list.size()) {
+                                construct_2d_tree.update_congestion_map_remove_two_pin_net(two_pin);
+                                construct_2d_tree.NetDirtyBit[two_pin->net_id] = true;
+                                if (construct_2d_tree.two_pin_list_size >= (int) construct_2d_tree.two_pin_list.size()) {
                                     two_pin->path.clear();
                                     delete (two_pin);
                                 }
                             }
                             break;
                         } else if (dir == -2) {
-                            update_congestion_map_remove_two_pin_net(two_pin);
-                            NetDirtyBit[two_pin->net_id] = true;
-                            if (two_pin_list_size >= (int) two_pin_list.size()) {
+                            construct_2d_tree.update_congestion_map_remove_two_pin_net(two_pin);
+                            construct_2d_tree.NetDirtyBit[two_pin->net_id] = true;
+                            if (construct_2d_tree.two_pin_list_size >= (int) construct_2d_tree.two_pin_list.size()) {
                                 two_pin->path.clear();
                                 delete (two_pin);
                             }
@@ -244,16 +248,17 @@ void Route_2pinnets::bfs_for_find_two_pin_list(Coordinate_2d *start_coor, int ne
     }
 
     if (insert_to_branch) {
-        if (net_flutetree[net_id].number < (int) branch_xy.size()) {
-            free(net_flutetree[net_id].branch);
-            net_flutetree[net_id].branch = (Branch *) malloc(branch_xy.size() * sizeof(Branch));
+        Tree& tree = construct_2d_tree.net_flutetree[net_id];
+        if (tree.number < (int) branch_xy.size()) {
+            free(tree.branch);
+            tree.branch = (Branch *) malloc(branch_xy.size() * sizeof(Branch));
         }
 
-        net_flutetree[net_id].number = branch_xy.size();
-        for (i = net_flutetree[net_id].number - 1; i >= 0; --i) {
-            net_flutetree[net_id].branch[i].x = branch_xy[i]->x;
-            net_flutetree[net_id].branch[i].y = branch_xy[i]->y;
-            net_flutetree[net_id].branch[i].n = branch_n[i];
+        tree.number = branch_xy.size();
+        for (i = tree.number - 1; i >= 0; --i) {
+            tree.branch[i].x = branch_xy[i]->x;
+            tree.branch[i].y = branch_xy[i]->y;
+            tree.branch[i].n = branch_n[i];
         }
     }
 }
@@ -265,13 +270,13 @@ void Route_2pinnets::reallocate_two_pin_list(bool insert_to_branch) {
 
     reset_c_map_used_net_to_one();
 
-    two_pin_list_size = 0;
+    construct_2d_tree.two_pin_list_size = 0;
 
     int usedTwoPinListSize = 0;
-    for (int twoPinListPos = 0; twoPinListPos < (int) two_pin_list.size(); ++twoPinListPos) {
-        if (NetDirtyBit[two_pin_list[twoPinListPos]->net_id] == false) {
+    for (int twoPinListPos = 0; twoPinListPos < (int) construct_2d_tree.two_pin_list.size(); ++twoPinListPos) {
+        if (construct_2d_tree.NetDirtyBit[construct_2d_tree.two_pin_list[twoPinListPos]->net_id] == false) {
             if (usedTwoPinListSize != twoPinListPos) {
-                swap(two_pin_list[twoPinListPos], two_pin_list[usedTwoPinListSize]);
+                swap(construct_2d_tree.two_pin_list[twoPinListPos], construct_2d_tree.two_pin_list[usedTwoPinListSize]);
                 ++usedTwoPinListSize;
             } else {
                 ++usedTwoPinListSize;
@@ -279,25 +284,25 @@ void Route_2pinnets::reallocate_two_pin_list(bool insert_to_branch) {
         }
     }
 
-    two_pin_list_size = usedTwoPinListSize;
+    construct_2d_tree.two_pin_list_size = usedTwoPinListSize;
 
     for (int netId = 0; netId < rr_map.get_netNumber(); ++netId) {
-        if (NetDirtyBit[netId] == true) {
+        if (construct_2d_tree.NetDirtyBit[netId] == true) {
             put_terminal_color_on_colormap(netId);
             int xx = rr_map.get_nPin(netId)[0]->get_tileX();
             int yy = rr_map.get_nPin(netId)[0]->get_tileY();
-            Coordinate_2d* start_coor = &coor_array[xx][yy];
+            Coordinate_2d* start_coor = &construct_2d_tree.coor_array[xx][yy];
 
             bfs_for_find_two_pin_list(start_coor, netId, insert_to_branch);
 
-            NetDirtyBit[netId] = false;
+            construct_2d_tree.NetDirtyBit[netId] = false;
             ++dirty_count;
         }
     }
 
-    for (int i = two_pin_list.size() - 1; i >= two_pin_list_size; --i) {
-        delete (two_pin_list[i]);
-        two_pin_list.pop_back();
+    for (int i = construct_2d_tree.two_pin_list.size() - 1; i >= construct_2d_tree.two_pin_list_size; --i) {
+        delete (construct_2d_tree.two_pin_list[i]);
+        construct_2d_tree.two_pin_list.pop_back();
     }
 
     delete traverseMap;

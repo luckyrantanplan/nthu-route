@@ -1,8 +1,12 @@
 #ifndef INC_REOUTE_2PINNETS_H
 #define INC_REOUTE_2PINNETS_H
 
-#include "Construct_2d_tree.h"
+#include <vector>
+
 #include "../grdb/plane.h"
+#include "../util/traversemap.h"
+#include "Construct_2d_tree.h"
+#include "Range_router.h"
 
 class Point_fc {
 public:
@@ -34,7 +38,9 @@ struct Route_2pinnets {
 
     Construct_2d_tree& construct_2d_tree;
     RoutingRegion& rr_map;
-    Route_2pinnets(Construct_2d_tree& construct_2d_tree);
+    RangeRouter& rangerouter;
+
+    Route_2pinnets(Construct_2d_tree& construct_2d_tree, RangeRouter& rangerouter);
     void route_all_2pin_net();
     void allocate_gridcell();
 

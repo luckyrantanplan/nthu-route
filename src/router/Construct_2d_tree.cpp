@@ -1,17 +1,20 @@
 #include "Construct_2d_tree.h"
-#include "parameter.h"
-#include "Route_2pinnets.h"
 
+#include <bits/move.h>
+#include <algorithm>
+#include <climits>
+#include <cmath>
+#include <cstdio>
+#include <iterator>
+#include <utility>
+
+#include "../flute/flute-function.h"
 #include "../flute/flute4nthuroute.h"
 #include "../grdb/RoutingComponent.h"
-#include "../util/traversemap.h"
-#include "../misc/geometry.h"
-#include "Post_processing.h"
-#include <cmath>
-#include <climits>
-#include <algorithm>
-#include "MM_mazeroute.h"
 #include "../grdb/RoutingRegion.h"
+#include "MM_mazeroute.h"
+#include "Range_router.h"
+#include "Route_2pinnets.h"
 
 using namespace std;
 using namespace Jm;
@@ -1692,12 +1695,15 @@ void Construct_2d_tree::output_3d_map() {
  */
 
 Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterSet& param, RoutingRegion& rr, std::function<void(int i, int j, int dir)> pre_evaluate_congestion_cost_fp) :
-        pre_evaluate_congestion_cost_fp { pre_evaluate_congestion_cost_fp }, parameter_set { param }, routing_parameter { routingparam }, rr_map { rr } {
+        pre_evaluate_congestion_cost_fp { pre_evaluate_congestion_cost_fp },	//
+        parameter_set { param }, //
+        routing_parameter { routingparam }, //
+        dir_array { { { 0, 1 }, { 0, -1 }, { -1, 0 }, { 1, 0 } } }, ////FRONT,BACK,LEFT,RIGHT
+        Jr2JmDirArray { { 0, 1, 3, 2 } }, //FRONT,BACK,LEFT,RIGHT <-> North, South, East, West
+        rr_map { rr }, //
+        post_processing { *this } {
 
     par_ind = 0;
-
-    dir_array[4][2] = { {0, 1}, {0, -1}, {-1, 0}, {1, 0}}; //FRONT,BACK,LEFT,RIGHT
-    Jr2JmDirArray[4] = {0, 1, 3, 2}; //FRONT,BACK,LEFT,RIGHT <-> North, South, East, West
 
     Multisource_multisink_mazeroute* mazeroute_in_range = NULL;
 
@@ -1740,7 +1746,11 @@ Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterS
 
     cal_total_wirelength();         // The report value is the sum of demand on every edge
 
-    allocate_gridcell();            //question: I don't know what this for. (jalamorm, 07/10/31)
+    RangeRouter rangeRouter(*this);
+
+    Route_2pinnets route_2pinnets(*this, rangeRouter);
+
+    route_2pinnets.allocate_gridcell();            //question: I don't know what this for. (jalamorm, 07/10/31)
 
     //Make a 2-pin net list without group by net
     for (int i = 0; i < rr_map.get_netNumber(); ++i) {
@@ -1749,15 +1759,15 @@ Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterS
         }
     }
 
-    reallocate_two_pin_list(true);
+    route_2pinnets.reallocate_two_pin_list(true);
     cache = new EdgePlane<CacheEdge>(rr_map.get_gridx(), rr_map.get_gridy(), CacheEdge());
     mazeroute_in_range = new Multisource_multisink_mazeroute(&this);
 
     int cur_overflow = -1;
     used_cost_flag = HISTORY_COST;
-    BOXSIZE_INC = routing_parameter->get_init_box_size_p2();
+    BOXSIZE_INC = routing_parameter.get_init_box_size_p2();
 
-    for (cur_iter = 1, done_iter = cur_iter; cur_iter <= routing_parameter->get_iteration_p2(); ++cur_iter, done_iter = cur_iter)   //do n-1 times
+    for (cur_iter = 1, done_iter = cur_iter; cur_iter <= routing_parameter.get_iteration_p2(); ++cur_iter, done_iter = cur_iter)   //do n-1 times
             {
         cout << "\033[31mIteration:\033[m " << cur_iter << endl;
 
@@ -1776,7 +1786,7 @@ Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterS
         pre_evaluate_congestion_cost();
 
         //route_all_2pin_net(false);
-        route_all_2pin_net();
+        route_2pinnets.route_all_2pin_net();
 
         cur_overflow = cal_max_overflow();
         cal_total_wirelength();
@@ -1784,16 +1794,16 @@ Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterS
         if (cur_overflow == 0)
             break;
 
-        reallocate_two_pin_list(true);
+        route_2pinnets.reallocate_two_pin_list(true);
 
 #ifdef MESSAGE
         printMemoryUsage("Memory Usage:");
 #endif
 
-        if (cur_overflow <= routing_parameter->get_overflow_threshold()) {
+        if (cur_overflow <= routing_parameter.get_overflow_threshold()) {
             break;
         }
-        BOXSIZE_INC += routing_parameter->get_box_size_inc_p2();
+        BOXSIZE_INC += routing_parameter.get_box_size_inc_p2();
     }
 
     output_2_pin_list();    //order:bbox�p
@@ -1806,6 +1816,6 @@ Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterS
     cout<<"===                   Enter Post Processing                  ==="<<endl;
     cout<<"================================================================"<<endl;
 #endif
-
+    post_processing.process(route_2pinnets);
 }
 

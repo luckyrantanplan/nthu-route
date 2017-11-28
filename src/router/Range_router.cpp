@@ -265,7 +265,7 @@ void RangeRouter::expand_range(int x1, int y1, int x2, int y2, int interval_inde
 //If there is no overflowed path by using the two methods above, then remain 
 //the original path.
 void RangeRouter::range_router(Two_pin_element_2d * two_pin) {
-    if (!check_path_no_overflow(&two_pin->path, two_pin->net_id, false)) {
+    if (! check_path_no_overflow(&two_pin->path, two_pin->net_id, false)) {
         ++total_twopin;
 
         NetDirtyBit[two_pin->net_id] = true;
@@ -363,7 +363,7 @@ void RangeRouter::query_range_2pin(int left_x, int bottom_y, int right_x, int to
     ++done_counter;
 }
 
-void RangeRouter::specify_all_range(void) {
+void RangeRouter::specify_all_range( ) {
     vector<Two_pin_element_2d *> twopin_list;
     vector<int> twopin_range_index_list;
 

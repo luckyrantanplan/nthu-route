@@ -81,20 +81,20 @@ void ParameterSet::push_parameter(int a, int b, int c, int d, int e, int f, int 
 
 ParameterAnalyzer::ParameterAnalyzer(int argc, char* argv[]) :
         argc(argc), argv(argv), type(1), routingParam() {
-    this->analyze2();
-    cout << "Input file: \"" << this->inputFileName << "\"" << endl;
-    cout << "Output file: \"" << this->outputFileName << "\"" << endl;
+    analyze2();
+    cout << "Input file: \"" << inputFileName << "\"" << endl;
+    cout << "Output file: \"" << outputFileName << "\"" << endl;
 }
 void ParameterAnalyzer::analyze2() {
     char cmd;
     bool defineOutput = false;
-    this->paraNO = 8;
+    paraNO = 8;
     parameterSet.setSet();
     int long_option_index = 0;
     struct option long_option[] = { { "p2-max-iteration", 1, 0, 1 }, { "p3-max-iteration", 1, 0, 2 }, { "overflow-threshold", 1, 0, 3 }, { "p3-init-box-size", 1, 0, 4 }, { "p3-box-expand-size", 1, 0,
             5 }, { "p2-boxsize-inc", 1, 0, 6 }, { "p2-box-expand-size", 1, 0, 7 }, { "monotonic-routing", 1, 0, 8 }, { "simple", 0, 0, 9 }, { "input", 1, 0, 'i' }, { "output", 1, 0, 'o' }, {
             "p2-init-box-size", 1, 0, 6 }, { 0, 0, 0, 0 } };
-    while ((cmd = getopt_long(this->argc, this->argv, "i:I:o:p:", long_option, &long_option_index)) != -1) {
+    while ((cmd = getopt_long(argc, argv, "i:I:o:p:", long_option, &long_option_index)) != -1) {
         string parameter;
         bool enable;
         if (long_option[long_option_index].has_arg != 0) {
@@ -334,8 +334,8 @@ const char* ParameterAnalyzer::input() {
     return this->inputFileName.c_str();
 }
 
-const char* ParameterAnalyzer::output() {
-    return this->outputFileName.c_str();
+const std::string& ParameterAnalyzer::output() {
+    return this->outputFileName;
 }
 
 ParameterSet& ParameterAnalyzer::parameter() {

@@ -45,7 +45,7 @@ int main(int argc, char* argv[]) {
     clock_t t1 = clock();
     Construct_2d_tree tree(ap.routing_param(), ap.parameter(), routingData, pre_evaluate_congestion_cost_all);
     clock_t t2 = clock();
-    Post_processing post_processing(tree);
+    // now the post processing is handle by Construct_2d_tree
     clock_t t3 = clock();
     printf("\033[33mtime:\033[m %.2f %.2f %.2f\n", (double) (t2 - t1) / CLOCKS_PER_SEC, (double) (t3 - t2) / CLOCKS_PER_SEC, (double) (t3 - t1) / CLOCKS_PER_SEC);
 

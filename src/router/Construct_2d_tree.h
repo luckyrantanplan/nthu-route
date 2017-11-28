@@ -1,6 +1,7 @@
 #ifndef _CONSTRUCT_2D_TREE_H_
 #define _CONSTRUCT_2D_TREE_H_
 
+#include <array>
 #include <cassert>
 #include <cstdlib>
 #include <functional>
@@ -10,11 +11,13 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include  <fstream>
+
 #include "../flute/flute-ds.h"
 #include "../grdb/plane.h"
 #include "../misc/geometry.h"
 #include "../util/traversemap.h"
+#include "parameter.h"
+#include "Post_processing.h"
 
 class Net;
 class ParameterSet;
@@ -197,7 +200,7 @@ struct Construct_2d_tree {
     vector<bool> NetDirtyBit;
 
     Multisource_multisink_mazeroute* mazeroute_in_range;
-
+    Post_processing post_processing;
     /***********************
      * Global Variable End
      * ********************/

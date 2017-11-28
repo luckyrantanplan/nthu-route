@@ -2,7 +2,6 @@
 #include "Post_processing.h"
 #include "../misc/geometry.h"
 #include <algorithm>
-
 using namespace Jm;
 
 #include "MM_mazeroute.h"
@@ -178,6 +177,9 @@ void Post_processing::initial_for_post_processing() {
 
 Post_processing::Post_processing(Construct_2d_tree& construct_2d_tree) :
         construct_2d_tree { construct_2d_tree } {
+}
+
+void Post_processing::process(Route_2pinnets& route_2pinnets) {
     cur_overflow = -1;
 
     //Fetch from routing_parameter 
@@ -195,8 +197,8 @@ Post_processing::Post_processing(Construct_2d_tree& construct_2d_tree) :
     if (cur_overflow > 0) {
         //In post processing, we only need to pre-evaluate all cost once.
         //The other update will be done by update_add(remove)_edge
-        pre_evaluate_congestion_cost();
-        for (int i = 0; i < Post_processing_iteration; ++i, ++done_iter) {
+        construct_2d_tree.pre_evaluate_congestion_cost();
+        for (int i = 0; i < Post_processing_iteration; ++i, ++construct_2d_tree.done_iter) {
             printf("\033[31mIteration: \033[m%d\n", i + 1);
 #ifdef MESSAGE
             monotonic_solved_counter = maze_solved_counter = no_overflow_counter = 0;
@@ -209,24 +211,24 @@ Post_processing::Post_processing(Construct_2d_tree& construct_2d_tree) :
             initial_for_post_processing();
 
             pre_overflow = cur_overflow;
-            cur_overflow = cal_max_overflow();
-            cal_total_wirelength();
+            cur_overflow = construct_2d_tree.cal_max_overflow();
+            construct_2d_tree.cal_total_wirelength();
 
             if (total_no_overflow || cur_overflow == 0)
                 break;
-            BOXSIZE_INC += inc_num;
-            reallocate_two_pin_list(true);
+            construct_2d_tree.BOXSIZE_INC += inc_num;
+            route_2pinnets.reallocate_two_pin_list(true);
         }
     }
 
-    for (int i = 0; i < (int) two_pin_list.size(); ++i) {
-        insert_all_two_pin_list (two_pin_list[i]);
+    for (int i = 0; i < (int) construct_2d_tree.two_pin_list.size(); ++i) {
+        construct_2d_tree.insert_all_two_pin_list(construct_2d_tree.two_pin_list[i]);
     }
 
-    delete cache;
+    delete construct_2d_tree.cache;
 #ifdef MESSAGE
     puts("maze routing complete successfully");
 #endif
-    init_3d_map();	        //allocate space
-    output_3d_map();	    //assign max_cap
+    construct_2d_tree.init_3d_map();	        //allocate space
+    construct_2d_tree.output_3d_map();	    //assign max_cap
 }

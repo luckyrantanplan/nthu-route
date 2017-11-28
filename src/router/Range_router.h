@@ -1,10 +1,10 @@
 #ifndef INC_RANGE_ROUTER_H
 #define INC_RANGE_ROUTER_H
 
-#include "Route_2pinnets.h"
-#include "../misc/geometry.h"
+//#include "Route_2pinnets.h"
+
 #include "../util/traversemap.h"
-#include "../misc/geometry.h"
+#include "Construct_2d_tree.h"
 
 #define INTERVAL_NUM 10
 #define EXPAND_RANGE_SIZE 10

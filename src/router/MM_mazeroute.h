@@ -22,7 +22,7 @@ private:
         vector<Vertex_mmm *> neighbor;
         int visit;
 
-        Vertex_mmm(int x, int y);
+        Vertex_mmm(Jm::Coordinate_2d& xy);
     };
 
     class MMM_element {
