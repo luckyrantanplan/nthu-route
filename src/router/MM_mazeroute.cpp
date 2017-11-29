@@ -7,17 +7,13 @@
 #include <stack>
 #include <queue>
 #include "../grdb/RoutingRegion.h"
+#include "Construct_2d_tree.h"
 
 using namespace Jm;
 using namespace std;
 
-void Multisource_multisink_mazeroute::MMMPriortyQueue::init() {
-    storage_ = new vector<MMM_element*>(2 * construct_2d_tree.rr_map.get_gridx() * construct_2d_tree.rr_map.get_gridy(), static_cast<MMM_element*>(NULL));
-    size_ = 0;
-}
-
-Multisource_multisink_mazeroute::Vertex_mmm::Vertex_mmm(Jm::Coordinate_2d& xy) :
-        coor(&xy), visit(-1) {
+Multisource_multisink_mazeroute::Vertex_mmm::Vertex_mmm(Coordinate_2d& xy) :
+        coor(xy), visit(-1) {
 }
 
 Multisource_multisink_mazeroute::Multisource_multisink_mazeroute(Construct_2d_tree& construct_2d_tree) :
@@ -26,11 +22,9 @@ Multisource_multisink_mazeroute::Multisource_multisink_mazeroute(Construct_2d_tr
 
     RoutingRegion& rr_map = construct_2d_tree.rr_map;
 
-    net_tree = new vector<vector<Vertex_mmm *> >(rr_map.get_netNumber(), vector<Vertex_mmm *>(0));
+    net_tree.resize(rr_map.get_netNumber());
 
     mmm_map = new VertexPlane<MMM_element>(rr_map.get_gridx(), rr_map.get_gridy(), MMM_element());
-
-    pqueue = new MMMPriortyQueue(construct_2d_tree);
 
     //initialization
     for (int i = 0; i < rr_map.get_gridx(); ++i) {
@@ -44,9 +38,9 @@ Multisource_multisink_mazeroute::Multisource_multisink_mazeroute(Construct_2d_tr
 }
 
 Multisource_multisink_mazeroute::~Multisource_multisink_mazeroute() {
-    delete net_tree;
+
     delete mmm_map;
-    delete pqueue;
+
 }
 
 /*recursively traverse parent in maze_routing_map to find path*/
@@ -70,10 +64,9 @@ void Multisource_multisink_mazeroute::adjust_twopin_element() {
     element->pin1 = construct_2d_tree.coor_array[new_pin1->x][new_pin1->y];
     element->pin2 = construct_2d_tree.coor_array[new_pin2->x][new_pin2->y];
 
-    vector<Vertex_mmm *>::iterator it;
     int flag = 0;
-    for (it = pin1_v->neighbor.begin(); it != pin1_v->neighbor.end(); ++it) {
-        if ((*it) == pin2_v) {
+    for (auto it = pin1_v->neighbor.begin(); it != pin1_v->neighbor.end(); ++it) {
+        if (&(*it) == pin2_v) {
             pin1_v->neighbor.erase(it);
             flag = 1;
             break;
@@ -82,8 +75,8 @@ void Multisource_multisink_mazeroute::adjust_twopin_element() {
     assert(flag == 1);
 
     flag = 0;
-    for (it = pin2_v->neighbor.begin(); it != pin2_v->neighbor.end(); ++it) {
-        if ((*it) == pin1_v) {
+    for (auto it = pin2_v->neighbor.begin(); it != pin2_v->neighbor.end(); ++it) {
+        if (&(*it) == pin1_v) {
             pin2_v->neighbor.erase(it);
             flag = 1;
             break;
@@ -94,8 +87,9 @@ void Multisource_multisink_mazeroute::adjust_twopin_element() {
     int net_id = element->net_id;
     Vertex_mmm* v1 = NULL;
     Vertex_mmm* v2 = NULL;
-    ;
-    for (vector<Vertex_mmm *>::iterator it = (*net_tree)[net_id].begin(); it != (*net_tree)[net_id].end() && (v1 == NULL || v2 == NULL); ++it) {
+
+    vector<Vertex_mmm *>& vect = (*net_tree)[net_id];
+    for (vector<Vertex_mmm *>::iterator it = vect.begin(); it != vect.end() && (v1 == nullptr || v2 == nullptr); ++it) {
         if ((*it)->coor == new_pin1) {
             v1 = (*it);
         } else if ((*it)->coor == new_pin2) {
@@ -113,7 +107,7 @@ void Multisource_multisink_mazeroute::find_subtree(Vertex_mmm *v, int mode) {
     v->visit = visit_counter;
 
     if (mode == 0) {
-        MMM_element *cur = &mmm_map->vertex(v->coor->x, v->coor->y);
+        MMM_element *cur = &mmm_map->vertex(v->coor.x, v->coor.y);
         cur->reachCost = 0;
         cur->distance = 0;
         cur->via_num = 0;
@@ -121,7 +115,7 @@ void Multisource_multisink_mazeroute::find_subtree(Vertex_mmm *v, int mode) {
         cur->visit = visit_counter;
         pqueue->insert(cur);
     } else {
-        mmm_map->vertex(v->coor->x, v->coor->y).dst = dst_counter;
+        mmm_map->vertex(v->coor.x, v->coor.y).dst = dst_counter;
     }
     for (vector<Vertex_mmm *>::iterator it = v->neighbor.begin(); it != v->neighbor.end(); ++it) {
         if ((*it)->visit != visit_counter)
@@ -153,7 +147,7 @@ void Multisource_multisink_mazeroute::setup_pqueue() {
         for (int i = 0; i < t->number; ++i) {
             Vertex_mmm* a = (*net_tree)[cur_net][i];
             Vertex_mmm* b = (*net_tree)[cur_net][t->branch[i].n];
-            if (a->coor->x == b->coor->x && a->coor->y == b->coor->y)
+            if (a->coor.x == b->coor.x && a->coor.y == b->coor.y)
                 continue;
             a->neighbor.push_back(b);
             b->neighbor.push_back(a);
@@ -165,10 +159,10 @@ void Multisource_multisink_mazeroute::setup_pqueue() {
 //find pin1 and pin2 in tree
     pin1_v = pin2_v = NULL;
     for (vector<Vertex_mmm *>::iterator it = (*net_tree)[cur_net].begin(); (it != (*net_tree)[cur_net].end()) && (pin1_v == NULL || pin2_v == NULL); ++it) {
-        if ((*it)->coor->x == element->pin1.x && (*it)->coor->y == element->pin1.y) {
+        if ((*it)->coor.x == element->pin1.x && (*it)->coor.y == element->pin1.y) {
             pin1_v = (*it);
             pin1_v->visit = visit_counter;
-        } else if ((*it)->coor->x == element->pin2.x && (*it)->coor->y == element->pin2.y) {
+        } else if ((*it)->coor.x == element->pin2.x && (*it)->coor.y == element->pin2.y) {
             pin2_v = (*it);
             pin2_v->visit = visit_counter;
         }
@@ -198,7 +192,7 @@ void Multisource_multisink_mazeroute::bfsSetColorMap(int x, int y) {
             else {
                 DirectionType dirType = static_cast<DirectionType>(construct_2d_tree.Jr2JmDirArray[dir]);
                 CacheEdge& edge = construct_2d_tree.cache->edge(x, y, dirType);
-                if (edge.MMVisitFlag != visit_counter && construct_2d_tree.congestionMap2d->edge(x, y, dirType).lookupNet(net_id)) {
+                if (edge.MMVisitFlag != visit_counter && construct_2d_tree.congestionMap2d.edge(x, y, dirType).lookupNet(net_id)) {
                     edge.MMVisitFlag = visit_counter;
                     Q.push(make_pair(x + construct_2d_tree.dir_array[dir][0], y + construct_2d_tree.dir_array[dir][1]));
                 }
@@ -206,13 +200,13 @@ void Multisource_multisink_mazeroute::bfsSetColorMap(int x, int y) {
         }
     }
 }
-bool Multisource_multisink_mazeroute::mm_maze_route_p2(Two_pin_element_2d *ielement, double bound_cost, int bound_distance, int bound_via_num, Coordinate_2d start, Coordinate_2d end) {
+bool Multisource_multisink_mazeroute::mm_maze_route_p2(Two_pin_element_2d &ielement, double bound_cost, int bound_distance, int bound_via_num, Coordinate_2d start, Coordinate_2d end) {
     int pre_dir = 0;
     bool find_path_flag = false;
     MMM_element* cur_pos = NULL;
     MMM_element* next_pos = NULL;
     MMM_element* sink_pos = NULL;
-    ielement->path.clear();
+    element->path.clear();
     element = ielement;
     boundary_l = start.x;
     boundary_b = start.y;
@@ -239,10 +233,10 @@ bool Multisource_multisink_mazeroute::mm_maze_route_p2(Two_pin_element_2d *ielem
         }
 
         for (int i = 3; i >= 0; --i) {
-            if ((i == 3 && cur_pos->coor->x >= gridxMinusOne) || (i == 2 && cur_pos->coor->x <= 0) || (i == 1 && cur_pos->coor->y <= 0) || (i == 0 && cur_pos->coor->y >= gridyMinusOne))
+            if ((i == 3 && cur_pos->coor.x >= gridxMinusOne) || (i == 2 && cur_pos->coor.x <= 0) || (i == 1 && cur_pos->coor.y <= 0) || (i == 0 && cur_pos->coor.y >= gridyMinusOne))
                 continue;
             else {
-                next_pos = &mmm_map->vertex(cur_pos->coor->x + construct_2d_tree.dir_array[i][0], cur_pos->coor->y + construct_2d_tree.dir_array[i][1]);
+                next_pos = &mmm_map->vertex(cur_pos->coor.x + construct_2d_tree.dir_array[i][0], cur_pos->coor.y + construct_2d_tree.dir_array[i][1]);
 
                 if (next_pos != cur_pos->parent && next_pos->walkableID == visit_counter) {
                     DirectionType dirType = static_cast<DirectionType>(construct_2d_tree.Jr2JmDirArray[i]);
@@ -250,7 +244,7 @@ bool Multisource_multisink_mazeroute::mm_maze_route_p2(Two_pin_element_2d *ielem
                     int total_distance = cur_pos->distance;
                     int via_num = cur_pos->via_num;
                     bool addDistance = false;
-                    CacheEdge& edge = construct_2d_tree.cache->edge(cur_pos->coor->x, cur_pos->coor->y, dirType);
+                    CacheEdge& edge = construct_2d_tree.cache->edge(cur_pos->coor.x, cur_pos->coor.y, dirType);
                     if (edge.MMVisitFlag != visit_counter) {
                         reachCost += edge.cost;
                         ++total_distance;
@@ -343,18 +337,18 @@ bool Multisource_multisink_mazeroute::mm_maze_route_p3(Two_pin_element_2d *ielem
         }
 
         for (int i = 3; i >= 0; --i) {
-            if ((i == 3 && cur_pos->coor->x >= gridxMinusOne) || (i == 2 && cur_pos->coor->x <= 0) || (i == 1 && cur_pos->coor->y <= 0) || (i == 0 && cur_pos->coor->y >= gridyMinusOne))
+            if ((i == 3 && cur_pos->coor.x >= gridxMinusOne) || (i == 2 && cur_pos->coor.x <= 0) || (i == 1 && cur_pos->coor.y <= 0) || (i == 0 && cur_pos->coor.y >= gridyMinusOne))
                 continue;
             else {
                 const std::array<int, 2>& dira = construct_2d_tree.dir_array[i];
-                next_pos = &mmm_map->vertex(cur_pos->coor->x + dira[0], cur_pos->coor->y + dira[1]);
+                next_pos = &mmm_map->vertex(cur_pos->coor.x + dira[0], cur_pos->coor.y + dira[1]);
 
                 if (next_pos != cur_pos->parent && next_pos->walkableID == visit_counter) {
                     DirectionType dirType = static_cast<DirectionType>(construct_2d_tree.Jr2JmDirArray[i]);
                     double reachCost = cur_pos->reachCost;
                     int total_distance = cur_pos->distance;
                     int via_num = cur_pos->via_num;
-                    CacheEdge& edge = construct_2d_tree.cache->edge(cur_pos->coor->x, cur_pos->coor->y, dirType);
+                    CacheEdge& edge = construct_2d_tree.cache->edge(cur_pos->coor.x, cur_pos->coor.y, dirType);
                     if ((edge.MMVisitFlag != visit_counter) && (edge.cost != 0.0)) {
                         reachCost += edge.cost;
                         ++total_distance;
@@ -408,120 +402,25 @@ bool Multisource_multisink_mazeroute::mm_maze_route_p3(Two_pin_element_2d *ielem
     return find_path_flag;
 }
 
-/****************
- MMMPriortyQueue
- ***************/
-Multisource_multisink_mazeroute::MMMPriortyQueue::MMMPriortyQueue(Construct_2d_tree& construct_2d_tree) :
-        construct_2d_tree { construct_2d_tree }, storage_(NULL) {
-    init();
-}
-
-Multisource_multisink_mazeroute::MMMPriortyQueue::~MMMPriortyQueue() {
-    close();
-}
-
-void Multisource_multisink_mazeroute::MMMPriortyQueue::close() {
-    if (storage_ != NULL) {
-        for (int ite = size_ - 1; ite >= 0; --ite) {
-            (*storage_)[ite]->pqIndex = -1;
-        }
-        size_ = 0;
-        delete storage_;
-    }
-}
-
-void Multisource_multisink_mazeroute::MMMPriortyQueue::pop() {
-    assert(empty() == false);
-
-    int storageSizeMinusOne = size_ - 1;
-
-    (*storage_)[0]->pqIndex = -1;
-
-    if (0 < storageSizeMinusOne) {
-        (*storage_)[0] = (*storage_)[storageSizeMinusOne];
-        (*storage_)[0]->pqIndex = 0;
-    }
-
-    int parentIndex = 0;
-    while (parentIndex < storageSizeMinusOne) {
-        register int LChildIndex = (parentIndex << 1) + 1;
-
-        if (LChildIndex >= storageSizeMinusOne)
-            break;
-
-        int updateIndex = LChildIndex;
-        register int RChildIndex = LChildIndex + 1;
-
-        if (RChildIndex >= storageSizeMinusOne) {
-            if (!compareMMM((*storage_)[LChildIndex], (*storage_)[parentIndex])) {
-                break;
-            }
-        } else {
-            if (!compareMMM((*storage_)[LChildIndex], (*storage_)[RChildIndex])) {
-                updateIndex = RChildIndex;
-            }
-        }
-
-        swap((*storage_)[parentIndex], (*storage_)[updateIndex]);
-        (*storage_)[parentIndex]->pqIndex = parentIndex;
-        (*storage_)[updateIndex]->pqIndex = updateIndex;
-
-        parentIndex = updateIndex;
-    }
-
-//Remove the last node from the array
-    --size_;
-}
-
-void Multisource_multisink_mazeroute::MMMPriortyQueue::update(int indexToUpdate) {
-    while (indexToUpdate > 0) {
-        int parsentIndex = (indexToUpdate - 1) >> 1;
-        if (compareMMM((*storage_)[parsentIndex], (*storage_)[indexToUpdate]))
-            break;
-        swap((*storage_)[parsentIndex], (*storage_)[indexToUpdate]);
-        (*storage_)[parsentIndex]->pqIndex = parsentIndex;
-        (*storage_)[indexToUpdate]->pqIndex = indexToUpdate;
-        indexToUpdate = parsentIndex;
-    }
-}
-
-bool Multisource_multisink_mazeroute::MMMPriortyQueue::comp_mmm_element::operator()(const MMM_element* a, const MMM_element* b) const {
-//If A has lower cost, return true, else return false
-
-    if ((a->reachCost - b->reachCost) < neg_error_bound) {
-        return true;
-    } else if ((a->reachCost - b->reachCost) > error_bound) {
-        return false;
-    } else {
-        if (a->distance < b->distance)
-            return true;
-        else if (a->distance > b->distance)
-            return false;
-        else
-            return a->via_num < b->via_num;
-    }
-}
-
 inline
 void Multisource_multisink_mazeroute::putNetOnColorMap() {
-    bfsSetColorMap(pin1_v->coor->x, pin1_v->coor->y);
-    bfsSetColorMap(pin2_v->coor->x, pin2_v->coor->y);
+    bfsSetColorMap(pin1_v->coor.x, pin1_v->coor.y);
+    bfsSetColorMap(pin2_v->coor.x, pin2_v->coor.y);
 }
 
-//Inine Functions
-/****************
- MMMPriortyQueue
- ***************/
-
-inline
-void Multisource_multisink_mazeroute::MMMPriortyQueue::clear() {
-    for (PQStorage::iterator ite = storage_->begin(); ite != storage_->begin() + size_; ++ite) {
-        (*ite)->pqIndex = -1;
+bool Multisource_multisink_mazeroute::smaller_than_lower_bound(double total_cost, int distance, int via_num, double bound_cost, int bound_distance, int bound_via_num) {
+    if ((total_cost - bound_cost) < neg_error_bound)
+        return true;
+    else if ((total_cost - bound_cost) > error_bound)
+        return false;
+    else {
+        if (distance < bound_distance)
+            return true;
+        else if (distance > bound_distance)
+            return false;
+        else {
+            return (via_num < bound_via_num);
+        }
     }
-    size_ = 0;
 }
 
-inline
-bool Multisource_multisink_mazeroute::MMMPriortyQueue::empty() {
-    return (size_ == 0);
-}

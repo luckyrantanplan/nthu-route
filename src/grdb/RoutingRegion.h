@@ -44,19 +44,19 @@ public:
     //void inc_curCapacity(int layer_id, int x1, int y1, int x2, int y2);
 
 public:
-    virtual void setGrid(unsigned int x, unsigned int y, unsigned int layerNumber);
-    virtual void setVerticalCapacity(unsigned int layerId, unsigned int capacity);
-    virtual void setHorizontalCapacity(unsigned int layerId, unsigned int capacity);
-    virtual void setNetNumber(unsigned int netNumber);
-    virtual void adjustEdgeCapacity(unsigned int x1, unsigned int y1, unsigned int z1, unsigned int x2, unsigned int y2, unsigned int z2, unsigned int capacity);
-    virtual void setLayerMinimumWidth(unsigned int layerId, unsigned int width);
-    virtual void setLayerMinimumSpacing(unsigned int layerId, unsigned int spacing);
-    virtual void setViaSpacing(unsigned int layerId, unsigned int viaSpacing);
-    virtual void setTileTransformInformation(unsigned int llx, unsigned int lly, unsigned int tWidth, unsigned int tHeight);
-    virtual void beginAddANet(const char* netName, unsigned int netSerial, unsigned int pinNumber, unsigned int minWidth);
-    virtual void addPin(unsigned int x, unsigned int y, unsigned int layer);
-    virtual void endAddANet();
-    virtual void endBuild();
+    void setGrid(unsigned int x, unsigned int y, unsigned int layerNumber);
+    void setVerticalCapacity(unsigned int layerId, unsigned int capacity);
+    void setHorizontalCapacity(unsigned int layerId, unsigned int capacity);
+    void setNetNumber(unsigned int netNumber);
+    void adjustEdgeCapacity(unsigned int x1, unsigned int y1, unsigned int z1, unsigned int x2, unsigned int y2, unsigned int z2, unsigned int capacity);
+    void setLayerMinimumWidth(unsigned int layerId, unsigned int width);
+    void setLayerMinimumSpacing(unsigned int layerId, unsigned int spacing);
+    void setViaSpacing(unsigned int layerId, unsigned int viaSpacing);
+    void setTileTransformInformation(unsigned int llx, unsigned int lly, unsigned int tWidth, unsigned int tHeight);
+    void beginAddANet(const char* netName, unsigned int netSerial, unsigned int pinNumber, unsigned int minWidth);
+    void addPin(unsigned int x, unsigned int y, unsigned int layer);
+    void endAddANet();
+    void endBuild();
 
 private:
     NetList netList_;

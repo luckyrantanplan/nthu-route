@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-class Pin: public Jm::Coordinate {
+class Pin: public Coordinate {
 public:
     //Constructor
     Pin(int x, int y, int z);
@@ -39,7 +39,7 @@ public:
     int get_boundaryE() const;
     int get_boundaryW() const;
     int get_boundaryS() const;
-
+    static bool comp_net(const Net* a, const Net* b);
 private:
     std::string name;
     int minPinX;
@@ -84,10 +84,10 @@ public:
     const Tile& tile(int x, int y, int z) const;
 
     ///@brief Get the specified edge
-    RoutingEdge& edge(int x, int y, int z, Jm::DirectionType);
+    RoutingEdge& edge(int x, int y, int z, DirectionType);
 
     ///@brief Get the specified edge, and the edge is read-only.
-    const RoutingEdge& edge(int x, int y, int z, Jm::DirectionType) const;
+    const RoutingEdge& edge(int x, int y, int z, DirectionType) const;
 
 private:
     struct RoutingEdge {
@@ -139,12 +139,12 @@ inline const RoutingSpace::Tile& RoutingSpace::tile(int x, int y, int z) const {
 }
 
 inline RoutingSpace::RoutingEdge&
-RoutingSpace::edge(int x, int y, int z, Jm::DirectionType dir) {
+RoutingSpace::edge(int x, int y, int z, DirectionType dir) {
     return routingSpace_[z].edge(x, y, dir);
 }
 
 inline const RoutingSpace::RoutingEdge&
-RoutingSpace::edge(int x, int y, int z, Jm::DirectionType dir) const {
+RoutingSpace::edge(int x, int y, int z, DirectionType dir) const {
     return routingSpace_[z].edge(x, y, dir);
 }
 

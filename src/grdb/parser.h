@@ -11,7 +11,6 @@
 
 #include "../misc/filehandler.h"
 
-class Builder;
 class RoutingRegion;
 
 using Jm::FileHandler;

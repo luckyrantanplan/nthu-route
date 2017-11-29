@@ -7,8 +7,7 @@
 
 struct Route_2pinnets;
 
-#define error_bound 0.00000000001
-#define neg_error_bound -0.00000000001
+
 
 struct COUNTER {
     int id;
@@ -33,9 +32,9 @@ struct Post_processing {
 
     int comp(const COUNTER& a, const COUNTER& b);
 
-    bool check_path_no_overflow(std::vector<Jm::Coordinate_2d*> *path, int net_id, int inc_flag);
+    bool check_path_no_overflow(std::vector<Coordinate_2d*>&path, int net_id, int inc_flag);
 
-    void compute_path_total_cost_and_distance(Two_pin_element_2d *element, Monotonic_element*);
+    void compute_path_total_cost_and_distance(Two_pin_element_2d&element, Monotonic_element&);
     void initial_for_post_processing();
     Post_processing(Construct_2d_tree& construct_2d_tree);
     void process(Route_2pinnets& route_2pinnets);

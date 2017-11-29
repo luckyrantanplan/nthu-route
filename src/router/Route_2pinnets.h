@@ -1,10 +1,13 @@
 #ifndef INC_REOUTE_2PINNETS_H
 #define INC_REOUTE_2PINNETS_H
 
+#include <functional>
 #include <vector>
 
 #include "../grdb/plane.h"
 #include "../util/traversemap.h"
+#include "Construct_2d_tree.h"
+#include "Range_router.h"
 
 class Two_pin_element_2d;
 struct Construct_2d_tree;
@@ -20,19 +23,19 @@ public:
 public:
     int x;
     int y;
-    std::vector<Two_pin_element_2d*> points;
+    std::vector<std::reference_wrapper<Two_pin_element_2d> > points;
 };
 
 struct Route_2pinnets {
 
-    VertexPlane<Point_fc>* gridcell; //This is some kind of color map, for recording
-                                     //which 2-pin net passed which gCell
+    VertexPlane<Point_fc> gridcell; //This is some kind of color map, for recording
+                                    //which 2-pin net passed which gCell
 
-    VertexColorMap<int>* traverseMap;   //This color map is used by
+    VertexColorMap<int> traverseMap;   //This color map is used by
     //bfs_for_find_two_pin_list()
     //for recording which tiles are traversed
 
-    VertexColorMap<int>* terminalMap;  //This color map is used by
+    VertexColorMap<int> terminalMap;  //This color map is used by
     //determine_is_terminal_or_steiner_point()
     //for recording which tiles contains terminal
 
@@ -52,7 +55,7 @@ struct Route_2pinnets {
     void reset_c_map_used_net_to_one();
     void put_terminal_color_on_colormap(int net_id);
     int determine_is_terminal_or_steiner_point(int xx, int yy, int dir, int net_id);
-    void bfs_for_find_two_pin_list(Jm::Coordinate_2d *start_coor, int net_id, bool insert_to_branch);
+    void bfs_for_find_two_pin_list(Coordinate_2d *start_coor, int net_id, bool insert_to_branch);
     void reallocate_two_pin_list(bool insert_to_branch);
 
 };

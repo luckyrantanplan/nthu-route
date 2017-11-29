@@ -16,7 +16,7 @@ typedef std::pair<int, int> IntPair;
 class BSearchQueNode{
 	private:
 		//cell information, such as x, y, z coordinate
-        Jm::Coordinate cell;
+        Coordinate cell;
 		//position of current wire segment in wire segments list
 		int wirePos;
 	public:
@@ -64,13 +64,13 @@ class VertexColorMap{
     T& color(int x, int y);//, int z);
 
     ///Set the color value
-    T& color(Jm::Coordinate& coor);
+    T& color(Coordinate& coor);
     
     ///Get the color value
     const T& color(int x, int y) const; //, int z) const;
 
     ///Get the color value
-    const T& color(Jm::Coordinate& coor) const;
+    const T& color(Coordinate& coor) const;
 
 	private:
     VertexPlane<T> vertexPlane;
@@ -103,7 +103,7 @@ const T& VertexColorMap<T>::color(int x, int y) const//, int z) const
 
 template<class T>
 inline
-const T& VertexColorMap<T>::color(Jm::Coordinate& coor) const 
+const T& VertexColorMap<T>::color(Coordinate& coor) const 
 {
 	return vertexPlane.vertex(coor.x(), coor.y());//, coor.z());
 }
@@ -118,7 +118,7 @@ T& VertexColorMap<T>::color(int x, int y)//, int z)
 
 template<class T>
 inline
-T& VertexColorMap<T>::color(Jm::Coordinate& coor)
+T& VertexColorMap<T>::color(Coordinate& coor)
 {
 	return vertexPlane.vertex(coor.x(), coor.y());//, coor.z());
 }
@@ -140,16 +140,16 @@ class EdgeColorMap {
     void reset();
 
     ///Set color
-    T& color(int x, int y, /*int z,*/ Jm::DirectionType);
+    T& color(int x, int y, /*int z,*/ DirectionType);
 
     ///Set color
-    T& color(Jm::Coordinate& coor, Jm::DirectionType);
+    T& color(Coordinate& coor, DirectionType);
 
     ///Get color
-    const T& color(int x, int y, /*int z,*/ Jm::DirectionType) const;
+    const T& color(int x, int y, /*int z,*/ DirectionType) const;
 
     ///Get color
-    const T& color(Jm::Coordinate& coor, Jm::DirectionType) const;
+    const T& color(Coordinate& coor, DirectionType) const;
 
     private:
     EdgePlane<T> edgePlane;
@@ -176,28 +176,28 @@ void EdgeColorMap<T>::reset(){
 
 template<class T>
 inline
-const T& EdgeColorMap<T>::color(int x, int y, /*int z,*/ Jm::DirectionType dir) const 
+const T& EdgeColorMap<T>::color(int x, int y, /*int z,*/ DirectionType dir) const 
 {
     return edgePlane.edge(x, y, /*z,*/ dir);
 }
 
 template<class T>
 inline
-const T& EdgeColorMap<T>::color(Jm::Coordinate& coor, Jm::DirectionType dir) const
+const T& EdgeColorMap<T>::color(Coordinate& coor, DirectionType dir) const
 {
     return edgePlane.edge(coor.x(), coor.y(), /*coor.z(),*/ dir);
 }
 
 template<class T>
 inline
-T& EdgeColorMap<T>::color(int x, int y, /*int z,*/ Jm::DirectionType dir)
+T& EdgeColorMap<T>::color(int x, int y, /*int z,*/ DirectionType dir)
 {
     return edgePlane.edge(x, y, /*z,*/ dir);
 }
 
 template<class T>
 inline
-T& EdgeColorMap<T>::color(Jm::Coordinate& coor, Jm::DirectionType dir)
+T& EdgeColorMap<T>::color(Coordinate& coor, DirectionType dir)
 {
     return edgePlane.edge(coor.x(), coor.y(), /*coor.z(),*/ dir);
 }

@@ -27,7 +27,6 @@
 #define ALLOUTPUT
 
 using namespace std;
-using namespace Jm;
 
 #ifdef CHECK_PREFER
 char prefer_direction[6][2] = { 0 };
@@ -84,7 +83,7 @@ void Layer_assignment::find_overflow_max() {
     for (i = 1; i < max_xx; ++i) {
         for (j = 0; j < max_yy; ++j) {
 
-            Edge_2d& edge = construct_2d_tree.congestionMap2d->edge(i, j, DIR_WEST);
+            Edge_2d& edge = construct_2d_tree.congestionMap2d.edge(i, j, DIR_WEST);
 
             if (edge.overUsage() > overflow_max) {
                 overflow_max = edge.overUsage();
@@ -93,7 +92,7 @@ void Layer_assignment::find_overflow_max() {
     }
     for (i = 0; i < max_xx; ++i) {
         for (j = 1; j < max_yy; ++j) {
-            Edge_2d& edge = construct_2d_tree.congestionMap2d->edge(i, j, DIR_SOUTH);
+            Edge_2d& edge = construct_2d_tree.congestionMap2d.edge(i, j, DIR_SOUTH);
 
             if (edge.overUsage() > overflow_max) {
                 overflow_max = edge.overUsage();
@@ -153,8 +152,8 @@ void Layer_assignment::initial_overflow_map() {
     for (int i = 1; i < max_xx; ++i) {
         for (int j = 0; j < max_yy; ++j) {
             OVERFLOW_NODE& overflow = layerInfo_map[i][j].overflow;
-            *(overflow.edge[LEFT]) = (construct_2d_tree.congestionMap2d->edge(i, j, DIR_WEST).overUsage() << 1);
-            *(overflow.edge[BACK]) = (construct_2d_tree.congestionMap2d->edge(i, j, DIR_SOUTH).overUsage() << 1);
+            *(overflow.edge[LEFT]) = (construct_2d_tree.congestionMap2d.edge(i, j, DIR_WEST).overUsage() << 1);
+            *(overflow.edge[BACK]) = (construct_2d_tree.congestionMap2d.edge(i, j, DIR_SOUTH).overUsage() << 1);
         }
     }
 
@@ -341,7 +340,7 @@ int Layer_assignment::preprocess(int net_id) {
             y = temp.y + plane_dir[i][1];
             if (x >= 0 && x < max_xx && y >= 0 &&	//
                     y < max_yy && //
-                    construct_2d_tree.congestionMap2d->edge(temp.x, temp.y, i).lookupNet(net_id)) {
+                    construct_2d_tree.congestionMap2d.edge(temp.x, temp.y, i).lookupNet(net_id)) {
                 if (path_map[x][y].val == 0 || path_map[x][y].val == -2) {
                     ++after_xy_cost;
 #ifdef POSTPROCESS
@@ -363,9 +362,9 @@ int Layer_assignment::preprocess(int net_id) {
 #ifndef VIA_DENSITY
                     if (max_layer < max_zz)
                     {
-                        if (congestionMap2d->edge(temp.x, temp.y, i).cur_cap < congestionMap2d->edge(temp.x, temp.y, i).max_cap)
+                        if (congestionMap2d.edge(temp.x, temp.y, i).cur_cap < congestionMap2d.edge(temp.x, temp.y, i).max_cap)
                         {
-                            temp_cap = (congestionMap2d->edge(temp.x, temp.y, i).used_net.size() << 1);
+                            temp_cap = (congestionMap2d.edge(temp.x, temp.y, i).used_net.size() << 1);
                             for(k = 0; k < max_zz && temp_cap > 0; ++k)
                             if (cur_map_3d[temp.x][temp.y][k].edge_list[i]->max_cap > 0)
                             temp_cap -= cur_map_3d[temp.x][temp.y][k].edge_list[i]->max_cap;
@@ -859,7 +858,7 @@ void Layer_assignment::find_group(int max) {
     }
     for (i = 1; i < max_xx; ++i)
         for (j = 0; j < max_yy; ++j) {
-            Edge_2d& edgeWest = construct_2d_tree.congestionMap2d->edge(i, j, DIR_WEST);
+            Edge_2d& edgeWest = construct_2d_tree.congestionMap2d.edge(i, j, DIR_WEST);
             temp_cap = (edgeWest.used_net.size() << 1);
             for (k = 0; k < max_zz && temp_cap > 0; ++k)
                 if (cur_map_3d[i][j][k].edge_list[LEFT]->max_cap > 0)
@@ -902,7 +901,7 @@ void Layer_assignment::find_group(int max) {
         }
     for (i = 0; i < max_xx; ++i)
         for (j = 1; j < max_yy; ++j) {
-            Edge_2d& edgeSouth = construct_2d_tree.congestionMap2d->edge(i, j, DIR_SOUTH);
+            Edge_2d& edgeSouth = construct_2d_tree.congestionMap2d.edge(i, j, DIR_SOUTH);
             temp_cap = (edgeSouth.used_net.size() << 1);
             for (k = 0; k < max_zz && temp_cap > 0; ++k)
                 if (cur_map_3d[i][j][k].edge_list[BACK]->max_cap > 0)
@@ -950,7 +949,7 @@ void Layer_assignment::find_group(int max) {
         for (j = 0; j < max_yy; ++j) {
             for (k = 0; k < max_zz && cur_map_3d[i][j][k].edge_list[LEFT]->max_cap == 0; ++k) {
             }
-            Edge_2d& edgeWest = construct_2d_tree.congestionMap2d->edge(i, j, DIR_WEST);
+            Edge_2d& edgeWest = construct_2d_tree.congestionMap2d.edge(i, j, DIR_WEST);
             if ((int) (edgeWest.used_net.size() << 1) > cur_map_3d[i][j][k].edge_list[LEFT]->max_cap) {
                 if (edgeWest.used_net.size() > 1) {
                     RoutedNetTable::iterator iter = edgeWest.used_net.begin();
@@ -969,7 +968,7 @@ void Layer_assignment::find_group(int max) {
         for (j = 1; j < max_yy; ++j) {
             for (k = 0; k < max_zz && cur_map_3d[i][j][k].edge_list[BACK]->max_cap == 0; ++k) {
             }
-            Edge_2d& edgeSouth = construct_2d_tree.congestionMap2d->edge(i, j, DIR_SOUTH);
+            Edge_2d& edgeSouth = construct_2d_tree.congestionMap2d.edge(i, j, DIR_SOUTH);
             if ((int) (edgeSouth.used_net.size() << 1) > cur_map_3d[i][j][k].edge_list[BACK]->max_cap) {
                 if (edgeSouth.used_net.size() > 1) {
                     RoutedNetTable::iterator iter = edgeSouth.used_net.begin();
@@ -1154,7 +1153,7 @@ void Layer_assignment::calculate_cap() {
 
     for (i = 1; i < max_xx; ++i)
         for (j = 0; j < max_yy; ++j) {
-            Edge_2d& edge = construct_2d_tree.congestionMap2d->edge(i, j, DIR_WEST);
+            Edge_2d& edge = construct_2d_tree.congestionMap2d.edge(i, j, DIR_WEST);
             if (edge.isOverflow()) {
                 overflow += (edge.overUsage() << 1);
                 if (max < edge.overUsage())
@@ -1163,7 +1162,7 @@ void Layer_assignment::calculate_cap() {
         }
     for (i = 0; i < max_xx; ++i)
         for (j = 1; j < max_yy; ++j) {
-            Edge_2d& edge = construct_2d_tree.congestionMap2d->edge(i, j, DIR_SOUTH);
+            Edge_2d& edge = construct_2d_tree.congestionMap2d.edge(i, j, DIR_SOUTH);
             if (edge.isOverflow()) {
                 overflow += (edge.overUsage() << 1);
                 if (max < edge.overUsage())

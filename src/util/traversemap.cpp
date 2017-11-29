@@ -6,12 +6,10 @@
 #include <vector>
 
 using namespace std;
-using namespace Jm;
 
 /****************
  * BSearchQueNode
  ****************/
-BSearchQueNode::BSearchQueNode(int x, int y, int z, int wirePos)
-:cell(x, y, z),
- wirePos(wirePos)
-{}
+BSearchQueNode::BSearchQueNode(int x, int y, int z, int wirePos) :
+        cell(x, y, z), wirePos(wirePos) {
+}

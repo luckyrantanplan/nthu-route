@@ -31,11 +31,11 @@ public:
 };
 class Grid_edge_element {
 public:
-    Jm::Coordinate_2d* grid;
+    Coordinate_2d& grid;
     int dir;
 
 public:
-    Grid_edge_element(Jm::Coordinate_2d* grid, int dir) :
+    Grid_edge_element(Coordinate_2d& grid, int dir) :
             grid(grid), dir(dir) {
     }
 };
@@ -43,12 +43,12 @@ class Interval_element {
 public:
     double begin_value;
     double end_value;
-    std::vector<Grid_edge_element*> grid_edge_vector;
+    std::vector<Grid_edge_element> grid_edge_vector;
 };
 struct RangeRouter {
 public:
 
-    std::vector<Range_element*> range_vector;
+    std::vector<Range_element> range_vector;
     Interval_element interval_list[INTERVAL_NUM];
 
     int total_twopin = 0;
@@ -60,11 +60,11 @@ public:
 
     Construct_2d_tree& construct_2d_tree;
 
-    VertexColorMap<int>* expandMap;   //This color map is used by
+    VertexColorMap<int> expandMap;   //This color map is used by
     //expand_range()
     //for recording which edges have expanded
     //
-    VertexColorMap<int>* routeStateMap; //This color map is used by
+    VertexColorMap<int> routeStateMap; //This color map is used by
     //query_range_2pin()
     //for recording if all the 2-pin nets which
     //locate on the same tile are routed
@@ -73,18 +73,18 @@ public:
 
     void define_interval();
     void divide_grid_edge_into_interval();
-    void specify_all_range(VertexPlane<Point_fc>*& gridCell);
+    void specify_all_range(VertexPlane<Point_fc> & gridCell);
 
     bool double_equal(double a, double b);
-    bool comp_grid_edge(const Grid_edge_element* a, const Grid_edge_element* b);
+    bool comp_grid_edge(const Grid_edge_element& a, const Grid_edge_element& b);
 
-    void insert_to_interval(double cong_value, Jm::Coordinate_2d* coor_2d, int dir);
+    void insert_to_interval(double cong_value, Coordinate_2d& coor_2d, int dir);
 
     void expand_range(int x1, int y1, int x2, int y2, int interval_index);
-    void range_router(Two_pin_element_2d * two_pin);
-    bool inside_range(int left_x, int bottom_y, int right_x, int top_y, Jm::Coordinate_2d *pt);
+    void range_router(Two_pin_element_2d& two_pin);
+    bool inside_range(int left_x, int bottom_y, int right_x, int top_y, Coordinate_2d& pt);
     void query_range_2pin(int left_x, int bottom_y, int right_x, int top_y, //
-            std::vector<Two_pin_element_2d *> *twopin_list, VertexPlane<Point_fc>* gridCell);
+            std::vector<Two_pin_element_2d>& twopin_list, VertexPlane<Point_fc>& gridCell);
 
 };
 

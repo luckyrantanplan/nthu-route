@@ -20,7 +20,7 @@ struct ans {
 };
 struct DP_NODE {
     int val;
-    Jm::Coordinate_3d *pi;
+    Coordinate_3d *pi;
 };
 struct NET_NODE {
     int id;
@@ -81,7 +81,7 @@ struct PATH_VERTEX_3D {
 struct ZLayerInfo {
     KLAT_NODE klat;
     VIADENSITY_NODE viadensity;
-    Jm::Coordinate_3d coord_3d;
+    Coordinate_3d coord_3d;
 };
 
 struct LayerInfo {
@@ -97,7 +97,7 @@ struct Layer_assignment {
     //enum {GREEDY, SHORT_PATH};
     int l_option;
     int max_xx, max_yy, max_zz, overflow_max, *prefer_idx;
-    std::vector<std::vector<std::vector<Jm::Coordinate_3d>>> coord_3d_map;
+    std::vector<std::vector<std::vector<Coordinate_3d>>> coord_3d_map;
     int i_router, i_test_case, i_order, i_method;
     const char temp_buf[1000] = "1000";
 
@@ -115,7 +115,7 @@ struct Layer_assignment {
     std::vector<std::vector<std::vector<PATH_VERTEX_3D>>> path_map_3d;
     std::vector<std::vector<LayerInfo>> layerInfo_map;
     Construct_2d_tree& construct_2d_tree;
-    Vertex_3d ***& cur_map_3d;
+    std::vector<std::vector<std::vector<Vertex_3d>>>& cur_map_3d;
 
     const int plane_dir[4][2] = { { 0, 1 }, { 0, -1 }, { -1, 0 }, { 1, 0 } };   // F B L R
     const int cube_dir[6][3] = { { 0, 1, 0 }, { 0, -1, 0 }, { -1, 0, 0 }, { 1, 0, 0 }, { 0, 0, 1 }, { 0, 0, -1 } }; // F B L R U D
@@ -134,9 +134,9 @@ struct Layer_assignment {
     void initial_3D_coordinate_map();
     void initial_overflow_map();
     void malloc_space();
-    void update_cur_map_for_klat_xy(int cur_idx, Jm::Coordinate_2d *start, Jm::Coordinate_2d *end, int net_id);
-    void update_cur_map_for_klat_z(int pre_idx, int cur_idx, Jm::Coordinate_2d *start, int net_id);
-    void update_path_for_klat(Jm::Coordinate_2d *start);
+    void update_cur_map_for_klat_xy(int cur_idx, Coordinate_2d *start, Coordinate_2d *end, int net_id);
+    void update_cur_map_for_klat_z(int pre_idx, int cur_idx, Coordinate_2d *start, int net_id);
+    void update_path_for_klat(Coordinate_2d *start);
     void cycle_reduction(int x, int y);
     int preprocess(int net_id);
     void rec_count(int level, int val, int *count_idx);
