@@ -39,7 +39,7 @@ public:
     int get_boundaryE() const;
     int get_boundaryW() const;
     int get_boundaryS() const;
-    static bool comp_net(const Net* a, const Net* b);
+    static bool comp_net(const Net& a, const Net& b);
 private:
     std::string name;
     int minPinX;

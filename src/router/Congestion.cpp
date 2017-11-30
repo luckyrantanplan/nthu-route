@@ -6,7 +6,15 @@
  */
 
 #include "Congestion.h"
-#include "../misc/geometry.h"
+
+#include <boost/multi_array/multi_array_ref.hpp>
+#include <algorithm>
+#include <cmath>
+#include <cstdio>
+#include <functional>
+#include <vector>
+
+#include "../grdb/RoutingRegion.h"
 
 Congestion::Congestion(int x, int y) :
         congestionMap2d { x, y }, //
@@ -194,4 +202,58 @@ int Congestion::find_overflow_max() {
 #endif
     printf("overflow max = %d\n", overflow_max);
     return overflow_max;
+}
+
+/*assign the estimated track# to each edge*/
+void Congestion::init_2d_map(RoutingRegion& rr_map) {
+
+    congestionMap2d(rr_map.get_gridx(), rr_map.get_gridy());
+
+    for (int layer = rr_map.get_layerNumber() - 1; layer >= 0; --layer) {
+        for (int x = rr_map.get_gridx() - 2; x >= 0; --x) {
+            for (int y = rr_map.get_gridy() - 1; y >= 0; --y) {
+#ifdef IBM_CASE
+                //There is no wire spacing, so
+                //the edge capacity on congestion map = edge capacity on every layer
+                congestionMap2d.edge(x, y, DIR_EAST).max_cap += rr_map.capacity(layer, x, y, DIR_EAST);
+#else
+                //Because the wire width = 1 and wire spaceing = 1,
+                //the edge capacity on congestion map = edge capacity on every layer /2.
+
+                congestionMap2d.edge(x, y, DIR_EAST).max_cap += (rr_map.capacity(layer, x, y, DIR_EAST) / 2);
+#endif
+            }
+        }
+    }
+
+    for (int layer = rr_map.get_layerNumber() - 1; layer >= 0; --layer) {
+        for (int x = rr_map.get_gridx() - 1; x >= 0; --x) {
+            for (int y = rr_map.get_gridy() - 2; y >= 0; --y) {
+#ifdef IBM_CASE
+                //There is no wire spacing, so
+                //the edge capacity on congestion map = edge capacity on every layer
+                congestionMap2d.edge(x, y, DIR_NORTH).max_cap += rr_map.capacity(layer, x, y,DIR_NORTH);
+#else
+                //Because the wire width = 1 and wire spaceing = 1,
+                //the edge capacity on congestion map = edge capacity on every layer /2.
+                congestionMap2d.edge(x, y, DIR_NORTH).max_cap += (rr_map.capacity(layer, x, y, DIR_NORTH) / 2);
+#endif
+            }
+        }
+    }
+
+}
+
+//Sum all demand value on every edge
+//So if demand vlaue = wire length, this function can be used
+int Congestion::cal_total_wirelength() {
+    int total_wl = 0;
+
+    for (int i = 0; i < congestionMap2d.edgePlane_.num_elements(); ++i) {
+        Edge_2d& edge = congestionMap2d.edgePlane_.data()[i];
+        total_wl += (int) edge.cur_cap;
+    }
+
+    printf("total wirelengh:%d\n", total_wl);
+    return total_wl;
 }

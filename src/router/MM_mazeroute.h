@@ -6,7 +6,7 @@
 #include <functional>
 #include <queue>
 #include <vector>
-
+#include "DataDef.h"
 #include "../misc/geometry.h"
 
 struct Construct_2d_tree;

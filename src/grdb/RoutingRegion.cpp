@@ -17,21 +17,10 @@ RoutingRegion::~RoutingRegion() {
 
 // Edges' capacity information
 //get edge's max capacity
-int RoutingRegion::capacity(int layer_id, int x1, int y1, int x2, int y2) {
-    int x = min(x1, x2);
-    int y = min(y1, y2);
+int RoutingRegion::capacity(int layer_id, int x, int y, DirectionType dir) {
 
-    //get vertical capacity
-    if ((x1 == x2) && (y1 != y2)) {
-        return routingSpace_.edge(x, y, layer_id, DIR_NORTH).capacity;
-    }
+    return routingSpace_.edge(x, y, layer_id, dir).capacity;
 
-    //get horizontal capacity
-    if ((x1 != x2) && (y1 == y2)) {
-        return routingSpace_.edge(x, y, layer_id, DIR_EAST).capacity;
-    }
-
-    return 0;
 }
 
 inline

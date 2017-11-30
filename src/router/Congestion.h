@@ -8,11 +8,14 @@
 #ifndef SRC_ROUTER_CONGESTION_H_
 #define SRC_ROUTER_CONGESTION_H_
 
-#include <boost/multi_array.hpp>
+#include <functional>
+#include <vector>
 
 #include "../grdb/EdgePlane.h"
 #include "../misc/geometry.h"
 #include "DataDef.h"
+
+class RoutingRegion;
 
 struct CacheEdge {
     double cost;               //Used as cache of cost in whole program
@@ -44,6 +47,8 @@ public:
     void pre_evaluate_congestion_cost();
     bool check_path_no_overflow(std::vector<Coordinate_2d*>&path, int net_id, int inc_flag);
     int find_overflow_max();
+    void init_2d_map(RoutingRegion& rr_map);
+    int cal_total_wirelength();
 };
 
 #endif /* SRC_ROUTER_CONGESTION_H_ */

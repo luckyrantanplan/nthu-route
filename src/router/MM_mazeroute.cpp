@@ -221,12 +221,12 @@ bool Multisource_multisink_mazeroute::mm_maze_route_p2(Two_pin_element_2d &ielem
         }
     }
 
-    while (!pqueue->empty()) {
-        cur_pos = pqueue->top();
-        pqueue->pop();
+    while (!pqueue.empty()) {
+        cur_pos = pqueue.top();
+        pqueue.pop();
 
         if (cur_pos->parent != NULL) {
-            pre_dir = construct_2d_tree.get_direction_2d_simple(cur_pos->coor, cur_pos->parent->coor);
+            pre_dir = Coordinate_2d::get_direction_simple(*cur_pos->coor, *cur_pos->parent->coor);
             //We only need horizontal or vertical information of the direction,
             //so we can &0x02 first.
             //pre_dir &= 0x02;
@@ -360,11 +360,11 @@ bool Multisource_multisink_mazeroute::mm_maze_route_p3(Two_pin_element_2d *ielem
 
                     bool needUpdate = false;
                     if (next_pos->visit != visit_counter) {
-                        if (construct_2d_tree.smaller_than_lower_bound(reachCost, total_distance, via_num, bound_cost, bound_distance, bound_via_num)) {
+                        if (smaller_than_lower_bound(reachCost, total_distance, via_num, bound_cost, bound_distance, bound_via_num)) {
                             needUpdate = true;
                         }
                     } else {
-                        if (construct_2d_tree.smaller_than_lower_bound(reachCost, total_distance, via_num, next_pos->reachCost, next_pos->distance, next_pos->via_num)) {
+                        if (smaller_than_lower_bound(reachCost, total_distance, via_num, next_pos->reachCost, next_pos->distance, next_pos->via_num)) {
                             needUpdate = true;
                         }
                     }
@@ -382,7 +382,7 @@ bool Multisource_multisink_mazeroute::mm_maze_route_p3(Two_pin_element_2d *ielem
                             bound_via_num = via_num;
                             sink_pos = next_pos;
                         } else {
-                            pqueue->update(next_pos);
+                            pqueue.push(*next_pos);
                         }
                     }
                 }

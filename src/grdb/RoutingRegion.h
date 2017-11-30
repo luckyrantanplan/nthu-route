@@ -39,9 +39,7 @@ public:
     const PinptrList& get_nPin(int net_id);	//get Pins by net
 
     // Edges' capacity information
-    int capacity(int layer_id, int x1, int y1, int x2, int y2);
-    //int curCapacity(int layer_id, int x1, int y1, int x2, int y2);
-    //void inc_curCapacity(int layer_id, int x1, int y1, int x2, int y2);
+    int capacity(int layer_id, int x, int y, DirectionType dir);
 
 public:
     void setGrid(unsigned int x, unsigned int y, unsigned int layerNumber);

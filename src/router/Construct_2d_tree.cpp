@@ -7,51 +7,24 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <iostream>
 #include <iterator>
-#include <memory>
+#include <string>
 #include <unordered_map>
 #include <utility>
 
 #include "../flute/flute-function.h"
 #include "../flute/flute4nthuroute.h"
+#include "../grdb/EdgePlane.h"
 #include "../grdb/RoutingComponent.h"
 #include "../grdb/RoutingRegion.h"
+#include "../misc/geometry.h"
 #include "Congestion.h"
 #include "MonotonicRouting.h"
 #include "Range_router.h"
 #include "Route_2pinnets.h"
 
 using namespace std;
-
-//Sum all demand value on every edge
-//So if demand vlaue = wire length, this function can be used
-int Construct_2d_tree::cal_total_wirelength() {
-    int total_wl = 0;
-
-    for (int i = rr_map.get_gridx() - 2; i >= 0; --i) {
-        for (int j = rr_map.get_gridy() - 1; j >= 0; --j) {
-            total_wl += (int) congestionMap2d.edge(i, j, RIGHT).cur_cap;
-        }
-    }
-    for (int i = rr_map.get_gridx() - 1; i >= 0; --i) {
-        for (int j = rr_map.get_gridy() - 2; j >= 0; --j) {
-            total_wl += (int) congestionMap2d.edge(i, j, FRONT).cur_cap;
-        }
-    }
-    printf("total wirelengh:%d\n", total_wl);
-    return total_wl;
-}
-
-/*sort bbox in ascending order, then pin_num in descending order*/
-bool Construct_2d_tree::comp_net(const Net* a, const Net* b) {
-    if (a->get_bboxSize() > b->get_bboxSize()) {
-        return true;
-    } else if (a->get_bboxSize() < b->get_bboxSize()) {
-        return false;
-    } else {
-        return (a->get_pinNumber() < b->get_pinNumber());
-    }
-}
 
 static bool Two_pin_element::comp_2pin_net(Two_pin_element&a, Two_pin_element&b) {
     int a_bbox_size = abs(a.pin1.x - a.pin2.x) + abs(a.pin1.y - a.pin2.y);
@@ -65,67 +38,11 @@ static bool Two_pin_element_2d::comp_2pin_net_from_path(Two_pin_element_2d&a, Tw
     return (a_bbox_size < b_bbox_size);
 }
 
-//sort by x,y,pin,steiner
-bool Construct_2d_tree::comp_vertex_fl(Vertex_flute_ptr a, Vertex_flute_ptr b) {
-    if (a->x < b->x)
-        return true;
-    else if (a->x > b->x)
-        return false;
-    else if (a->y < b->y)
-        return true;
-    else if (a->y > b->y)
-        return false;
-    else if (a->type == PIN)
-        return true;
-    else
-        return false;
-}
-
-/*assign the estimated track# to each edge*/
-void Construct_2d_tree::init_2d_map() {
-
-    congestionMap2d(rr_map.get_gridx(), rr_map.get_gridy(), Edge_2d());
-
-    for (int x = rr_map.get_gridx() - 2; x >= 0; --x) {
-        for (int y = rr_map.get_gridy() - 1; y >= 0; --y) {
-            for (int layer = rr_map.get_layerNumber() - 1; layer >= 0; --layer) {
-#ifdef IBM_CASE		
-                //There is no wire spacing, so
-                //the edge capacity on congestion map = edge capacity on every layer
-                congestionMap2d.edge(x, y, DIR_EAST).max_cap += rr_map.capacity(layer, x, y, x+1, y);
-#else
-                //Because the wire width = 1 and wire spaceing = 1,
-                //the edge capacity on congestion map = edge capacity on every layer /2.
-                congestionMap2d.edge(x, y, DIR_EAST).max_cap += (rr_map.capacity(layer, x, y, x + 1, y) / 2);
-#endif		
-            }
-        }
-    }
-
-    for (int x = rr_map.get_gridx() - 1; x >= 0; --x) {
-        for (int y = rr_map.get_gridy() - 2; y >= 0; --y) {
-            for (int layer = rr_map.get_layerNumber() - 1; layer >= 0; --layer) {
-#ifdef IBM_CASE		
-                //There is no wire spacing, so
-                //the edge capacity on congestion map = edge capacity on every layer
-                congestionMap2d.edge(x, y, DIR_NORTH).max_cap += rr_map.capacity(layer, x, y, x, y+1);
-#else
-                //Because the wire width = 1 and wire spaceing = 1,
-                //the edge capacity on congestion map = edge capacity on every layer /2.
-                congestionMap2d.edge(x, y, DIR_NORTH).max_cap += (rr_map.capacity(layer, x, y, x, y + 1) / 2);
-#endif		
-            }
-        }
-    }
-}
-
 //Make an coordinate array which contains the (x, y) information
 void Construct_2d_tree::allocate_coor_array() {
     coor_array.resize(boost::extents[rr_map.get_gridx()][rr_map.get_gridy()]);
 
 }
-
-
 
 void Construct_2d_tree::init_2pin_list() {
     int i, netnum;
@@ -1213,8 +1130,6 @@ void Construct_2d_tree::output_2_pin_list() {
     });
 }
 
-
-
 /*stage 1: contruct 2d steiner tree
  output 2-pin list to stage2
  return max_overflow;
@@ -1289,7 +1204,7 @@ Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterS
 
     for (cur_iter = 1, done_iter = cur_iter; cur_iter <= routing_parameter.get_iteration_p2(); ++cur_iter, done_iter = cur_iter)   //do n-1 times
             {
-        cout << "\033[31mIteration:\033[m " << cur_iter << endl;
+        std::cout << "\033[31mIteration:\033[m " << cur_iter << std::endl;
 
         factor = (1.0 - exp(-5 * exp(-(0.1 * cur_iter))));
 

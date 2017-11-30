@@ -81,11 +81,11 @@ struct Construct_2d_tree {
 
 
 
-    int cal_total_wirelength();
 
 
 
-    void init_2d_map();
+
+
     void allocate_coor_array();
     void init_2pin_list();
     void init_flute();

@@ -92,6 +92,17 @@ int Net::get_boundaryS() const {
     return minPinY;
 }
 
+/*sort bbox in ascending order, then pin_num in descending order*/
+static bool Net::comp_net(const Net& a, const Net& b) {
+    if (a.get_bboxSize() > b.get_bboxSize()) {
+        return true;
+    } else if (a.get_bboxSize() < b.get_bboxSize()) {
+        return false;
+    } else {
+        return (a.get_pinNumber() < b.get_pinNumber());
+    }
+}
+
 /*************
  * RoutingSpace
  *************/

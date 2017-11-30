@@ -85,7 +85,11 @@ public:
             x(x), y(y), visit(0)/*, copy_ind(-1)*/{
     }
 
-    static bool comp_vertex_fl(Vertex_flute& a, Vertex_flute& b);
+
+
+    //sort by x,y,pin,steiner
+    static bool comp_vertex_fl(const Vertex_flute& a, const Vertex_flute& b) const;
+
 };
 
 typedef std::unordered_map<int, int> RoutedNetTable;
