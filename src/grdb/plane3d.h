@@ -4,8 +4,8 @@
  *  Both can be specified the data structure of routing bins or routing edges.
  *  author: Yen-Jung Chang
  * */
-#ifndef INC_PLANE_H
-#define INC_PLANE_H
+#ifndef INC_PLANE3D_H
+#define INC_PLANE3D_H
 
 #include <boost/multi_array/base.hpp>
 #include <boost/multi_array.hpp>
@@ -13,18 +13,18 @@
 #include "../misc/geometry.h"
 
 template<class VertexT, class EdgeT>
-class Plane {
+class Plane3d {
 public:
-    Plane(int xSize, int ySize);
+    Plane3d(int xSize, int ySize, int zSize);
 
-    Plane(const Plane&);
+    Plane3d(const Plane3d&);
 
-    ~Plane();
+    ~Plane3d();
 
-    void operator=(const Plane&);
+    void operator=(const Plane3d&);
 
-    ///@brief Change the size of plane. Every vertex will reset to initial value.
-    void resize(int xSize, int ySize);
+    ///@brief Change the size of Plane3d. Every vertex will reset to initial value.
+    void resize(int xSize, int ySize, int zSize);
 
     ///@brief Get the map size in x-axis
     int getXSize() const;
@@ -36,28 +36,28 @@ public:
     void reset();
 
     ///@brief Get the specified vertex
-    VertexT& vertex(int x, int y);    //, int z);
+    VertexT& vertex(int x, int y, int z);    //, int z);
 
     ///@brief Get the specified vertex, and the vertex is read-only.
-    const VertexT& vertex(int x, int y) const;
+    const VertexT& vertex(int x, int y, int z) const;
 
     ///@brief Get the specified edge
-    EdgeT& edge(int x, int y, DirectionType);
+    EdgeT& edge(int x, int y, int z, DirectionType);
 
     ///@brief Get the specified edge, and the edge is read-only.
-    const EdgeT& edge(int x, int y, DirectionType) const;
+    const EdgeT& edge(int x, int y, int z, DirectionType) const;
 
     ///@brief Get the specified edge.
     ///The direction id is using JR Direction
     /// (North, South, West, East) which is different from JR Driection
     /// (North, South, East, West)
-    EdgeT& edge(int x, int y, OrientationType dir);
+    EdgeT& edge(int x, int y, int z, OrientationType dir);
 
     ///@brief Get the specified edge, and the edge is read-only.
     ///The direction id is using JR Direction
     /// (North, South, West, East) which is different from JR Driection
     /// (North, South, East, West)
-    const EdgeT& edge(int x, int y, OrientationType dir) const;
+    const EdgeT& edge(int x, int y, int z, OrientationType dir) const;
 
 private:
 
@@ -65,81 +65,81 @@ private:
         VertexT v;
         EdgeT east;
         EdgeT south;
+        EdgeT down;
     };
-    boost::multi_array<Vertex, 2> plane_;
+    boost::multi_array<Vertex, 3> plane_;
 };
 
 template<class VertexT, class EdgeT>
-Plane<VertexT, EdgeT>::Plane(int xSize, int ySize) :
-        plane_(boost::extents[xSize][ySize]) {
+Plane3d<VertexT, EdgeT>::Plane3d(int xSize, int ySize, int zSize) :
+        plane_(boost::extents[xSize][ySize][zSize]) {
 }
 
 template<class VertexT, class EdgeT>
-Plane<VertexT, EdgeT>::Plane(const Plane& original) :
+Plane3d<VertexT, EdgeT>::Plane3d(const Plane3d& original) :
         plane_(original.plane_) {
 }
 
 template<class VertexT, class EdgeT>
-Plane<VertexT, EdgeT>::~Plane() {
+Plane3d<VertexT, EdgeT>::~Plane3d() {
 }
 
 template<class VertexT, class EdgeT>
-void Plane<VertexT, EdgeT>::operator=(const Plane& original) {
+void Plane3d<VertexT, EdgeT>::operator=(const Plane3d& original) {
     plane_ = original.plane_;
 }
 
 template<class VertexT, class EdgeT>
 inline
-void Plane<VertexT, EdgeT>::resize(int xSize, int ySize) {
-    plane_.resize(xSize, ySize);
+void Plane3d<VertexT, EdgeT>::resize(int xSize, int ySize, int zSize) {
+    plane_.resize(xSize, ySize, zSize);
 
 }
 
 template<class VertexT, class EdgeT>
 inline
-int Plane<VertexT, EdgeT>::getXSize() const {
+int Plane3d<VertexT, EdgeT>::getXSize() const {
     return plane_.size();
 }
 
 template<class VertexT, class EdgeT>
 inline
-int Plane<VertexT, EdgeT>::getYSize() const {
+int Plane3d<VertexT, EdgeT>::getYSize() const {
     return plane_[0].size();
 }
 
 template<class VertexT, class EdgeT>
 inline
-void Plane<VertexT, EdgeT>::reset() {
+void Plane3d<VertexT, EdgeT>::reset() {
     plane_.clear();
 }
 
 template<class VertexT, class EdgeT>
-inline VertexT& Plane<VertexT, EdgeT>::vertex(int x, int y) {
-    return plane_[x][y].v;
+inline VertexT& Plane3d<VertexT, EdgeT>::vertex(int x, int y, int z) {
+    return plane_[x][y][z].v;
 }
 
 template<class VertexT, class EdgeT>
-inline const VertexT& Plane<VertexT, EdgeT>::vertex(int x, int y) const {
-    return plane_[x][y].v;
+inline const VertexT& Plane3d<VertexT, EdgeT>::vertex(int x, int y, int z) const {
+    return plane_[x][y][z].v;
 }
 
 template<class VertexT, class EdgeT>
-inline EdgeT& Plane<VertexT, EdgeT>::edge(int x, int y, DirectionType dirType) {
+inline EdgeT& Plane3d<VertexT, EdgeT>::edge(int x, int y, int z, DirectionType dirType) {
 
     switch (dirType) {
     case DirectionType::DIR_EAST:
-        return plane_[x][y].east;
+        return plane_[x][y][z].east;
     case DirectionType::DIR_NORTH:
-        return plane_[x][y - 1].south;
+        return plane_[x][y - 1][z].south;
     case DirectionType::DIR_SOUTH:
-        return plane_[x][y].south;
+        return plane_[x][y][z].south;
     case DirectionType::DIR_WEST:
-        return plane_[x - 1][y].east;
+        return plane_[x - 1][y][z].east;
     case DirectionType::DIR_UP:
-
+        return plane_[x][y][z - 1].down;
     case DirectionType::DIR_DOWN:
-    default:
-        throw std::exception();
+        return plane_[x][y][z].down;
 
     }
     return plane_[x][y].east; //unreachable
@@ -147,21 +147,21 @@ inline EdgeT& Plane<VertexT, EdgeT>::edge(int x, int y, DirectionType dirType) {
 
 template<class VertexT, class EdgeT>
 inline const EdgeT&
-Plane<VertexT, EdgeT>::edge(int x, int y, DirectionType dirType) const {
-    return edge(x, y, dirType);
+Plane3d<VertexT, EdgeT>::edge(int x, int y, int z, DirectionType dirType) const {
+    return edge(x, y, z, dirType);
 }
 
 template<class VertexT, class EdgeT>
-inline EdgeT& Plane<VertexT, EdgeT>::edge(int x, int y, OrientationType JrDir) {
-    static const int Jr2JmTransferTable[4] = { 0, 1, 3, 2 };
+inline EdgeT& Plane3d<VertexT, EdgeT>::edge(int x, int y, int z, OrientationType JrDir) {
+    static const int Jr2JmTransferTable[6] = { 0, 1, 3, 2, 4, 5 };
     DirectionType dir = static_cast<DirectionType>(Jr2JmTransferTable[JrDir]);
-    return edge(x, y, dir);
+    return edge(x, y, z, dir);
 
 }
 
 template<class VertexT, class EdgeT>
 inline const EdgeT&
-Plane<VertexT, EdgeT>::edge(int x, int y, OrientationType JrDir) const {
-    return edge(x, y, JrDir);
+Plane3d<VertexT, EdgeT>::edge(int x, int y, int z, OrientationType JrDir) const {
+    return edge(x, y, z, JrDir);
 }
-#endif //INC_PLANE_H
+#endif //INC_PLANE3D_H

@@ -334,7 +334,7 @@ bool RangeRouter::inside_range(int left_x, int bottom_y, int right_x, int top_y,
 }
 
 void RangeRouter::query_range_2pin(int left_x, int bottom_y, int right_x, int top_y,                                //
-        std::vector<Two_pin_element_2d *> *twopin_list, VertexPlane<Point_fc>* gridCell) {
+        std::vector<Two_pin_element_2d *>& twopin_list, boost::multi_array<Point_fc, 2>& gridCell) {
 
     std::vector<Point_fc *> cell_list;
     int len;
@@ -343,7 +343,7 @@ void RangeRouter::query_range_2pin(int left_x, int bottom_y, int right_x, int to
 
     for (int i = left_x; i <= right_x; ++i)
         for (int j = bottom_y; j <= top_y; ++j) {
-            cell_list.push_back(&(gridCell->vertex(i, j)));
+            cell_list.push_back(&(gridCell.vertex(i, j)));
         }
 
     len = cell_list.size();
@@ -366,27 +366,28 @@ void RangeRouter::query_range_2pin(int left_x, int bottom_y, int right_x, int to
     ++done_counter;
 }
 
-void RangeRouter::specify_all_range(VertexPlane<Point_fc>*& gridCell) {
+void RangeRouter::specify_all_range(boost::multi_array<Point_fc, 2>& gridCell) {
     std::vector<Two_pin_element_2d *> twopin_list;
     std::vector<int> twopin_range_index_list;
 
-    expandMap = new VertexColorMap<int>(construct_2d_tree.rr_map.get_gridx(), construct_2d_tree.rr_map.get_gridy(), -1);
-    routeStateMap = new VertexColorMap<int>(construct_2d_tree.rr_map.get_gridx(), construct_2d_tree.rr_map.get_gridy(), -1);
+    int x = construct_2d_tree.rr_map.get_gridx();
+    int y = construct_2d_tree.rr_map.get_gridy();
+
+    expandMap(x, y, -1);
+    routeStateMap(x, y, -1);
 
     total_twopin = 0;
     for (int i = intervalCount - 1; i >= 0; --i) {
-        for (int s = range_vector.size() - 1; s >= 0; --s) {
-            delete range_vector[s];
-        }
+
         range_vector.clear();
         sort(interval_list[i].grid_edge_vector.begin(), interval_list[i].grid_edge_vector.end(), [&](const Grid_edge_element* a, const Grid_edge_element* b) {
             return comp_grid_edge(a,b);
         });
 
         for (int j = 0; j < (int) interval_list[i].grid_edge_vector.size(); ++j) {
-            int x = interval_list[i].grid_edge_vector[j]->grid->x;
-            int y = interval_list[i].grid_edge_vector[j]->grid->y;
-            int dir = interval_list[i].grid_edge_vector[j]->dir;
+            int x = interval_list[i].grid_edge_vector[j].grid.x;
+            int y = interval_list[i].grid_edge_vector[j].grid.y;
+            int dir = interval_list[i].grid_edge_vector[j].dir;
 
             int nei_x = x;
             int nei_y = y;
@@ -395,9 +396,9 @@ void RangeRouter::specify_all_range(VertexPlane<Point_fc>*& gridCell) {
             else
                 ++nei_y;
 
-            if ((expandMap.color(x, y) != i) || (expandMap.color(nei_x, nei_y) != i)) {
-                expandMap.color(x, y) = i;
-                expandMap.color(nei_x, nei_y) = i;
+            if ((expandMap[x][y] != i) || (expandMap[nei_x][nei_y] != i)) {
+                expandMap[x][y] = i;
+                expandMap[nei_x][nei_y] = i;
 
                 expand_range(x, y, nei_x, nei_y, i);
             }

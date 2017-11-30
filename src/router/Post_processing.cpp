@@ -2,7 +2,6 @@
 #include "Post_processing.h"
 #include "../misc/geometry.h"
 #include <algorithm>
-using namespace Jm;
 
 #include "MM_mazeroute.h"
 #include "Route_2pinnets.h"
@@ -20,57 +19,7 @@ int Post_processing::comp(const COUNTER& a, const COUNTER& b) {
         return false;
 }
 
-//Check if the specified edge is not overflowed
-//Return false if the edge is overflowed
-bool Post_processing::check_path_no_overflow(vector<Coordinate_2d*>& path, int net_id, int inc_flag) {
-    for (int i = path.size() - 2; i >= 0; --i) {
-        Coordinate_2d& coord = *path[i];
 
-        int dir = construct_2d_tree.get_direction_2d(coord, path[i + 1]);
-        //There are two modes:
-        // 1. inc_flag = 0: Just report if the specified edge is overflowd
-        // 2. inc_flag = 1: Check if the specified edge will be overflowed if wd add a demond on it.
-        if (inc_flag == 0) {
-            if (construct_2d_tree.congestionMap2d.edge(coord.x, coord.y, dir).isOverflow())
-                return false;
-        } else {
-            int inc = 1;
-            //If there is another 2-pin net from the same net is using the specified edge,
-            //then we don't need to increase a demand on it. We can use the edge directly
-            if (construct_2d_tree.congestionMap2d.edge(coord.x, coord.y, dir).lookupNet(net_id))
-                inc = 0;
-
-            if (construct_2d_tree.congestionMap2d.edge(coord.x, coord.y, dir).cur_cap + inc > construct_2d_tree.congestionMap2d.edge(coord.x, coord.y, dir).max_cap)
-                return false;
-        }
-    }
-    return true;
-}
-
-//Obtain a cost of a path, including via cost.
-void Post_processing::compute_path_total_cost_and_distance(Two_pin_element_2d& element, Monotonic_element& mn) {
-    int distance;
-    int pre_dir = -1;
-
-    mn.total_cost = 0;
-    mn.distance = 0;
-    mn.via_num = 0;
-    for (int i = element.path.size() - 2; i >= 0; --i) {
-        int dir = construct_2d_tree.get_direction_2d(element.path[i], element.path[i + 1]);
-        mn.total_cost += construct_2d_tree.get_cost_2d(element.path[i].xx(), element.path[i].yy(), dir, element.net_id, &distance);
-        mn.distance += distance;
-        if (pre_dir != -1) {
-            //if the wire need to bend, then we need to add via cost to it
-            if ((pre_dir < 2 && dir >= 2) || (pre_dir >= 2 && dir < 2)) {
-                mn.via_num += construct_2d_tree.via_cost;
-                if (construct_2d_tree.used_cost_flag == HISTORY_COST) {
-                    mn.total_cost += construct_2d_tree.via_cost;
-                }
-            }
-        }
-        pre_dir = dir;
-    }
-}
 
 void Post_processing::initial_for_post_processing() {
     int i, j, edge_idx, x_dir, y_dir, x, y, id;

@@ -1,12 +1,11 @@
 #ifndef INC_REOUTE_2PINNETS_H
 #define INC_REOUTE_2PINNETS_H
 
+#include <boost/multi_array.hpp>
 #include <functional>
 #include <vector>
 
-#include "../grdb/plane.h"
-#include "../util/traversemap.h"
-#include "Construct_2d_tree.h"
+#include "DataDef.h"
 #include "Range_router.h"
 
 class Two_pin_element_2d;
@@ -28,14 +27,14 @@ public:
 
 struct Route_2pinnets {
 
-    VertexPlane<Point_fc> gridcell; //This is some kind of color map, for recording
+    boost::multi_array<Point_fc,2> gridcell; //This is some kind of color map, for recording
                                     //which 2-pin net passed which gCell
 
-    VertexColorMap<int> traverseMap;   //This color map is used by
+    boost::multi_array<int,2> traverseMap;   //This color map is used by
     //bfs_for_find_two_pin_list()
     //for recording which tiles are traversed
 
-    VertexColorMap<int> terminalMap;  //This color map is used by
+    boost::multi_array<int,2> terminalMap;  //This color map is used by
     //determine_is_terminal_or_steiner_point()
     //for recording which tiles contains terminal
 

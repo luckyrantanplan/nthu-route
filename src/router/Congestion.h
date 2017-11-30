@@ -26,7 +26,7 @@ struct CacheEdge {
 class Congestion {
 public:
 
-    std::function<void(int i, int j, int dir)> pre_evaluate_congestion_cost_fp;
+    std::function<void(int i, int j, OrientationType dir)> pre_evaluate_congestion_cost_fp;
 
     int via_cost;
     int used_cost_flag;
@@ -36,13 +36,14 @@ public:
 
     EdgePlane<Edge_2d> congestionMap2d;
     EdgePlane<CacheEdge> cache;
-    Congestion();
+    Congestion(int x, int y);
     virtual ~Congestion();
     double get_cost_2d(int i, int j, OrientationType dir, int net_id, int *distance);
     int cal_max_overflow();
     void pre_evaluate_congestion_cost_all(int i, int j, OrientationType dir);
     void pre_evaluate_congestion_cost();
-
+    bool check_path_no_overflow(std::vector<Coordinate_2d*>&path, int net_id, int inc_flag);
+    int find_overflow_max();
 };
 
 #endif /* SRC_ROUTER_CONGESTION_H_ */

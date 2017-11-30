@@ -23,10 +23,10 @@ Route_2pinnets::Route_2pinnets(Construct_2d_tree& construct_2d_tree, RangeRouter
 
 void Route_2pinnets::allocate_gridcell() {
 
-    for (int x = rr_map.get_gridx() - 1; x >= 0; --x) {
-        for (int y = rr_map.get_gridy() - 1; y >= 0; --y) {
-            gridcell.vertex(x, y).x = x;
-            gridcell.vertex(x, y).y = y;
+    for (int x = gridcell.size() - 1; x >= 0; --x) {
+        for (int y = gridcell[0].size() - 1; y >= 0; --y) {
+            gridcell[x][y].x = x;
+            gridcell[x][y].y = y;
         }
     }
 

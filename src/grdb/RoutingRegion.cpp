@@ -3,7 +3,6 @@
 #include "../misc/geometry.h"
 
 using namespace std;
-using namespace Jm;
 
 /***************
  RoutingRegion

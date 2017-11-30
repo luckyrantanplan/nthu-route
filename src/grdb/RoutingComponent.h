@@ -123,7 +123,7 @@ typedef std::vector<Net> NetList;
 inline
 void RoutingSpace::resize(int x, int y, int z) {
     //routingSpace_.resize(x, y , z);
-    routingSpace_.resize(z, Plane<Tile, RoutingEdge>(x, y, Tile(), RoutingEdge()));
+    routingSpace_.resize(z, Plane<Tile, RoutingEdge>(x, y));
     wireWidth.resize(z);
     wireSpacing.resize(z);
     viaSpacing.resize(z);

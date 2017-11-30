@@ -1,14 +1,13 @@
 #ifndef INC_VERIFIER_H
 #define INC_VERIFIER_H
 
-#include "traversemap.h"
-
-#include "../grdb/RoutingRegion.h"
-#include "../grdb/plane.h"
-#include "../misc/filehandler.h"
-
 #include <string>
 #include <vector>
+
+#include "../misc/filehandler.h"
+#include "../grdb/plane3d.h"
+
+class RoutingRegion;
 
 class WireSegment {
 public:
@@ -59,7 +58,7 @@ public:
 
 private:
     struct RoutingTile {
-        RoutingTile(int color, int viaCutCount) :
+        RoutingTile(int color = -1, int viaCutCount = 0) :
                 color(color), viaCutCount(viaCutCount) {
         }
         ///Used for checking wire connectivity
@@ -92,7 +91,7 @@ private:
     std::vector<WireSegments>* netWires;  ///<Wire information of nets
     ///The tile count that passed by a net
     std::vector<int>* netTileNum;
-    std::vector<Plane<RoutingTile, RoutingEdge> >* routingSpace_;
+    std::vector<Plane3d<RoutingTile, RoutingEdge> > routingSpace_;
     int XYWireLength;
     int viaWireLength;
     int overflow;

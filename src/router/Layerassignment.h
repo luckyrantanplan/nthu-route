@@ -1,13 +1,18 @@
 #ifndef INC_LAYER_ASSIGNMENT_H
 #define INC_LAYER_ASSIGNMENT_H
 
+#include <boost/multi_array.hpp>
 #include <array>
 #include <memory>
-#include <set>
+#include <string>
 #include <vector>
 
+#include "../grdb/EdgePlane3d.h"
+#include "../grdb/plane.h"
 #include "../misc/geometry.h"
-#include "Construct_2d_tree.h"
+#include "DataDef.h"
+
+struct Construct_2d_tree;
 
 struct ans {
     int idx;
@@ -86,7 +91,7 @@ struct ZLayerInfo {
 
 struct LayerInfo {
     PATH_NODE path;
-    OVERFLOW_NODE overflow;
+
     std::vector<ZLayerInfo> zLayerInfo;
 
 };
@@ -96,8 +101,12 @@ struct Layer_assignment {
     char follow_prefer_direction;
     //enum {GREEDY, SHORT_PATH};
     int l_option;
-    int max_xx, max_yy, max_zz, overflow_max, *prefer_idx;
-    std::vector<std::vector<std::vector<Coordinate_3d>>> coord_3d_map;
+    int max_xx;
+    int max_yy;
+    int max_zz;
+    int overflow_max;
+    int *prefer_idx;
+    boost::multi_array<Coordinate_3d, 3> coord_3d_map;
     int i_router, i_test_case, i_order, i_method;
     const char temp_buf[1000] = "1000";
 
@@ -106,23 +115,22 @@ struct Layer_assignment {
     std::vector<AVERAGE_NODE> average_order;
     std::vector<NET_INFO_NODE> net_info;
     std::vector<MULTIPIN_NET_NODE> multi_pin_net;
-    std::vector<std::vector<PATH_NODE>> path_map;
-    std::vector<std::vector<std::vector<KLAT_NODE>>> klat_map;
-    std::vector<std::vector<OVERFLOW_NODE>> overflow_map;
+    boost::multi_array<PATH_NODE, 2> path_map;
+    boost::multi_array<KLAT_NODE, 3> klat_map;
+    boost::multi_array<OVERFLOW_NODE, 2> overflow_map;
     std::vector<UNION_NODE> group_set;
     std::array<LENGTH_NODE, 1000> length_count;
-    std::vector<std::vector<std::vector<VIADENSITY_NODE>>> viadensity_map;
-    std::vector<std::vector<std::vector<PATH_VERTEX_3D>>> path_map_3d;
-    std::vector<std::vector<LayerInfo>> layerInfo_map;
+    boost::multi_array<VIADENSITY_NODE, 3> viadensity_map;
+    Plane<LayerInfo, int> layerInfo_map;  //edge are overflow
     Construct_2d_tree& construct_2d_tree;
-    std::vector<std::vector<std::vector<Vertex_3d>>>& cur_map_3d;
+    EdgePlane3d<Edge_3d> cur_map_3d;
 
     const int plane_dir[4][2] = { { 0, 1 }, { 0, -1 }, { -1, 0 }, { 1, 0 } };   // F B L R
     const int cube_dir[6][3] = { { 0, 1, 0 }, { 0, -1, 0 }, { -1, 0, 0 }, { 1, 0, 0 }, { 0, 0, 1 }, { 0, 0, -1 } }; // F B L R U D
     int global_net_id, global_x, global_y, global_max_layer, global_pin_num, global_pin_cost = 0, global_xy_reduce = 0, global_BFS_xy = 0;
     int min_DP_val, min_DP_idx[4], max_DP_k, min_DP_k, min_DP_via_cost;
     int total_pin_number = 0;
-    std::vector<std::vector<std::vector<int>>> BFS_color_map;
+    boost::multi_array<int, 3> BFS_color_map;
     int temp_global_pin_cost, temp_global_xy_cost, after_xy_cost;
 
     int is_used_for_BFS[1300][1300];
@@ -130,11 +138,11 @@ struct Layer_assignment {
     int global_increase_vo;
 
     void print_max_overflow();
-    void find_overflow_max();
+
     void initial_3D_coordinate_map();
     void initial_overflow_map();
     void malloc_space();
-    void update_cur_map_for_klat_xy(int cur_idx, Coordinate_2d *start, Coordinate_2d *end, int net_id);
+    void update_cur_map_for_klat_xy(int cur_idx, const Coordinate_2d& start, const Coordinate_2d& end, int net_id);
     void update_cur_map_for_klat_z(int pre_idx, int cur_idx, Coordinate_2d *start, int net_id);
     void update_path_for_klat(Coordinate_2d *start);
     void cycle_reduction(int x, int y);
@@ -160,7 +168,8 @@ struct Layer_assignment {
     void calculate_cap();
     void generate_all_output();
     Layer_assignment(const std::string& outputFileNamePtr, Construct_2d_tree& onstruct_2d_tree);
-
+    void init_3d_map();
+    void output_3d_map();
 };
 
 #endif //INC_LAYER_ASSIGNMENT_H

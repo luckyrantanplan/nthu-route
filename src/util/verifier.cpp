@@ -1,15 +1,15 @@
 #include "verifier.h"
-#include "traversemap.h"
+
+#include <algorithm>
+#include <cstdlib>
+#include <cstring>
+#include <iostream>
+#include <iterator>
 
 #include "../grdb/parser.h"
-#include "../grdb/RoutingRegion.h"
-#include "../grdb/RoutingComponent.h"
-#include "../misc/filehandler.h"
 
-#include <string>
-#include <iostream>
-#include <cmath>
-#include <cstring>
+#include "../grdb/RoutingComponent.h"
+#include "../misc/geometry.h"
 
 #define MAX_STRING_BUFER_LENGTH 1024
 
@@ -77,10 +77,8 @@ void Verifier::initialVerifierMemorySpace() {
     netWires = new vector<WireSegments>(rr->get_netNumber());
     netTileNum = new vector<int>(rr->get_netNumber(), 0);
 
-    routingSpace_ = new vector<Plane<RoutingTile, RoutingEdge> >(this->rr->get_layerNumber(),
-            Plane<RoutingTile, RoutingEdge>(this->rr->get_gridx(), this->rr->get_gridy(), RoutingTile(-1, 0), RoutingEdge(-1, 0), 3   //Because we need use this plane to check duplicate wires, so
-                                                                                                                                      //3 routing edges per routing tile is needed.
-                    ));
+    routingSpace_.resize(rr->get_layerNumber(),
+            Plane3d<RoutingTile, RoutingEdge>(this->rr->get_gridx(), this->rr->get_gridy(),1   ));
 }
 
 void Verifier::releaseMemory() {

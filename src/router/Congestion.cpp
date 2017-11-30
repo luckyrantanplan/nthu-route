@@ -8,16 +8,17 @@
 #include "Congestion.h"
 #include "../misc/geometry.h"
 
-Congestion::Congestion() {
+Congestion::Congestion(int x, int y) :
+        congestionMap2d { x, y }, //
+        cache { x, y } {
     exponent = 5.0;
     WL_Cost = 1.0;
     via_cost = 3;
     factor = 1.0;
+
     used_cost_flag = FASTROUTE_COST;    // cost function type, i.e., HISTORY_COST, HISTORY_MADEOF_COST, MADEOF_COST, FASTROUTE_COST
     pre_evaluate_congestion_cost_fp = [&](int i, int j, OrientationType dir) {pre_evaluate_congestion_cost_all( i, j, dir);};
 
-
-    cache.resize( rr_map.get_gridx(), rr_map.get_gridy());
 }
 
 Congestion::~Congestion() {
@@ -125,4 +126,72 @@ void Congestion::pre_evaluate_congestion_cost() {
             }
         }
     }
+}
+
+//Check if the specified edge is not overflowed
+//Return false if the edge is overflowed
+bool Congestion::check_path_no_overflow(std::vector<Coordinate_2d*>& path, int net_id, int inc_flag) {
+    for (int i = path.size() - 2; i >= 0; --i) {
+        Coordinate_2d& coord = *path[i];
+
+        Edge_2d& edge = congestionMap2d.edge(coord.x, coord.y, Coordinate_2d::get_direction(coord, *path[i + 1]));
+        //There are two modes:
+        // 1. inc_flag = 0: Just report if the specified edge is overflowd
+        // 2. inc_flag = 1: Check if the specified edge will be overflowed if wd add a demond on it.
+        if (inc_flag == 0) {
+            if (edge.isOverflow()) {
+                return false;
+            }
+        } else {
+            int inc = 1;
+            //If there is another 2-pin net from the same net is using the specified edge,
+            //then we don't need to increase a demand on it. We can use the edge directly
+            if (edge.lookupNet(net_id))
+                inc = 0;
+
+            if (edge.cur_cap + inc > edge.max_cap)
+                return false;
+        }
+    }
+    return true;
+}
+
+int Congestion::find_overflow_max() {
+
+    int overflow_max = 0;
+    for (int i = 0; i < congestionMap2d.edgePlane_.num_elements(); ++i) {
+        Edge_2d& edge = congestionMap2d.edgePlane_.data()[i];
+        if (edge.overUsage() > overflow_max) {
+            overflow_max = edge.overUsage();
+        }
+    }
+
+    printf("2D maximum overflow = %d\n", overflow_max);
+#ifdef MAX_OVERFLOW_CONSTRAINT
+#ifdef FOLLOW_PREFER
+    if (follow_prefer_direction == 1)
+    {
+        if (overflow_max % (max_zz / 2))
+        overflow_max = ((overflow_max / (max_zz / 2)) << 1) + 2;
+        else
+        overflow_max = ((overflow_max / (max_zz / 2)) << 1);
+    }
+    else
+    {
+        if (overflow_max % max_zz)
+        overflow_max = ((overflow_max / max_zz) << 1) + 2;
+        else
+        overflow_max = ((overflow_max / max_zz) << 1);
+    }
+#else
+    if (overflow_max % max_zz)
+    overflow_max = ((overflow_max / max_zz) << 1) + 2;
+    else
+    overflow_max = ((overflow_max / max_zz) << 1);
+#endif
+#else
+    overflow_max <<= 1;
+#endif
+    printf("overflow max = %d\n", overflow_max);
+    return overflow_max;
 }

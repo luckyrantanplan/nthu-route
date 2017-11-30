@@ -100,7 +100,7 @@ RoutingSpace::RoutingSpace(int x, int y, int z) :
 //routingSpace_(z, Plane<Tile, RoutingEdge>(x, y, Tile(), RoutingEdge(0)))
 
 {
-    routingSpace_ = std::vector<Plane<Tile, RoutingEdge> >(z, Plane<Tile, RoutingEdge>(x, y, Tile()));
+    routingSpace_ = std::vector<Plane<Tile, RoutingEdge> >(z, Plane<Tile, RoutingEdge>(x, y));
     assignTileCoordinate();
 }
 

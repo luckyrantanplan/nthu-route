@@ -1,14 +1,15 @@
 #ifndef INC_MM_MAZEROUTE_H
 #define INC_MM_MAZEROUTE_H
 
+#include <boost/multi_array.hpp>
 #include <stddef.h>
 #include <functional>
 #include <queue>
 #include <vector>
 
-#include "../grdb/VertexPlane.h"
 #include "../misc/geometry.h"
-#include "Post_processing.h"
+
+struct Construct_2d_tree;
 
 using namespace std;
 
@@ -90,7 +91,8 @@ private:
 
 private:
     Construct_2d_tree& construct_2d_tree;
-    VertexPlane<MMM_element> *mmm_map;
+    boost::multi_array<MMM_element, 2> mmm_map;
+
     vector<vector<Vertex_mmm*> > net_tree;
     MMMPriortyQueue pqueue;
     Two_pin_element_2d *element;

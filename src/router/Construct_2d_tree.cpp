@@ -1,19 +1,25 @@
 #include "Construct_2d_tree.h"
 
 #include <bits/move.h>
+#include <boost/multi_array/base.hpp>
 #include <algorithm>
 #include <climits>
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
 #include <iterator>
+#include <memory>
+#include <unordered_map>
 #include <utility>
-#include "Route_2pinnets.h"
+
 #include "../flute/flute-function.h"
 #include "../flute/flute4nthuroute.h"
 #include "../grdb/RoutingComponent.h"
 #include "../grdb/RoutingRegion.h"
-#include "MM_mazeroute.h"
+#include "Congestion.h"
+#include "MonotonicRouting.h"
 #include "Range_router.h"
+#include "Route_2pinnets.h"
 
 using namespace std;
 
@@ -119,55 +125,7 @@ void Construct_2d_tree::allocate_coor_array() {
 
 }
 
-void Construct_2d_tree::init_3d_map() {
 
-    /*allocate space for cur_map_3d*/
-
-    int x = rr_map.get_gridx();
-    int y = rr_map.get_gridy();
-    int z = rr_map.get_layerNumber();
-    cur_map_3d.resize(boost::extents[x][y][z]);
-
-    for (int i = 0; i < x; ++i) {
-        for (int j = 0; j < y; ++j) {
-            for (int k = 0; k < z; ++k) {
-                if (i + 1 < x) {
-                    std::shared_ptr<Edge_3d> newedge = std::make_shared<Edge_3d>(); /*allocate space for edge_list without initialization*/
-                    cur_map_3d[i][j][k].edge_list[RIGHT] = newedge;
-                    cur_map_3d[i + 1][j][k].edge_list[LEFT] = newedge;
-                }
-                if (j + 1 < y) {
-                    std::shared_ptr<Edge_3d> newedge = std::make_shared<Edge_3d>();
-                    cur_map_3d[i][j][k].edge_list[FRONT] = newedge;
-                    cur_map_3d[i][j + 1][k].edge_list[BACK] = newedge;
-                }
-                if (k + 1 < z) {
-                    std::shared_ptr<Edge_3d> newedge = std::make_shared<Edge_3d>();
-                    cur_map_3d[i][j][k].edge_list[UP] = newedge;
-                    cur_map_3d[i][j][k + 1].edge_list[DOWN] = newedge;
-                }
-            }
-        }
-    }
-
-    for (int j = 0; j < y; ++j) {
-        for (int k = 0; k < z; ++k) {
-            cur_map_3d[0][j][k].edge_list[LEFT] = nullptr;
-            cur_map_3d[x - 1][j][k].edge_list[RIGHT] = nullptr;
-        }
-    }
-    for (int i = 0; i < x; ++i) {
-        for (int k = 0; k < z; ++k) {
-            cur_map_3d[i][0][k].edge_list[BACK] = nullptr;
-            cur_map_3d[i][y - 1][k].edge_list[FRONT] = nullptr;
-        }
-        for (int j = 0; j < y; ++j) {
-            cur_map_3d[i][j][0].edge_list[DOWN] = nullptr;
-            cur_map_3d[i][j][z - 1].edge_list[UP] = nullptr;
-        }
-    }
-
-}
 
 void Construct_2d_tree::init_2pin_list() {
     int i, netnum;
@@ -1255,31 +1213,7 @@ void Construct_2d_tree::output_2_pin_list() {
     });
 }
 
-/*used for stage2
- return the maximum overflow=cur_cap/max_cap
- update 0307:only assign max_cap to cur_3d_map
- */
-void Construct_2d_tree::output_3d_map() {
-    int i, j, k;
 
-//assign max_cap to cur_3d_map
-    for (i = 0; i < rr_map.get_gridx() - 1; ++i)
-        for (j = 0; j < rr_map.get_gridy(); ++j)
-            for (k = 0; k < rr_map.get_layerNumber(); ++k) {
-                cur_map_3d[i][j][k].edge_list[RIGHT]->max_cap = rr_map.capacity(k, i, j, i + 1, j);
-            }
-    for (i = 0; i < rr_map.get_gridx(); ++i)
-        for (j = 0; j < rr_map.get_gridy() - 1; ++j)
-            for (k = 0; k < rr_map.get_layerNumber(); ++k) {
-                cur_map_3d[i][j][k].edge_list[FRONT]->max_cap = rr_map.capacity(k, i, j, i, j + 1);
-            }
-
-#ifdef DEBUG1
-    print_cap_3d("max");
-    print_cap_3d("cur");
-#endif	
-
-}
 
 /*stage 1: contruct 2d steiner tree
  output 2-pin list to stage2
@@ -1321,7 +1255,7 @@ Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterS
     allocate_coor_array();          // Make an 2D coordinate array which contains the (x, y) information
 
     if (routing_parameter.get_monotonic_en()) {
-        allocate_monotonic();           // Allocate the memory for storing the data while searching monotonic path
+        //allocate_monotonic();           // Allocate the memory for storing the data while searching monotonic path
 // 1. A 2D array that stores max congestion
 // 2. A 2D array that stores parent (x,y) during finding monotonic path
     }
@@ -1405,3 +1339,15 @@ Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterS
     post_processing.process(route_2pinnets);
 }
 
+inline void Construct_2d_tree::printMemoryUsage(const char* msg) {
+    std::cout << msg << std::endl;
+    //for print out memory usage
+    std::ifstream mem("/proc/self/status");
+    std::string memory;
+    for (unsigned i = 0; i < 13; ++i) {
+        getline(mem, memory);
+        if (i > 10) {
+            std::cout << memory << std::endl;
+        }
+    }
+}

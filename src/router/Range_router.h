@@ -59,12 +59,12 @@ public:
     int intervalCount;
 
     Construct_2d_tree& construct_2d_tree;
+    boost::multi_array<int, 2> expandMap;   //This color map is used by
 
-    VertexColorMap<int> expandMap;   //This color map is used by
     //expand_range()
     //for recording which edges have expanded
     //
-    VertexColorMap<int> routeStateMap; //This color map is used by
+    boost::multi_array<int, 2> routeStateMap; //This color map is used by
     //query_range_2pin()
     //for recording if all the 2-pin nets which
     //locate on the same tile are routed
@@ -73,7 +73,7 @@ public:
 
     void define_interval();
     void divide_grid_edge_into_interval();
-    void specify_all_range(VertexPlane<Point_fc> & gridCell);
+    void specify_all_range(boost::multi_array<Point_fc, 2> & gridCell);
 
     bool double_equal(double a, double b);
     bool comp_grid_edge(const Grid_edge_element& a, const Grid_edge_element& b);
@@ -84,7 +84,7 @@ public:
     void range_router(Two_pin_element_2d& two_pin);
     bool inside_range(int left_x, int bottom_y, int right_x, int top_y, Coordinate_2d& pt);
     void query_range_2pin(int left_x, int bottom_y, int right_x, int top_y, //
-            std::vector<Two_pin_element_2d>& twopin_list, VertexPlane<Point_fc>& gridCell);
+            std::vector<Two_pin_element_2d>& twopin_list, boost::multi_array<Point_fc, 2>& gridCell);
 
 };
 

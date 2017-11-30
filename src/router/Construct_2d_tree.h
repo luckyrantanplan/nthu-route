@@ -3,16 +3,11 @@
 
 #include <boost/multi_array.hpp>
 #include <array>
-#include <functional>
-#include <iostream>
 #include <map>
 #include <set>
-#include <string>
 #include <vector>
 
 #include "../flute/flute-ds.h"
-#include "../grdb/EdgePlane.h"
-#include "../misc/geometry.h"
 #include "../util/traversemap.h"
 #include "DataDef.h"
 #include "MM_mazeroute.h"
@@ -43,7 +38,7 @@ struct Construct_2d_tree {
     double max_congestion_factor;
     int fail_find_path_count;
 
-    boost::multi_array<Vertex_3d, 3> cur_map_3d;
+
     std::vector<Two_pin_element> all_two_pin_list;
 
     RoutingRegion& rr_map;
@@ -80,26 +75,15 @@ struct Construct_2d_tree {
         return (a.boxSize() > b.boxSize());
     }
 
-    inline
-    void printMemoryUsage(const char* msg) {
-        std::cout << msg << std::endl;
-        //for print out memory usage
-        std::ifstream mem("/proc/self/status");
-        std::string memory;
-        for (unsigned i = 0; i < 13; ++i) {
-            getline(mem, memory);
-            if (i > 10) {
-                std::cout << memory << std::endl;
-            }
-        }
-    }
+
+    void printMemoryUsage(const char* msg);
 
 
 
 
     int cal_total_wirelength();
-    void init_3d_map();
-    void output_3d_map();
+
+
 
     void init_2d_map();
     void allocate_coor_array();
@@ -124,5 +108,7 @@ struct Construct_2d_tree {
     Construct_2d_tree(RoutingParameters& routingparam, ParameterSet& param, RoutingRegion& rr);
 
 };
+
+
 
 #endif /* _CONSTRUCT_2D_TREE_H_ */

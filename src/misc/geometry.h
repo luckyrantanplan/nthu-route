@@ -220,7 +220,7 @@ public:
             return FRONT;
     }
 
-    static int get_direction(const Coordinate_2d& a, const Coordinate_2d& b) {
+    static OrientationType get_direction(const Coordinate_2d& a, const Coordinate_2d& b) {
         assert(!(a.x != b.x && a.y != b.y));
 
         if (a.x != b.x) {
@@ -247,6 +247,11 @@ public:
 public:
     Coordinate_3d(int x = 0, int y = 0, int z = 0) :
             x(x), y(y), z(z) {
+    }
+    void set(int ix, int iy, int iz) {
+        x = ix;
+        y = iy;
+        z = iz;
     }
 
 };
