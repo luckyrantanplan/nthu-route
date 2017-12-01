@@ -64,7 +64,7 @@ void Post_processing::initial_for_post_processing() {
 
     std::sort(counter.begin(), counter.end(), [&](COUNTER& a,COUNTER& b ) {return comp(a,b);});	// sort by flag
 
-    Monotonic_element mn;
+
     // According other attribute to do maze routing
     for (i = 0; i < (int) construct_2d_tree.two_pin_list.size(); ++i) {
         id = counter[i].id;
@@ -81,10 +81,13 @@ void Post_processing::initial_for_post_processing() {
             construct_2d_tree.update_congestion_map_remove_two_pin_net(twopList);
 
             bound_path = new vector<Coordinate_2d*>(twopList.path);
+
+            Monotonic_element mn;
             compute_path_total_cost_and_distance(twopList, &mn);
             bound_cost = mn.total_cost;
             bound_distance = mn.distance;
             bound_via_num = mn.via_num;
+
             twopList.path.clear();
 
             if (construct_2d_tree.routing_parameter.get_monotonic_en()) {

@@ -193,12 +193,6 @@ public:
     int x;
     int y;
 
-    int xx() {
-        return x;
-    }
-    int yy() {
-        return y;
-    }
 public:
     Coordinate_2d(int x = 0, int y = 0) :
             x { x }, y { y } {

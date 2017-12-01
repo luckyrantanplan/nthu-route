@@ -1,15 +1,18 @@
 #include "Range_router.h"
 
 #include <algorithm>
+#include <array>
+#include <initializer_list>
 #include <iterator>
 
+#include "../grdb/EdgePlane.h"
 #include "../grdb/RoutingRegion.h"
-#include "../misc/geometry.h"
+#include "Congestion.h"
 #include "Construct_2d_tree.h"
 #include "MM_mazeroute.h"
+#include "MonotonicRouting.h"
 #include "parameter.h"
 #include "Post_processing.h"
-#include "Route_2pinnets.h"
 
 using namespace std;
 
@@ -23,7 +26,7 @@ bool RangeRouter::double_equal(double a, double b) {
 
 /*sort grid_edge in decending order*/
 bool RangeRouter::comp_grid_edge(const Grid_edge_element& a, const Grid_edge_element& b) {
-    return construct_2d_tree.congestionMap2d.edge(a.grid.x, a.grid.y, a.dir).congestion() > construct_2d_tree.congestionMap2d.edge(b.grid.x, b.grid.y, b.dir).congestion();
+    return congestion.congestionMap2d.edge(a.grid.x, a.grid.y, a.dir).congestion() > congestion.congestionMap2d.edge(b.grid.x, b.grid.y, b.dir).congestion();
 }
 
 /*
@@ -31,56 +34,17 @@ bool RangeRouter::comp_grid_edge(const Grid_edge_element& a, const Grid_edge_ele
  and also compute average congestion value (sum of demand / sum of capacity)
  */
 void RangeRouter::define_interval() {
-    min_congestion = 1000000;
-    max_congestion = -1000000;
-    avg_congestion = 0;
-    num_of_grid_edge = 0;
-    double edgeCongestion;
 
-    RoutingRegion& rr_map = construct_2d_tree.rr_map;
-    for (int i = rr_map.get_gridx() - 1; i >= 0; --i) {
-        for (int j = rr_map.get_gridy() - 2; j >= 0; --j) {
-            edgeCongestion = construct_2d_tree.congestionMap2d.edge(i, j, DIR_NORTH).congestion();
-            if (edgeCongestion > 1.0) {
-                if (edgeCongestion < min_congestion)
-                    min_congestion = edgeCongestion;
-                if (edgeCongestion > max_congestion)
-                    max_congestion = edgeCongestion;
-                avg_congestion += edgeCongestion;
-                ++num_of_grid_edge;
-            }
-        }
+    Congestion::Statistic s = congestion.stat_congestion();
+
+    interval_list[0].begin_value = s.max;
+
+    for (int i = 1; i < interval_list.size(); ++i) {
+        interval_list[i - 1].end_value = interval_list[i].begin_value = s.max - ((double) i / interval_list.size()) * (s.max - 1.0);
     }
-
-    for (int i = rr_map.get_gridx() - 2; i >= 0; --i) {
-        for (int j = rr_map.get_gridy() - 1; j >= 0; --j) {
-            edgeCongestion = construct_2d_tree.congestionMap2d.edge(i, j, DIR_EAST).congestion();
-            if (edgeCongestion > 1.0) {
-                if (edgeCongestion < min_congestion)
-                    min_congestion = edgeCongestion;
-                if (edgeCongestion > max_congestion)
-                    max_congestion = edgeCongestion;
-                avg_congestion += edgeCongestion;
-                ++num_of_grid_edge;
-            }
-        }
-    }
-
-    avg_congestion /= num_of_grid_edge;
-
-    interval_list[0].begin_value = max_congestion;
-    if (max_congestion >= 2)
-        construct_2d_tree.max_congestion_factor = 2.0;
-    else
-        construct_2d_tree.max_congestion_factor = max_congestion;
-
-    for (int i = 1; i < intervalCount; ++i) {
-        interval_list[i - 1].end_value = interval_list[i].begin_value = max_congestion - ((double) i / intervalCount) * (max_congestion - 1.0);
-    }
-    interval_list[intervalCount - 1].end_value = 1;
-    for (int i = 0; i < intervalCount; ++i) {
-
-        interval_list[i].grid_edge_vector.clear();
+    interval_list[interval_list.size() - 1].end_value = 1;
+    for (Interval_element& ele : interval_list) {
+        ele.grid_edge_vector.clear();
     }
 #ifdef MESSAGE
     printf("interval value: ");
@@ -92,31 +56,31 @@ void RangeRouter::define_interval() {
 }
 
 void RangeRouter::insert_to_interval(double cong_value, Coordinate_2d& coor_2d, int dir) {
-    int i;
-    for (i = intervalCount - 1; i >= 0; --i) {
-        if (((cong_value < interval_list[i].begin_value) || (double_equal(cong_value, interval_list[i].begin_value) == true)) && cong_value > interval_list[i].end_value) {
-            interval_list[i].grid_edge_vector.push_back(Grid_edge_element(coor_2d, dir));
+
+    for (int i = interval_list.size() - 1; i >= 0; --i) {
+        Interval_element& ele = interval_list[i];
+        if (((cong_value < ele.begin_value) || double_equal(cong_value, ele.begin_value)) && cong_value > ele.end_value) {
+            ele.grid_edge_vector.push_back(Grid_edge_element(coor_2d, dir));
             return;
         }
     }
 }
 
 void RangeRouter::divide_grid_edge_into_interval() {
-    double tmp;
-    RoutingRegion& rr_map = construct_2d_tree.rr_map;
-    for (int i = 0; i < rr_map.get_gridx() - 1; ++i) {
-        for (int j = 0; j < rr_map.get_gridy(); ++j) {
-            tmp = construct_2d_tree.congestionMap2d.edge(i, j, DIR_EAST).congestion();
-            if (tmp > 1)
-                insert_to_interval(tmp, construct_2d_tree.coor_array[i][j], RIGHT);
-        }
-    }
 
-    for (int i = 0; i < rr_map.get_gridx(); ++i) {
-        for (int j = 0; j < rr_map.get_gridy() - 1; ++j) {
-            tmp = construct_2d_tree.congestionMap2d.edge(i, j, DIR_NORTH).congestion();
-            if (tmp > 1)
-                insert_to_interval(tmp, construct_2d_tree.coor_array[i][j], FRONT);
+    RoutingRegion& rr_map = construct_2d_tree.rr_map;
+    for (int i = 0; i < congestion.congestionMap2d.getXSize() - 1; ++i) {
+        for (int j = 0; j < congestion.congestionMap2d.getYSize(); ++j) {
+            {
+                double tmp = congestion.congestionMap2d.edge(i, j, DIR_EAST).congestion();
+                if (tmp > 1)
+                    insert_to_interval(tmp, construct_2d_tree.coor_array[i][j], RIGHT);
+            }
+            {
+                double tmp = congestion.congestionMap2d.edge(i, j, DIR_NORTH).congestion();
+                if (tmp > 1)
+                    insert_to_interval(tmp, construct_2d_tree.coor_array[i][j], FRONT);
+            }
         }
     }
 
@@ -135,15 +99,15 @@ void RangeRouter::divide_grid_edge_into_interval() {
 
 void RangeRouter::expand_range(int x1, int y1, int x2, int y2, int interval_index) {
     Coordinate_2d start, end, cur_start, cur_end;
-    int i, j, edge_num;
+    int edge_num;
     double total_cong, avg_cong;
 
-    //(x1, y1) (x2, y2) are neighbor, so we can do the following operation
+//(x1, y1) (x2, y2) are neighbor, so we can do the following operation
     x1 = min(x1, x2);
     x2 = max(x1, x2);
     y1 = min(y1, y2);
     y2 = max(y1, y2);
-    //obtain the expanded boundary. This is the very first expand, and the expand unit is 10.
+//obtain the expanded boundary. This is the very first expand, and the expand unit is 10.
     start.x = max(x1 - EXPAND_RANGE_SIZE, 0);
     RoutingRegion& rr_map = construct_2d_tree.rr_map;
     end.x = min(x2 + EXPAND_RANGE_SIZE, rr_map.get_gridx() - 1);
@@ -152,24 +116,24 @@ void RangeRouter::expand_range(int x1, int y1, int x2, int y2, int interval_inde
 
     total_cong = 0;
     edge_num = 0;
-    //Obtain the total congestion value and edge number of RIGHT edges. 
-    for (i = start.x; i < end.x; ++i) {
-        for (j = start.y; j <= end.y; ++j) {
-            total_cong += construct_2d_tree.congestionMap2d.edge(i, j, DIR_EAST).congestion();
+//Obtain the total congestion value and edge number of RIGHT edges.
+    for (int i = start.x; i < end.x; ++i) {
+        for (int j = start.y; j <= end.y; ++j) {
+            total_cong += congestion.congestionMap2d.edge(i, j, DIR_EAST).congestion();
             edge_num++;
-            expandMap.color(i, j) = interval_index;
+            expandMap[i][j] = interval_index;
         }
     }
 
-    //Set "visited" flag to the grid cells on the right most colum
-    for (j = start.y; j <= end.y; ++j) {
-        expandMap.color(end.x, j) = interval_index;
+//Set "visited" flag to the grid cells on the right most colum
+    for (int j = start.y; j <= end.y; ++j) {
+        expandMap[end.x][j] = interval_index;
     }
 
-    //Obtain the total congestion value and edge number of FRONT edges. 
-    for (i = start.x; i <= end.x; ++i) {
-        for (j = start.y; j < end.y; ++j) {
-            total_cong += construct_2d_tree.congestionMap2d.edge(i, j, DIR_NORTH).congestion();
+//Obtain the total congestion value and edge number of FRONT edges.
+    for (int i = start.x; i <= end.x; ++i) {
+        for (int j = start.y; j < end.y; ++j) {
+            total_cong += congestion.congestionMap2d.edge(i, j, DIR_NORTH).congestion();
             edge_num++;
         }
     }
@@ -190,62 +154,62 @@ void RangeRouter::expand_range(int x1, int y1, int x2, int y2, int interval_inde
             end = cur_end;
             break;
         }
-        EdgePlane<Edge_2d>& congestionMap2d = construct_2d_tree.congestionMap2d;
+        EdgePlane<Edge_2d>& congestionMap2d = congestion.congestionMap2d;
         //Below here are four for loops, those for loops update the congestion condition
-        for (i = cur_start.x; i < cur_end.x; ++i) {
+        for (int i = cur_start.x; i < cur_end.x; ++i) {
             if (cur_start.y != start.y) {
-                j = cur_start.y;
+                int j = cur_start.y;
                 total_cong += congestionMap2d.edge(i, j, DIR_EAST).congestion();
                 edge_num++;
-                expandMap.color(i, j) = interval_index;
+                expandMap[i][j] = interval_index;
             }
             if (cur_end.y != end.y) {
-                j = cur_end.y;
+                int j = cur_end.y;
                 total_cong += congestionMap2d.edge(i, j, DIR_EAST).congestion();
                 edge_num++;
-                expandMap.color(i, j) = interval_index;
+                expandMap[i][j] = interval_index;
             }
         }
-        for (j = start.y; j <= end.y; ++j) {
+        for (int j = start.y; j <= end.y; ++j) {
             if (cur_start.x != start.x) {
-                i = cur_start.x;
+                int i = cur_start.x;
                 total_cong += congestionMap2d.edge(i, j, DIR_EAST).congestion();
                 edge_num++;
             }
             if (cur_end.x != end.x) {
-                i = end.x;
+                int i = end.x;
                 total_cong += congestionMap2d.edge(i, j, DIR_EAST).congestion();
                 edge_num++;
             }
         }
-        for (j = cur_start.y; j < cur_end.y; ++j) {
+        for (int j = cur_start.y; j < cur_end.y; ++j) {
             if (cur_start.x != start.x) {
-                i = cur_start.x;
+                int i = cur_start.x;
                 total_cong += congestionMap2d.edge(i, j, DIR_NORTH).congestion();
                 edge_num++;
-                expandMap.color(i, j) = interval_index;
+                expandMap[i][j] = interval_index;
             }
             if (cur_end.x != end.x) {
-                i = cur_end.x;
+                int i = cur_end.x;
                 total_cong += congestionMap2d.edge(i, j, DIR_NORTH).congestion();
                 edge_num++;
-                expandMap.color(i, j) = interval_index;
+                expandMap[i][j] = interval_index;
             }
         }
-        for (i = start.x; i <= end.x; ++i) {
+        for (int i = start.x; i <= end.x; ++i) {
             if (cur_start.y != start.y) {
-                j = cur_start.y;
+                int j = cur_start.y;
                 total_cong += congestionMap2d.edge(i, j, DIR_NORTH).congestion();
                 edge_num++;
             }
             if (cur_end.y != end.y) {
-                j = end.y;
+                int j = end.y;
                 total_cong += congestionMap2d.edge(i, j, DIR_NORTH).congestion();
                 edge_num++;
             }
         }
 
-        expandMap.color(cur_end.x, cur_end.y) = interval_index;
+        expandMap[cur_end.x][cur_end.y] = interval_index;
 
         start = cur_start;
         end = cur_end;
@@ -266,11 +230,10 @@ void RangeRouter::expand_range(int x1, int y1, int x2, int y2, int interval_inde
 //If there is no overflowed path by using the two methods above, then remain 
 //the original path.
 void RangeRouter::range_router(Two_pin_element_2d& two_pin) {
-    if (!construct_2d_tree.post_processing.check_path_no_overflow(two_pin.path, two_pin.net_id, false)) {
+    if (!congestion.check_path_no_overflow(two_pin.path, two_pin.net_id, false)) {
         ++total_twopin;
 
         construct_2d_tree.NetDirtyBit[two_pin.net_id] = true;
-
         construct_2d_tree.update_congestion_map_remove_two_pin_net(two_pin);
 
         std::vector<Coordinate_2d*> bound_path(two_pin.path);
@@ -419,9 +382,6 @@ void RangeRouter::specify_all_range(boost::multi_array<Point_fc, 2>& gridCell) {
         }
     }
 
-    delete expandMap;
-    delete routeStateMap;
-
     twopin_list.clear();
     int length = construct_2d_tree.two_pin_list.size();
     for (int i = 0; i < length; ++i) {
@@ -440,6 +400,6 @@ void RangeRouter::specify_all_range(boost::multi_array<Point_fc, 2>& gridCell) {
     construct_2d_tree.mazeroute_in_range->clear_net_tree();
 }
 
-RangeRouter::RangeRouter(Construct_2d_tree& construct2dTree) :
-        total_twopin(0), num_of_grid_edge(0), min_congestion(0.), max_congestion(0.), avg_congestion(0.), intervalCount { INTERVAL_NUM }, construct_2d_tree { construct2dTree } {
+RangeRouter::RangeRouter(Construct_2d_tree& construct2dTree, Congestion& congestion) :
+        total_twopin(0), num_of_grid_edge(0), min_congestion(0.), max_congestion(0.), avg_congestion(0.), intervalCount { INTERVAL_NUM }, construct_2d_tree { construct2dTree }, congestion { congestion } {
 }

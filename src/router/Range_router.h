@@ -3,10 +3,14 @@
 
 //#include "Route_2pinnets.h"
 
+#include <boost/multi_array.hpp>
 #include <vector>
 
-#include "../grdb/plane.h"
-#include "../util/traversemap.h"
+#include "../misc/geometry.h"
+#include "DataDef.h"
+#include "Route_2pinnets.h"
+
+class Congestion;
 
 #define INTERVAL_NUM 10
 #define EXPAND_RANGE_SIZE 10
@@ -32,10 +36,10 @@ public:
 class Grid_edge_element {
 public:
     Coordinate_2d& grid;
-    int dir;
+    OrientationType dir;
 
 public:
-    Grid_edge_element(Coordinate_2d& grid, int dir) :
+    Grid_edge_element(Coordinate_2d& grid, OrientationType dir) :
             grid(grid), dir(dir) {
     }
 };
@@ -49,14 +53,9 @@ struct RangeRouter {
 public:
 
     std::vector<Range_element> range_vector;
-    Interval_element interval_list[INTERVAL_NUM];
+    std::array<Interval_element, INTERVAL_NUM> interval_list;
 
     int total_twopin = 0;
-    int num_of_grid_edge = 0;
-    double min_congestion = 0.;
-    double max_congestion = 0.;
-    double avg_congestion = 0.;
-    int intervalCount;
 
     Construct_2d_tree& construct_2d_tree;
     boost::multi_array<int, 2> expandMap;   //This color map is used by
@@ -69,7 +68,9 @@ public:
     //for recording if all the 2-pin nets which
     //locate on the same tile are routed
 
-    RangeRouter(Construct_2d_tree& construct_2d_tree);
+    Congestion& congestion;
+
+    RangeRouter(Construct_2d_tree& construct_2d_tree, Congestion& congestion);
 
     void define_interval();
     void divide_grid_edge_into_interval();
@@ -85,6 +86,8 @@ public:
     bool inside_range(int left_x, int bottom_y, int right_x, int top_y, Coordinate_2d& pt);
     void query_range_2pin(int left_x, int bottom_y, int right_x, int top_y, //
             std::vector<Two_pin_element_2d>& twopin_list, boost::multi_array<Point_fc, 2>& gridCell);
+
+private:
 
 };
 

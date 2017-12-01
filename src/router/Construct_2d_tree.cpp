@@ -38,12 +38,6 @@ static bool Two_pin_element_2d::comp_2pin_net_from_path(Two_pin_element_2d&a, Tw
     return (a_bbox_size < b_bbox_size);
 }
 
-//Make an coordinate array which contains the (x, y) information
-void Construct_2d_tree::allocate_coor_array() {
-    coor_array.resize(boost::extents[rr_map.get_gridx()][rr_map.get_gridy()]);
-
-}
-
 void Construct_2d_tree::init_2pin_list() {
     int i, netnum;
 
@@ -1137,6 +1131,7 @@ void Construct_2d_tree::output_2_pin_list() {
 
 Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterSet& param, RoutingRegion& rr) :
 //
+        coor_array { boost::extents[rr.get_gridx()][rr.get_gridy()] },	//
         parameter_set { param }, //
         routing_parameter { routingparam }, //
         dir_array { { { 0, 1 }, { 0, -1 }, { -1, 0 }, { 1, 0 } } }, ////FRONT,BACK,LEFT,RIGHT
@@ -1167,7 +1162,13 @@ Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterS
     NetDirtyBit = vector<bool>(rr_map.get_netNumber(), true);
     /* TroyLee: End */
 
-    allocate_coor_array();          // Make an 2D coordinate array which contains the (x, y) information
+    // Make an 2D coordinate array which contains the (x, y) information
+    for (int i = 0; i < rr_map.get_gridx(); ++i) {
+        for (int j = 0; j < rr_map.get_gridy(); ++j) {
+            coor_array[i][j].x = i;
+            coor_array[i][j].y = j;
+        }
+    }
 
     if (routing_parameter.get_monotonic_en()) {
         //allocate_monotonic();           // Allocate the memory for storing the data while searching monotonic path

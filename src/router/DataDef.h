@@ -88,7 +88,7 @@ public:
 
 
     //sort by x,y,pin,steiner
-    static bool comp_vertex_fl(const Vertex_flute& a, const Vertex_flute& b) const;
+    static bool comp_vertex_fl(const Vertex_flute& a, const Vertex_flute& b) ;
 
 };
 

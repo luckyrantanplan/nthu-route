@@ -20,7 +20,7 @@ Edge_3d::Edge_3d() :
 
 }
 
-bool Vertex_flute::comp_vertex_fl(const Vertex_flute& a, const Vertex_flute& b) const {
+bool Vertex_flute::comp_vertex_fl(const Vertex_flute& a, const Vertex_flute& b) {
     if (a.x < b.x)
         return true;
     else if (a.x > b.x)

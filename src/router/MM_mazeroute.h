@@ -2,6 +2,7 @@
 #define INC_MM_MAZEROUTE_H
 
 #include <boost/multi_array.hpp>
+#include  <boost/heap/pairing_heap.hpp>
 #include <stddef.h>
 #include <functional>
 #include <queue>
@@ -19,16 +20,24 @@ class Multisource_multisink_mazeroute {
 private:
     class Vertex_mmm {
     public:
-        const Coordinate_2d & coor;
-        vector<std::reference_wrapper<Vertex_mmm>> neighbor;
+        Coordinate_2d& coor;
+
+        vector<Vertex_mmm*> neighbor;
         int visit;
 
         Vertex_mmm(Coordinate_2d& xy);
+
     };
+
+    class MMM_element;
+    class MMM_element_greater;
+
+    typedef boost::heap::pairing_heap<MMM_element*, MMM_element_greater> MMMPriortyQueue;
+    typedef boost::heap::pairing_heap<MMM_element*, MMM_element_greater>::handle_type HandleType;
 
     class MMM_element {
     public:
-        Coordinate_2d *coor;
+
         MMM_element *parent;
         double reachCost;       //Cost from source to current element
         int distance;           //Distance from source to current element
@@ -38,44 +47,51 @@ private:
         int dst;                //defalut: -1. If the element is a sink, this value
                                 //will be set to current dst ID (dst_counter)
         int walkableID;         //If this element is walkable, then ID = visit_counter
-        int pqIndex;            //Index in MMMPriortyQueue
+        HandleType handle;            //Index in MMMPriortyQueue
 
     public:
         MMM_element() :
                 coor(NULL), parent(NULL), reachCost(0.), distance(0), via_num(0), visit(-1), dst(-1), walkableID(-1), pqIndex(-1) {
         }
 
+        Coordinate_2d& getCoor() const {
+            return *coor;
+        }
+
+        void setCoor(Coordinate_2d& coord) {
+            coor = &coord;
+        }
+    private:
+        Coordinate_2d *coor;
     };
 
     class MMM_element_greater {
 
     public:
 
-        bool operator()(const MMM_element& lhs, const MMM_element&rhs) const {
+        bool operator()(const MMM_element* lhs, const MMM_element* rhs) const {
 
-            if ((lhs.reachCost - rhs.reachCost) < neg_error_bound) {
+            if ((lhs->reachCost - rhs->reachCost) < neg_error_bound) {
                 return false;
-            } else if ((lhs.reachCost - rhs.reachCost) > error_bound) {
+            } else if ((lhs->reachCost - rhs->reachCost) > error_bound) {
                 return true;
             } else {
-                if (lhs.distance < rhs.distance)
+                if (lhs->distance < rhs->distance)
                     return false;
-                else if (lhs.distance > rhs.distance)
+                else if (lhs->distance > rhs->distance)
                     return true;
                 else
-                    return lhs.via_num > rhs.via_num;
+                    return lhs->via_num > rhs->via_num;
             }
 
         }
     };
 
-    typedef std::priority_queue<MMM_element, std::vector<MMM_element>, MMM_element_greater> MMMPriortyQueue;
-
 public:
     Multisource_multisink_mazeroute(Construct_2d_tree& construct_2d_tree);
     ~Multisource_multisink_mazeroute();
-    bool mm_maze_route_p2(Two_pin_element_2d *element, double bound_cost, int bound_distance, int bound_via_num, Coordinate_2d start, Coordinate_2d end);
-    bool mm_maze_route_p3(Two_pin_element_2d *element, double bound_cost, int bound_distance, int bound_via_num, Coordinate_2d start, Coordinate_2d end);
+    bool mm_maze_route_p2(Two_pin_element_2d&element, double bound_cost, int bound_distance, int bound_via_num, Coordinate_2d& start, Coordinate_2d& end);
+    bool mm_maze_route_p3(Two_pin_element_2d&element, double bound_cost, int bound_distance, int bound_via_num, Coordinate_2d& start, Coordinate_2d& end);
     void clear_net_tree();
 
 private:
@@ -93,7 +109,7 @@ private:
     Construct_2d_tree& construct_2d_tree;
     boost::multi_array<MMM_element, 2> mmm_map;
 
-    vector<vector<Vertex_mmm*> > net_tree;
+    vector<vector<Vertex_mmm> > net_tree;
     MMMPriortyQueue pqueue;
     Two_pin_element_2d *element;
     Vertex_mmm* pin1_v;

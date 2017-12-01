@@ -103,13 +103,13 @@ int Congestion::cal_max_overflow() {
 
 void Congestion::pre_evaluate_congestion_cost_all(int i, int j, OrientationType dir) {
     static const int inc = 1;
-    double cong;
 
+    Edge_2d& edge = congestionMap2d.edge(i, j, dir);
     if (used_cost_flag == HISTORY_COST) {
-        cong = (congestionMap2d.edge(i, j, dir).cur_cap + inc) / (congestionMap2d.edge(i, j, dir).max_cap * (1.0 - ((congestionMap2d.edge(i, j, dir).history - 1) / (cur_iter * (1.5 + 3 * factor)))));
-        cache.edge(i, j, dir).cost = WL_Cost + (congestionMap2d.edge(i, j, dir).history) * pow(cong, exponent);
+        double cong = (edge.cur_cap + inc) / (edge.max_cap * (1.0 - ((edge.history - 1) / (cur_iter * (1.5 + 3 * factor)))));
+        cache.edge(i, j, dir).cost = WL_Cost + (edge.history) * pow(cong, exponent);
     } else {
-        if (congestionMap2d.edge(i, j, dir).isFull())
+        if (edge.isFull())
             cache.edge(i, j, dir).cost = 1.0;
         else
             cache.edge(i, j, dir).cost = 0.0;
@@ -248,12 +248,28 @@ void Congestion::init_2d_map(RoutingRegion& rr_map) {
 //So if demand vlaue = wire length, this function can be used
 int Congestion::cal_total_wirelength() {
     int total_wl = 0;
-
     for (int i = 0; i < congestionMap2d.edgePlane_.num_elements(); ++i) {
-        Edge_2d& edge = congestionMap2d.edgePlane_.data()[i];
-        total_wl += (int) edge.cur_cap;
+        total_wl += (int) congestionMap2d.edgePlane_.data()[i].cur_cap;
     }
-
     printf("total wirelengh:%d\n", total_wl);
     return total_wl;
+}
+
+Congestion::Statistic Congestion::stat_congestion() {
+    Statistic s;
+    s.max = std::numeric_limits<double>::max();
+    s.min = std::numeric_limits<double>::min();
+    s.avg = 0;
+
+    double edgeCongestion;
+    for (int i = 0; i < congestionMap2d.edgePlane_.num_elements(); ++i) {
+        double congestion = congestionMap2d.edgePlane_.data()[i].congestion;
+        if (congestion > 1.0) {
+            s.min = std::min(congestion, s.min);
+            s.max = std::max(congestion, s.max);
+            s.avg += congestion;
+        }
+    }
+    s.avg /= congestionMap2d.edgePlane_.num_elements();
+    return s;
 }

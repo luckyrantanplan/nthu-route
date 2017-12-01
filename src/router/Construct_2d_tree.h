@@ -25,6 +25,7 @@ using std::map;
 
 struct Construct_2d_tree {
 
+    boost::multi_array<Coordinate_2d, 2> coor_array;
     int par_ind;
     ParameterSet& parameter_set;
     RoutingParameters& routing_parameter;
@@ -35,9 +36,7 @@ struct Construct_2d_tree {
     int two_pin_list_size;
     int flute_mode;
 
-    double max_congestion_factor;
     int fail_find_path_count;
-
 
     std::vector<Two_pin_element> all_two_pin_list;
 
@@ -64,7 +63,6 @@ struct Construct_2d_tree {
     vector<Vertex_flute_ptr> vertex_fl;
     EdgeColorMap<int> bboxRouteStateMap;
 
-
     double adjust_value;
 
     void update_congestion_map_insert_two_pin_net(Two_pin_element_2d& element);
@@ -75,18 +73,8 @@ struct Construct_2d_tree {
         return (a.boxSize() > b.boxSize());
     }
 
-
     void printMemoryUsage(const char* msg);
 
-
-
-
-
-
-
-
-
-    void allocate_coor_array();
     void init_2pin_list();
     void init_flute();
     void free_memory_con2d();
@@ -108,7 +96,5 @@ struct Construct_2d_tree {
     Construct_2d_tree(RoutingParameters& routingparam, ParameterSet& param, RoutingRegion& rr);
 
 };
-
-
 
 #endif /* _CONSTRUCT_2D_TREE_H_ */

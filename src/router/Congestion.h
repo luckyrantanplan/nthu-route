@@ -29,6 +29,13 @@ struct CacheEdge {
 class Congestion {
 public:
 
+    struct Statistic {
+
+        double min;
+        double max;
+        double avg;
+    };
+
     std::function<void(int i, int j, OrientationType dir)> pre_evaluate_congestion_cost_fp;
 
     int via_cost;
@@ -49,6 +56,7 @@ public:
     int find_overflow_max();
     void init_2d_map(RoutingRegion& rr_map);
     int cal_total_wirelength();
+    Statistic stat_congestion();
 };
 
 #endif /* SRC_ROUTER_CONGESTION_H_ */
