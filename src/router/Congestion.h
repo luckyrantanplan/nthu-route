@@ -52,7 +52,7 @@ public:
     int cal_max_overflow();
     void pre_evaluate_congestion_cost_all(int i, int j, OrientationType dir);
     void pre_evaluate_congestion_cost();
-    bool check_path_no_overflow(std::vector<Coordinate_2d*>&path, int net_id, int inc_flag);
+    bool check_path_no_overflow(std::vector<Coordinate_2d>&path, int net_id, int inc_flag);
     int find_overflow_max();
     void init_2d_map(RoutingRegion& rr_map);
     int cal_total_wirelength();

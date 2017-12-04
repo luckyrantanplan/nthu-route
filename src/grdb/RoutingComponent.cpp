@@ -93,7 +93,7 @@ int Net::get_boundaryS() const {
 }
 
 /*sort bbox in ascending order, then pin_num in descending order*/
-static bool Net::comp_net(const Net& a, const Net& b) {
+bool Net::comp_net(const Net& a, const Net& b) {
     if (a.get_bboxSize() > b.get_bboxSize()) {
         return true;
     } else if (a.get_bboxSize() < b.get_bboxSize()) {

@@ -22,19 +22,19 @@ public:
 public:
     int x;
     int y;
-    std::vector<std::reference_wrapper<Two_pin_element_2d> > points;
+    std::vector<Two_pin_element_2d *> points;
 };
 
 struct Route_2pinnets {
 
-    boost::multi_array<Point_fc,2> gridcell; //This is some kind of color map, for recording
-                                    //which 2-pin net passed which gCell
+    boost::multi_array<Point_fc, 2> gridcell; //This is some kind of color map, for recording
+    //which 2-pin net passed which gCell
 
-    boost::multi_array<int,2> traverseMap;   //This color map is used by
+    boost::multi_array<int, 2> traverseMap;   //This color map is used by
     //bfs_for_find_two_pin_list()
     //for recording which tiles are traversed
 
-    boost::multi_array<int,2> terminalMap;  //This color map is used by
+    boost::multi_array<int, 2> terminalMap;  //This color map is used by
     //determine_is_terminal_or_steiner_point()
     //for recording which tiles contains terminal
 

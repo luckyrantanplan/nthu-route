@@ -13,8 +13,10 @@
 #include <cstdio>
 #include <cstdlib>
 #include <vector>
-#include "../misc/geometry.h"
+
+#include "../grdb/EdgePlane.h"
 #include "Congestion.h"
+#include "DataDef.h"
 
 MonotonicRouting::MonotonicRouting(Congestion& congestion) :
         congestion { congestion }, //
@@ -117,7 +119,7 @@ void MonotonicRouting::traverse_parent_monotonic(int x1, int y1, int x2, int y2,
 //Sink != Source
     while ((i != x1) || (j != y1)) {
 //Push the path in to a list
-        two_pin_monotonic_path.path.push_back(&coor_array[i][j]);
+        two_pin_monotonic_path.path.push_back(Coordinate_2d(i, j));
 
 //Update the coordinate of tracing cell
         if (parent_monotonic[i][j] == LEFT)
@@ -129,7 +131,7 @@ void MonotonicRouting::traverse_parent_monotonic(int x1, int y1, int x2, int y2,
     }
 
 //push the source to list
-    two_pin_monotonic_path.path.push_back(&coor_array[i][j]);
+    two_pin_monotonic_path.path.push_back(Coordinate_2d(i, j));
 }
 
 //Try to obtain a monotonic routing path without cost over bounding cost
@@ -152,8 +154,8 @@ bool MonotonicRouting::monotonic_pattern_route(int x1, int y1, int x2, int y2, T
 //travese parent_monotonic to find path in two_pin_monotonic_path
     traverse_parent_monotonic(x1, y1, x2, y2, two_pin_monotonic_path);
 
-    two_pin_monotonic_path.pin1 = *(two_pin_monotonic_path.path[0]);
-    two_pin_monotonic_path.pin2 = *(two_pin_monotonic_path.path.back());
+    two_pin_monotonic_path.pin1 = two_pin_monotonic_path.path[0];
+    two_pin_monotonic_path.pin2 = two_pin_monotonic_path.path.back();
     two_pin_monotonic_path.net_id = net_id;
     return true;
 }
@@ -286,9 +288,9 @@ void MonotonicRouting::compute_path_total_cost_and_distance(Two_pin_element_2d& 
     mn.distance = 0;
     mn.via_num = 0;
     for (int i = element.path.size() - 2; i >= 0; --i) {
-        Coordinate_2d& c=*element.path[i];
+        Coordinate_2d& c = element.path[i];
 
-        OrientationType dir = Coordinate_2d::get_direction(c, *element.path[i + 1]);
+        OrientationType dir = Coordinate_2d::get_direction(c, element.path[i + 1]);
         mn.total_cost += congestion.get_cost_2d(c.x, c.y, dir, element.net_id, &distance);
         mn.distance += distance;
         if (pre_dir != -1) {

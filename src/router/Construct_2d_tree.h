@@ -69,9 +69,7 @@ struct Construct_2d_tree {
     void update_congestion_map_remove_two_pin_net(Two_pin_element_2d& element);
     void insert_all_two_pin_list(Two_pin_element_2d& mn_path_2d);
 
-    inline bool comp_stn_2pin(const Two_pin_element_2d&a, const Two_pin_element_2d&b) {
-        return (a.boxSize() > b.boxSize());
-    }
+
 
     void printMemoryUsage(const char* msg);
 

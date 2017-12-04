@@ -51,7 +51,7 @@ public:
 public:
     Coordinate_2d pin1;
     Coordinate_2d pin2;
-    std::vector<Coordinate_2d*> path;
+    std::vector<Coordinate_2d> path;
     int net_id;
     int done;
 
@@ -59,6 +59,10 @@ public:
         return abs(pin1.x - pin2.x) + abs(pin1.y - pin2.y);
     }
     static bool comp_2pin_net_from_path(Two_pin_element_2d &a, Two_pin_element_2d &b);
+
+    static bool comp_stn_2pin(const Two_pin_element_2d&a, const Two_pin_element_2d&b) {
+        return (a.boxSize() > b.boxSize());
+    }
 };
 
 class Two_pin_element {
@@ -85,10 +89,8 @@ public:
             x(x), y(y), visit(0)/*, copy_ind(-1)*/{
     }
 
-
-
     //sort by x,y,pin,steiner
-    static bool comp_vertex_fl(const Vertex_flute& a, const Vertex_flute& b) ;
+    static bool comp_vertex_fl(const Vertex_flute& a, const Vertex_flute& b);
 
 };
 
@@ -142,7 +144,5 @@ class Vertex_3d {
 public:
     std::shared_ptr<Edge_3d> edge_list[6];  //FRONT,BACK,LEFT,RIGHT,UP,DOWN
 };
-
-
 
 #endif /* SRC_DATADEF_H_ */

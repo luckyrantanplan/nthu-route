@@ -19,14 +19,12 @@ int Post_processing::comp(const COUNTER& a, const COUNTER& b) {
         return false;
 }
 
-
-
 void Post_processing::initial_for_post_processing() {
     int i, j, edge_idx, x_dir, y_dir, x, y, id;
     vector<COUNTER> counter(construct_2d_tree.two_pin_list.size());
     bool no_overflow;
 
-    Multisource_multisink_mazeroute* mazeroute = construct_2d_tree.mazeroute_in_range;
+    Multisource_multisink_mazeroute& mazeroute = construct_2d_tree.mazeroute_in_range;
     double bound_cost;
     int bound_distance, bound_via_num;
     bool find_path_flag = false;
@@ -63,7 +61,6 @@ void Post_processing::initial_for_post_processing() {
     }
 
     std::sort(counter.begin(), counter.end(), [&](COUNTER& a,COUNTER& b ) {return comp(a,b);});	// sort by flag
-
 
     // According other attribute to do maze routing
     for (i = 0; i < (int) construct_2d_tree.two_pin_list.size(); ++i) {
@@ -114,7 +111,7 @@ void Post_processing::initial_for_post_processing() {
                 start.y = max(0, start.y - BOXSIZE_INC);
                 end.x = min(construct_2d_tree.rr_map.get_gridx() - 1, end.x + BOXSIZE_INC);
                 end.y = min(construct_2d_tree.rr_map.get_gridy() - 1, end.y + BOXSIZE_INC);
-                find_path_flag = mazeroute->mm_maze_route_p3(twopList, bound_cost, bound_distance, bound_via_num, start, end);
+                find_path_flag = mazeroute->mm_maze_route_p(twopList, bound_cost, bound_distance, bound_via_num, start, end, 3);
                 if (find_path_flag == false) {
                     twopList.path.clear();
                     twopList.path.insert(twopList.path.begin(), bound_path->begin(), bound_path->end());

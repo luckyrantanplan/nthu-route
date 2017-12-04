@@ -59,6 +59,8 @@ public:
     /// (North, South, East, West)
     const T& edge(int x, int y, OrientationType dir) const;
 
+    template<typename F>
+    void foreach(F& f);
 private:
     ///The real data structure of plane
     boost::multi_array<T, 2> edgePlane_;
@@ -121,7 +123,7 @@ inline T& EdgePlane<T>::edge(int x, int y, DirectionType dir) {
         throw std::exception();
 
     }
-
+    return edgePlane_[x][2 * y]; // unreachable
 }
 
 template<class T>
@@ -150,6 +152,14 @@ template<class T>
 inline
 void EdgePlane<T>::reset() {
     edgePlane_.clear();
+}
+
+template<class T>
+template<typename F>
+void EdgePlane<T>::foreach(F& f) {
+    for (int i = 0; i < edgePlane_.num_elements(); ++i) {
+        f(edgePlane_.data()[i]);
+    }
 }
 
 #endif /* SRC_GRDB_EDGEPLANE_H_ */

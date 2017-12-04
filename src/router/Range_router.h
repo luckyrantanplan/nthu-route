@@ -4,10 +4,12 @@
 //#include "Route_2pinnets.h"
 
 #include <boost/multi_array.hpp>
+#include <array>
 #include <vector>
 
 #include "../misc/geometry.h"
 #include "DataDef.h"
+#include "MonotonicRouting.h"
 #include "Route_2pinnets.h"
 
 class Congestion;
@@ -69,7 +71,7 @@ public:
     //locate on the same tile are routed
 
     Congestion& congestion;
-
+    MonotonicRouting monotonicRouter;
     RangeRouter(Construct_2d_tree& construct_2d_tree, Congestion& congestion);
 
     void define_interval();
@@ -79,13 +81,13 @@ public:
     bool double_equal(double a, double b);
     bool comp_grid_edge(const Grid_edge_element& a, const Grid_edge_element& b);
 
-    void insert_to_interval(double cong_value, Coordinate_2d& coor_2d, int dir);
+    void insert_to_interval(double cong_value, Coordinate_2d& coor_2d, OrientationType dir);
 
     void expand_range(int x1, int y1, int x2, int y2, int interval_index);
     void range_router(Two_pin_element_2d& two_pin);
     bool inside_range(int left_x, int bottom_y, int right_x, int top_y, Coordinate_2d& pt);
     void query_range_2pin(int left_x, int bottom_y, int right_x, int top_y, //
-            std::vector<Two_pin_element_2d>& twopin_list, boost::multi_array<Point_fc, 2>& gridCell);
+            std::vector<Two_pin_element_2d*>& twopin_list, boost::multi_array<Point_fc, 2>& gridCell);
 
 private:
 

@@ -1,17 +1,14 @@
+#include <sys/time.h>
 #include <cstdio>
-#include <cstdlib>
 #include <ctime>
-#include <cassert>
+#include <iostream>
 
-#include "parameter.h"
-#include "Construct_2d_tree.h"
-
-#include "../grdb/RoutingRegion.h"
 #include "../grdb/parser.h"
+#include "../grdb/RoutingRegion.h"
 #include "../misc/filehandler.h"
-#include "../util/verifier.h"
-#include "Post_processing.h"
+#include "Construct_2d_tree.h"
 #include "Layerassignment.h"
+#include "parameter.h"
 
 void dataPreparation(ParameterAnalyzer& ap, RoutingRegion& builder);
 

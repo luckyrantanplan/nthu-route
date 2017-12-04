@@ -198,14 +198,21 @@ public:
             x { x }, y { y } {
     }
 
+    Coordinate_2d(Coordinate_2d& c) :
+            x { c.x }, y { c.y } {
+    }
+
     bool operator==(const Coordinate_2d& other) const {
         return (x == other.x && y == other.y);
     }
     bool operator!=(const Coordinate_2d& other) const {
         return (x != other.x || y != other.y);
     }
-
-    static int get_direction_simple(const Coordinate_2d& a, const Coordinate_2d& b) {
+    void set(int ix, int iy) {
+        x = ix;
+        y = iy;
+    }
+    static OrientationType get_direction_simple(const Coordinate_2d& a, const Coordinate_2d& b) {
         assert(!(a.x != b.x && a.y != b.y));
 
         if (a.x != b.x)

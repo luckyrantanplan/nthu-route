@@ -138,11 +138,11 @@ void Congestion::pre_evaluate_congestion_cost() {
 
 //Check if the specified edge is not overflowed
 //Return false if the edge is overflowed
-bool Congestion::check_path_no_overflow(std::vector<Coordinate_2d*>& path, int net_id, int inc_flag) {
+bool Congestion::check_path_no_overflow(std::vector<Coordinate_2d>& path, int net_id, int inc_flag) {
     for (int i = path.size() - 2; i >= 0; --i) {
-        Coordinate_2d& coord = *path[i];
+        Coordinate_2d& coord = path[i];
 
-        Edge_2d& edge = congestionMap2d.edge(coord.x, coord.y, Coordinate_2d::get_direction(coord, *path[i + 1]));
+        Edge_2d& edge = congestionMap2d.edge(coord.x, coord.y, Coordinate_2d::get_direction(coord, path[i + 1]));
         //There are two modes:
         // 1. inc_flag = 0: Just report if the specified edge is overflowd
         // 2. inc_flag = 1: Check if the specified edge will be overflowed if wd add a demond on it.
@@ -262,14 +262,16 @@ Congestion::Statistic Congestion::stat_congestion() {
     s.avg = 0;
 
     double edgeCongestion;
-    for (int i = 0; i < congestionMap2d.edgePlane_.num_elements(); ++i) {
-        double congestion = congestionMap2d.edgePlane_.data()[i].congestion;
+
+    congestionMap2d.foreach([&s](Edge_2d& edge) {
+        double congestion = edge.congestion;
         if (congestion > 1.0) {
             s.min = std::min(congestion, s.min);
             s.max = std::max(congestion, s.max);
             s.avg += congestion;
         }
-    }
+    });
+
     s.avg /= congestionMap2d.edgePlane_.num_elements();
     return s;
 }
