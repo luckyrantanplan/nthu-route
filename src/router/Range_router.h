@@ -37,7 +37,7 @@ public:
 };
 class Grid_edge_element {
 public:
-    Coordinate_2d& grid;
+    Coordinate_2d grid;
     OrientationType dir;
 
 public:
@@ -72,8 +72,7 @@ public:
 
     Congestion& congestion;
     MonotonicRouting monotonicRouter;
-    RangeRouter(Construct_2d_tree& construct_2d_tree, Congestion& congestion);
-
+    RangeRouter(Construct_2d_tree& construct_2d_tree, Congestion& congestion, bool monotonic_enable);
     void define_interval();
     void divide_grid_edge_into_interval();
     void specify_all_range(boost::multi_array<Point_fc, 2> & gridCell);
@@ -81,16 +80,17 @@ public:
     bool double_equal(double a, double b);
     bool comp_grid_edge(const Grid_edge_element& a, const Grid_edge_element& b);
 
-    void insert_to_interval(double cong_value, Coordinate_2d& coor_2d, OrientationType dir);
+    void insert_to_interval(double cong_value, Coordinate_2d coor_2d, OrientationType dir);
 
     void expand_range(int x1, int y1, int x2, int y2, int interval_index);
-    void range_router(Two_pin_element_2d& two_pin);
+    void range_router(Two_pin_element_2d& two_pin, int version);
     bool inside_range(int left_x, int bottom_y, int right_x, int top_y, Coordinate_2d& pt);
     void query_range_2pin(int left_x, int bottom_y, int right_x, int top_y, //
             std::vector<Two_pin_element_2d*>& twopin_list, boost::multi_array<Point_fc, 2>& gridCell);
 
 private:
 
-};
+}
+;
 
 #endif //INC_RANGE_ROUTER_H

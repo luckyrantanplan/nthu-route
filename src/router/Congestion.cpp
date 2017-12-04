@@ -17,15 +17,15 @@
 #include "../grdb/RoutingRegion.h"
 
 Congestion::Congestion(int x, int y) :
-        congestionMap2d { x, y }, //
-        cache { x, y } {
+        congestionMap2d { x, y }  //
+{
     exponent = 5.0;
     WL_Cost = 1.0;
     via_cost = 3;
     factor = 1.0;
 
     used_cost_flag = FASTROUTE_COST;    // cost function type, i.e., HISTORY_COST, HISTORY_MADEOF_COST, MADEOF_COST, FASTROUTE_COST
-    pre_evaluate_congestion_cost_fp = [&](int i, int j, OrientationType dir) {pre_evaluate_congestion_cost_all( i, j, dir);};
+    pre_evaluate_congestion_cost_fp = [&](Edge_2d& edge) {pre_evaluate_congestion_cost_all( edge);};
 
 }
 
@@ -38,24 +38,26 @@ double Congestion::get_cost_2d(int i, int j, OrientationType dir, int net_id, in
 
 //Check if the specified net pass the edge.
 //If it have passed the edge before, then the cost is 0.
-    if (congestionMap2d.edge(i, j, dir).lookupNet(net_id) == false) {
+    Edge_2d& edge = congestionMap2d.edge(i, j, dir);
+
+    if (edge.lookupNet(net_id) == false) {
         (*distance) = 1;
 
 //Used in part II
         switch (used_cost_flag) {
 
         case HISTORY_COST: {
-            return cache.edge(i, j, dir).cost;
+            return edge.cost;
         }
 
 //Used in part III: Post processing
         case MADEOF_COST: {
-            return congestionMap2d.edge(i, j, dir).isFull();
+            return edge.isFull();
         }
 
 //Used in part I: Initial routing
         case FASTROUTE_COST: {
-            return 1 + parameter_h / (1 + exp((-1) * parameter_k * (congestionMap2d.edge(i, j, dir).cur_cap + 1 - congestionMap2d.edge(i, j, dir).max_cap)));
+            return 1 + parameter_h / (1 + exp((-1) * parameter_k * (edge.cur_cap + 1 - edge.max_cap)));
         }
         }
         return 0;
@@ -101,48 +103,36 @@ int Congestion::cal_max_overflow() {
  * just reassign function ponter pre_evaluate_congestion_cost_fp to your
  * function in *route/route.cpp* .                                        */
 
-void Congestion::pre_evaluate_congestion_cost_all(int i, int j, OrientationType dir) {
+void Congestion::pre_evaluate_congestion_cost_all(Edge_2d& edge) {
     static const int inc = 1;
-
-    Edge_2d& edge = congestionMap2d.edge(i, j, dir);
     if (used_cost_flag == HISTORY_COST) {
         double cong = (edge.cur_cap + inc) / (edge.max_cap * (1.0 - ((edge.history - 1) / (cur_iter * (1.5 + 3 * factor)))));
-        cache.edge(i, j, dir).cost = WL_Cost + (edge.history) * pow(cong, exponent);
+        edge.cost = WL_Cost + (edge.history) * pow(cong, exponent);
     } else {
         if (edge.isFull())
-            cache.edge(i, j, dir).cost = 1.0;
+            edge.cost = 1.0;
         else
-            cache.edge(i, j, dir).cost = 0.0;
+            edge.cost = 0.0;
     }
 }
 
 void Congestion::pre_evaluate_congestion_cost() {
 
-    for (int i = congestionMap2d.getXSize() - 1; i >= 0; --i) {
-        for (int j = congestionMap2d.getYSize() - 2; j >= 0; --j) {
-            pre_evaluate_congestion_cost_fp(i, j, FRONT); // Function Pointer to Cost function
-            if (congestionMap2d.edge(i, j, DIR_NORTH).isOverflow()) {
-                ++congestionMap2d.edge(i, j, DIR_NORTH).history;
-            }
+    congestionMap2d.foreach([&](Edge_2d& edge) {
+        pre_evaluate_congestion_cost_fp(edge);
+        if (edge.isOverflow()) {
+            ++edge.history;
         }
-    }
-    for (int i = congestionMap2d.getXSize() - 2; i >= 0; --i) {
-        for (int j = congestionMap2d.getYSize() - 1; j >= 0; --j) {
-            pre_evaluate_congestion_cost_fp(i, j, RIGHT);
-            if (congestionMap2d.edge(i, j, DIR_EAST).isOverflow()) {
-                ++congestionMap2d.edge(i, j, DIR_EAST).history;
-            }
-        }
-    }
+    });
+
 }
 
 //Check if the specified edge is not overflowed
 //Return false if the edge is overflowed
 bool Congestion::check_path_no_overflow(std::vector<Coordinate_2d>& path, int net_id, int inc_flag) {
     for (int i = path.size() - 2; i >= 0; --i) {
-        Coordinate_2d& coord = path[i];
 
-        Edge_2d& edge = congestionMap2d.edge(coord.x, coord.y, Coordinate_2d::get_direction(coord, path[i + 1]));
+        Edge_2d& edge = congestionMap2d.edge(path[i], path[i + 1]);
         //There are two modes:
         // 1. inc_flag = 0: Just report if the specified edge is overflowd
         // 2. inc_flag = 1: Check if the specified edge will be overflowed if wd add a demond on it.
@@ -274,4 +264,47 @@ Congestion::Statistic Congestion::stat_congestion() {
 
     s.avg /= congestionMap2d.edgePlane_.num_elements();
     return s;
+}
+
+//Add the path of two pin element on to congestion map
+//The congestion map record not only which net pass which edge,
+//but also the number of a net pass through
+void Congestion::update_congestion_map_insert_two_pin_net(Two_pin_element_2d& element) {
+
+    for (int i = element.path.size() - 2; i >= 0; --i) {
+//get an edge from congestion map - c_map_2d
+
+        Edge_2d& edge = congestionMap2d.edge(element.path[i], element.path[i + 1]);
+        std::pair<RoutedNetTable::iterator, bool> insert_result = edge.used_net.insert(std::make_pair(element.net_id, 1));
+
+        if (!insert_result.second)
+            ++((insert_result.first)->second);
+        else {
+            ++edge.cur_cap;
+
+            if (used_cost_flag != FASTROUTE_COST) {
+                pre_evaluate_congestion_cost_fp(edge);
+            }
+        }
+    }
+}
+
+//Remove a net from an edge.
+//If the net pass that edge more than once, this function will only decrease the counter.
+void Congestion::update_congestion_map_remove_two_pin_net(Two_pin_element_2d& element) {
+
+    for (int i = element.path.size() - 2; i >= 0; --i) {
+        OrientationType dir = Coordinate_2d::get_direction(element.path[i], element.path[i + 1]);
+
+        RoutedNetTable::iterator find_result = congestionMap2d.edge(element.path[i].x, element.path[i].y, dir).used_net.find(element.net_id);
+
+        --(find_result->second);
+        if (find_result->second == 0) {
+            congestionMap2d.edge(element.path[i].x, element.path[i].y, dir).used_net.erase(element.net_id);
+            --(congestionMap2d.edge(element.path[i].x, element.path[i].y, dir).cur_cap);
+            if (used_cost_flag != FASTROUTE_COST) {
+                pre_evaluate_congestion_cost_fp(element.path[i].x, element.path[i].y, dir);
+            }
+        }
+    }
 }

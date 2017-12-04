@@ -26,18 +26,6 @@
 
 using namespace std;
 
-static bool Two_pin_element::comp_2pin_net(Two_pin_element&a, Two_pin_element&b) {
-    int a_bbox_size = abs(a.pin1.x - a.pin2.x) + abs(a.pin1.y - a.pin2.y);
-    int b_bbox_size = abs(b.pin1.x - b.pin2.x) + abs(b.pin1.y - b.pin2.y);
-    return (a_bbox_size < b_bbox_size);
-}
-
-static bool Two_pin_element_2d::comp_2pin_net_from_path(Two_pin_element_2d&a, Two_pin_element_2d&b) {
-    int a_bbox_size = abs(a.pin1.x - a.pin2.x) + abs(a.pin1.y - a.pin2.y);
-    int b_bbox_size = abs(b.pin1.x - b.pin2.x) + abs(b.pin1.y - b.pin2.y);
-    return (a_bbox_size < b_bbox_size);
-}
-
 void Construct_2d_tree::init_2pin_list() {
     int i, netnum;
 
@@ -198,7 +186,7 @@ Monotonic_element Construct_2d_tree::L_pattern_max_cong(int x1, int y1, int x2, 
                 temp = get_cost_2d(i, j, dir[dir_index], net_id, &distance);
                 max_path.total_cost += max(static_cast<double>(0), temp);
                 max_path.distance += distance;
-                two_pin_L_path.path.push_back(&coor_array[i][j]);
+                two_pin_L_path.path.push_back(Coordinate_2d(i, j));
                 if (temp > max_path.max_cost)
                     max_path.max_cost = temp;
             }
@@ -209,7 +197,7 @@ Monotonic_element Construct_2d_tree::L_pattern_max_cong(int x1, int y1, int x2, 
                 temp = get_cost_2d(i, j, dir[dir_index], net_id, &distance);
                 max_path.total_cost += max(static_cast<double>(0), temp);
                 max_path.distance += distance;
-                two_pin_L_path.path.push_back(&coor_array[i][j]);
+                two_pin_L_path.path.push_back(Coordinate_2d(i, j));
                 if (temp > max_path.max_cost)
                     max_path.max_cost = temp;
                 if (dir[dir_index] == FRONT)
@@ -221,7 +209,7 @@ Monotonic_element Construct_2d_tree::L_pattern_max_cong(int x1, int y1, int x2, 
         }
     }
 
-    (*two_pin_L_path).path.push_back(&coor_array[x2][y2]);
+    (*two_pin_L_path).path.push_back(Coordinate_2d(x2, y2));
     return max_path;
 }
 
@@ -268,55 +256,6 @@ void Construct_2d_tree::L_pattern_route(int x1, int y1, int x2, int y2, Two_pin_
     (*two_pin_L_path).pin1 = *((*two_pin_L_path).path[0]);
     (*two_pin_L_path).pin2 = *((*two_pin_L_path).path.back());
     (*two_pin_L_path).net_id = net_id;
-}
-
-//Add the path of two pin element on to congestion map
-//The congestion map record not only which net pass which edge,
-//but also the number of a net pass through
-void Construct_2d_tree::update_congestion_map_insert_two_pin_net(Two_pin_element_2d& element) {
-    int dir;
-
-    NetDirtyBit[element.net_id] = true;
-
-    for (int i = element.path.size() - 2; i >= 0; --i) {
-//get an edge from congestion map - c_map_2d
-        dir = get_direction_2d(element.path[i], element.path[i + 1]);
-
-        pair<RoutedNetTable::iterator, bool> insert_result = congestionMap2d.edge(element.path[i]->x, element.path[i]->y, dir).used_net.insert(pair<int, int>(element.net_id, 1));
-
-        if (!insert_result.second)
-            ++((insert_result.first)->second);
-        else {
-            ++(congestionMap2d.edge(element.path[i]->x, element.path[i]->y, dir).cur_cap);
-
-            if (used_cost_flag != FASTROUTE_COST) {
-                pre_evaluate_congestion_cost_fp(element.path[i]->x, element.path[i]->y, dir);
-            }
-        }
-    }
-}
-
-//Remove a net from an edge.
-//If the net pass that edge more than once, this function will only decrease the counter.
-void Construct_2d_tree::update_congestion_map_remove_two_pin_net(Two_pin_element_2d& element) {
-    int dir;
-
-    NetDirtyBit[element.net_id] = true;
-
-    for (int i = element.path.size() - 2; i >= 0; --i) {
-        dir = get_direction_2d(element.path[i], element.path[i + 1]);
-
-        RoutedNetTable::iterator find_result = congestionMap2d.edge(element.path[i]->x, element.path[i]->y, dir).used_net.find(element.net_id);
-
-        --(find_result->second);
-        if (find_result->second == 0) {
-            congestionMap2d.edge(element.path[i]->x, element.path[i]->y, dir).used_net.erase(element.net_id);
-            --(congestionMap2d.edge(element.path[i]->x, element.path[i]->y, dir).cur_cap);
-            if (used_cost_flag != FASTROUTE_COST) {
-                pre_evaluate_congestion_cost_fp(element.path[i]->x, element.path[i]->y, dir);
-            }
-        }
-    }
 }
 
 void Construct_2d_tree::update_congestion_map_remove_multipin_net(Two_pin_list_2d& list) {
@@ -430,7 +369,8 @@ void Construct_2d_tree::gen_FR_congestion_map() {
 
                 /*insert 2pin_path into this net*/
                 net_2pin_list[netId].push_back(L_path);
-                update_congestion_map_insert_two_pin_net(L_path);
+                NetDirtyBit[L_path.net_id] = true;
+                congestion.update_congestion_map_insert_two_pin_net(L_path);
 #ifdef DEBUG_LROUTE
                 print_path(*L_path);
 #endif
@@ -1134,7 +1074,6 @@ Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterS
         coor_array { boost::extents[rr.get_gridx()][rr.get_gridy()] },	//
         parameter_set { param }, //
         routing_parameter { routingparam }, //
-        dir_array { { { 0, 1 }, { 0, -1 }, { -1, 0 }, { 1, 0 } } }, ////FRONT,BACK,LEFT,RIGHT
 
         rr_map { rr }, //
         post_processing { *this } {
@@ -1196,7 +1135,6 @@ Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterS
     }
 
     route_2pinnets.reallocate_two_pin_list(true);
-    cache = new EdgePlane<CacheEdge>(rr_map.get_gridx(), rr_map.get_gridy(), CacheEdge());
     mazeroute_in_range = new Multisource_multisink_mazeroute(*this);
 
     int cur_overflow = -1;

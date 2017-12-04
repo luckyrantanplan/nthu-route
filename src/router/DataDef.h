@@ -63,6 +63,7 @@ public:
     static bool comp_stn_2pin(const Two_pin_element_2d&a, const Two_pin_element_2d&b) {
         return (a.boxSize() > b.boxSize());
     }
+
 };
 
 class Two_pin_element {
@@ -74,7 +75,6 @@ public:
     double max_cong;
 
     static bool comp_2pin_net(Two_pin_element &a, Two_pin_element &b);
-
 };
 
 class Vertex_flute {
@@ -101,6 +101,10 @@ public:
     Edge_2d();
 
 public:
+
+    double cost;               //Used as cache of cost in whole program
+    int MMVisitFlag;        //Used as cache of hash table lookup result in MM_mazeroute
+
     double cur_cap;
     double max_cap;
     int history;

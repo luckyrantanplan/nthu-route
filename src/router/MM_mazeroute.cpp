@@ -13,7 +13,7 @@
 
 using namespace std;
 
-Multisource_multisink_mazeroute::Vertex_mmm::Vertex_mmm(Coordinate_2d& xy) :
+Multisource_multisink_mazeroute::Vertex_mmm::Vertex_mmm(const Coordinate_2d& xy) :
         coor(xy), visit(-1) {
 }
 
@@ -69,7 +69,7 @@ void Multisource_multisink_mazeroute::adjust_twopin_element() {
 
     int flag = 0;
     for (auto it = pin1_v->neighbor.begin(); it != pin1_v->neighbor.end(); ++it) {
-        if (&(*it) == pin2_v) {
+        if ((*it) == pin2_v) {
             pin1_v->neighbor.erase(it);
             flag = 1;
             break;
@@ -79,7 +79,7 @@ void Multisource_multisink_mazeroute::adjust_twopin_element() {
 
     flag = 0;
     for (auto it = pin2_v->neighbor.begin(); it != pin2_v->neighbor.end(); ++it) {
-        if (&(*it) == pin1_v) {
+        if ((*it) == pin1_v) {
             pin2_v->neighbor.erase(it);
             flag = 1;
             break;
@@ -91,12 +91,12 @@ void Multisource_multisink_mazeroute::adjust_twopin_element() {
     Vertex_mmm* v1 = nullptr;
     Vertex_mmm* v2 = nullptr;
 
-    vector<Vertex_mmm *>& vect = (*net_tree)[net_id];
-    for (vector<Vertex_mmm *>::iterator it = vect.begin(); it != vect.end() && (v1 == nullptr || v2 == nullptr); ++it) {
-        if ((*it)->coor == new_pin1) {
-            v1 = (*it);
-        } else if ((*it)->coor == new_pin2) {
-            v2 = (*it);
+    vector<Vertex_mmm>& vect = net_tree[net_id];
+    for (vector<Vertex_mmm>::iterator it = vect.begin(); it != vect.end() && (v1 == nullptr || v2 == nullptr); ++it) {
+        if (it->coor == new_pin1) {
+            v1 = &(*it);
+        } else if (it->coor == new_pin2) {
+            v2 = &(*it);
         }
     }
     assert(v1 != nullptr);
@@ -141,7 +141,7 @@ void Multisource_multisink_mazeroute::setup_pqueue() {
         for (int i = 0; i < t.number; ++i) {
             Branch& branch = t.branch[i];
 
-            net_tree[cur_net].push_back(Vertex_mmm(construct_2d_tree.coor_array[(int) branch.x][(int) branch.y]));
+            net_tree[cur_net].push_back(Vertex_mmm(Coordinate_2d((int) branch.x, (int) branch.y)));
         }
         for (int i = 0; i < t.number; ++i) {
             Vertex_mmm* a = &net_tree[cur_net][i];
@@ -158,12 +158,12 @@ void Multisource_multisink_mazeroute::setup_pqueue() {
 //find pin1 and pin2 in tree
     pin1_v = nullptr;
     pin2_v = nullptr;
-    for (Vertex_mmm * vert : net_tree[cur_net]) {
-        if (vert->coor == element->pin1) {
-            pin1_v = vert;
+    for (Vertex_mmm& vert : net_tree[cur_net]) {
+        if (vert.coor == element->pin1) {
+            pin1_v = &vert;
             pin1_v->visit = visit_counter;
-        } else if (vert->coor == element->pin2) {
-            pin2_v = vert;
+        } else if (vert.coor == element->pin2) {
+            pin2_v = &vert;
             pin2_v->visit = visit_counter;
         }
 
@@ -182,36 +182,35 @@ void Multisource_multisink_mazeroute::setup_pqueue() {
 
 void Multisource_multisink_mazeroute::bfsSetColorMap(int x, int y) {
     int net_id = element->net_id;
-    stack<pair<int, int> > Q;
+    stack<Coordinate_2d> Q;
 
-    Q.push(make_pair(x, y));
+    Q.push(Coordinate_2d(x, y));
     while (!Q.empty()) {
-        x = Q.top().first;
-        y = Q.top().second;
-        Q.pop();
-        mmm_map[x][y].walkableID = visit_counter;
+        Coordinate_2d c = Q.top();
 
-        for (OrientationType dir = 3; dir >= 0; --dir) {
-            if ((dir == 3 && x >= gridxMinusOne) || (dir == 2 && x <= 0) || (dir == 1 && y <= 0) || (dir == 0 && y >= gridyMinusOne))
-                continue;
-            else {
-                CacheEdge& edge = congestion.cache.edge(x, y, dir);
-                if (edge.MMVisitFlag != visit_counter && congestion.congestionMap2d.edge(x, y, dir).lookupNet(net_id)) {
+        Q.pop();
+        mmm_map[c.x][c.y].walkableID = visit_counter;
+
+        for (Coordinate_2d dir : Coordinate_2d::dir_array()) {
+            Coordinate_2d other = dir + c;
+            if (congestion.congestionMap2d.isVertexInside(other)) {
+                Edge_2d& edge = congestion.congestionMap2d.edge(c, other);
+                if (edge.MMVisitFlag != visit_counter && edge.lookupNet(net_id)) {
                     edge.MMVisitFlag = visit_counter;
-                    Q.push(make_pair(x + construct_2d_tree.dir_array[dir][0], y + construct_2d_tree.dir_array[dir][1]));
+                    Q.push(other);
                 }
             }
         }
     }
 }
 bool Multisource_multisink_mazeroute::mm_maze_route_p(Two_pin_element_2d &ielement, double bound_cost, int bound_distance, int bound_via_num, Coordinate_2d& start, Coordinate_2d& end, int version) {
-    int pre_dir = 0;
+
     bool find_path_flag = false;
 
     MMM_element* next_pos = nullptr;
     MMM_element* sink_pos = nullptr;
     element->path.clear();
-    element = ielement;
+    element = &ielement;
     int boundary_l = start.x;
     int boundary_b = start.y;
     int boundary_r = end.x;
@@ -226,21 +225,17 @@ bool Multisource_multisink_mazeroute::mm_maze_route_p(Two_pin_element_2d &ieleme
     }
 
     while (!pqueue.empty()) {
-        MMM_element& cur_pos = pqueue.top();
+        MMM_element& cur_pos = *pqueue.top();
         pqueue.pop();
 
         if (cur_pos.parent != nullptr) {
-            pre_dir = Coordinate_2d::get_direction_simple(cur_pos.coor, cur_pos.parent->coor);
-            //We only need horizontal or vertical information of the direction,
-            //so we can &0x02 first.
-            //pre_dir &= 0x02;
+
         }
 
-        for (OrientationType i = 3; i >= 0; --i) {
-            if ((i == 3 && cur_pos.coor.x >= gridxMinusOne) || (i == 2 && cur_pos.coor.x <= 0) || (i == 1 && cur_pos.coor.y <= 0) || (i == 0 && cur_pos.coor.y >= gridyMinusOne))
-                continue;
-            else {
-                next_pos = &mmm_map[cur_pos.coor.x + construct_2d_tree.dir_array[i][0]][cur_pos.coor.y + construct_2d_tree.dir_array[i][1]];
+        for (Coordinate_2d dir : Coordinate_2d::dir_array()) {
+            Coordinate_2d other = dir + cur_pos.coor;
+            if (congestion.congestionMap2d.isVertexInside(other)) {
+                next_pos = &mmm_map[other.x][other.y];
 
                 if (next_pos != cur_pos.parent && next_pos->walkableID == visit_counter) {
 
@@ -248,7 +243,7 @@ bool Multisource_multisink_mazeroute::mm_maze_route_p(Two_pin_element_2d &ieleme
                     int total_distance = cur_pos.distance;
                     int via_num = cur_pos.via_num;
                     bool addDistance = false;
-                    CacheEdge& edge = congestion.cache.edge(cur_pos.coor.x, cur_pos.coor.y, i);
+                    Edge_2d& edge = congestion.congestionMap2d.edge(cur_pos.coor, other);
                     if (version == 2) {
 
                         if (edge.MMVisitFlag != visit_counter) {
@@ -257,11 +252,13 @@ bool Multisource_multisink_mazeroute::mm_maze_route_p(Two_pin_element_2d &ieleme
                             addDistance = true;
                         }
 
-                        if (((i & 0x02) != pre_dir) && (cur_pos.parent != nullptr)) {
-                            via_num += 3;
-                            if (addDistance) {
-                                total_distance += 3;
-                                reachCost += congestion.via_cost;
+                        if (cur_pos.parent != nullptr) {
+                            if (cur_pos.parent->coor.x != other.x && cur_pos.parent->coor.y != other.y) { // other and parent are not align
+                                via_num += 3;
+                                if (addDistance) {
+                                    total_distance += 3;
+                                    reachCost += congestion.via_cost;
+                                }
                             }
                         }
                     } else {
@@ -269,10 +266,12 @@ bool Multisource_multisink_mazeroute::mm_maze_route_p(Two_pin_element_2d &ieleme
                             reachCost += edge.cost;
                             ++total_distance;
                         }
-
-                        if (((i & 0x02) != pre_dir) && (cur_pos.parent != nullptr)) {
-                            via_num += 3;
+                        if (cur_pos.parent != nullptr) {
+                            if (cur_pos.parent->coor.x != other.x && cur_pos.parent->coor.y != other.y) { // other and parent are not align
+                                via_num += 3;
+                            }
                         }
+
                     }
 
                     bool needUpdate = false;
@@ -287,7 +286,7 @@ bool Multisource_multisink_mazeroute::mm_maze_route_p(Two_pin_element_2d &ieleme
                     }
 
                     if (needUpdate == true) {
-                        next_pos->parent = cur_pos;
+                        next_pos->parent = &cur_pos;
                         next_pos->reachCost = reachCost;
                         next_pos->distance = total_distance;
                         next_pos->via_num = via_num;

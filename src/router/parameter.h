@@ -8,8 +8,6 @@ enum {
     MIN_MAX_COST, MIN_TOTAL_COST
 };
 
-
-
 enum {
     NORMAL, WEIGHTED
 };
@@ -52,10 +50,14 @@ public:
     std::string inputFileName;
     std::string outputFileName;
 public:
-    ParameterSet(int pattern_route_obj = 0, int pattern_route_cost = 0, int flute_mode = 0, int iter_2d = 0, int maze_route_cost = 0, int maze_size_mode = 0, int maze_route_list_cost = 0,
+    ParameterSet(int pattern_route_obj = 0, int pattern_route_cost = 0, int flute_mode = 0,	//
+            int iter_2d = 0, int maze_route_cost = 0, int maze_size_mode = 0, int maze_route_list_cost = 0,	//
             int maze_route_list_order = 0, int _overflow_threshold = 10, int _iter_p3 = 10) :
-            pattern_route_obj(pattern_route_obj), pattern_route_cost(pattern_route_cost), flute_mode(flute_mode), iter_2d(iter_2d), maze_route_cost(maze_route_cost), maze_size_mode(maze_size_mode), maze_route_list_cost(
-                    maze_route_list_cost), maze_route_list_order(maze_route_list_order), overflow_threshold(_overflow_threshold), iter_p3(_iter_p3) {
+            pattern_route_obj(pattern_route_obj), pattern_route_cost(pattern_route_cost),	//
+            flute_mode(flute_mode), iter_2d(iter_2d), maze_route_cost(maze_route_cost),	//
+            maze_size_mode(maze_size_mode), maze_route_list_cost(maze_route_list_cost),	//
+            maze_route_list_order(maze_route_list_order), //
+            overflow_threshold(_overflow_threshold), iter_p3(_iter_p3) {
     }
 
     void setSet();
@@ -63,14 +65,15 @@ public:
     void setInputfile(std::string input);
     void setOutputfile(std::string output);
 
-    void push_parameter(int pattern_route_obj = 0, int pattern_route_cost = 0, int flute_mode = 0, int iter_2d = 0, int maze_route_cost = 0, int maze_size_mode = 0, int maze_route_list_cost = 0,
+    void push_parameter(int pattern_route_obj = 0, int pattern_route_cost = 0, int flute_mode = 0, //
+            int iter_2d = 0, int maze_route_cost = 0, int maze_size_mode = 0, int maze_route_list_cost = 0, //
             int maze_route_list_order = 0, int _overflow_threshold = 0, int _iter_p3 = 10);
 };
 
 /* TroyLee: RouterParameter Fetch From Command-line */
 /* Presetting Parameter Table */
 struct PresettingParameters {
-    /* Indentifier */
+    /* Identifier */
     int net_to_route;
     int grid_x, grid_y;
     /* Common Setting */

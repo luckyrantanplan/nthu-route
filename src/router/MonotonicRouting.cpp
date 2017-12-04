@@ -18,10 +18,11 @@
 #include "Congestion.h"
 #include "DataDef.h"
 
-MonotonicRouting::MonotonicRouting(Congestion& congestion) :
+MonotonicRouting::MonotonicRouting(Congestion& congestion, bool enable) :
         congestion { congestion }, //
-        cong_monotonic { boost::extents[congestion.cache.getXSize()][congestion.cache.getYSize()] }, //
-        parent_monotonic { boost::extents[congestion.cache.getXSize()][congestion.cache.getYSize()] }
+        cong_monotonic { boost::extents[congestion.congestionMap2d.getXSize()][congestion.congestionMap2d.getYSize()] }, //
+        parent_monotonic { boost::extents[congestion.congestionMap2d.getXSize()][congestion.congestionMap2d.getYSize()] }, //
+        monotonic_enable { enable }
 //
 {
 
@@ -306,3 +307,27 @@ void MonotonicRouting::compute_path_total_cost_and_distance(Two_pin_element_2d& 
     }
 }
 
+bool MonotonicRouting::monotonicRoute(Two_pin_element_2d& two_pin, Bound& bound, std::vector<Coordinate_2d>& bound_path) {
+    Monotonic_element mn;
+    compute_path_total_cost_and_distance(two_pin, mn);
+
+    bound.cost = mn.total_cost;
+    bound.distance = mn.distance;
+    bound.via_num = mn.via_num;
+    bound.flag = true;
+    two_pin.path.clear();
+
+    bool find_path_flag = false;
+
+    if (monotonic_enable) {
+        bool find_path_flag = monotonic_pattern_route(two_pin.pin1.x, two_pin.pin1.y, two_pin.pin2.x, two_pin.pin2.y, two_pin, two_pin.net_id, bound);
+
+        if (find_path_flag) {
+            bound_path.clear();
+            bound.cost = cong_monotonic[two_pin.path[0].x][two_pin.path[0].y].total_cost;
+            bound.distance = cong_monotonic[two_pin.path[0].x][two_pin.path[0].y].distance;
+            bound.via_num = cong_monotonic[two_pin.path[0].x][two_pin.path[0].y].via_num;
+        }
+    }
+    return find_path_flag;
+}

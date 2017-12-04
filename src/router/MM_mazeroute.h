@@ -20,12 +20,12 @@ class Multisource_multisink_mazeroute {
 private:
     class Vertex_mmm {
     public:
-        Coordinate_2d& coor;
+        Coordinate_2d coor;
 
         vector<Vertex_mmm*> neighbor;
         int visit;
 
-        Vertex_mmm(Coordinate_2d& xy);
+        Vertex_mmm(const Coordinate_2d& xy);
 
     };
 
@@ -79,8 +79,8 @@ private:
 public:
     Multisource_multisink_mazeroute(Construct_2d_tree& construct_2d_tree, Congestion& congestion);
     ~Multisource_multisink_mazeroute();
-    bool mm_maze_route_p (Two_pin_element_2d&element, double bound_cost, int bound_distance, int bound_via_num, Coordinate_2d& start, Coordinate_2d& end,int version);
-     void clear_net_tree();
+    bool mm_maze_route_p(Two_pin_element_2d&element, double bound_cost, int bound_distance, int bound_via_num, Coordinate_2d& start, Coordinate_2d& end, int version);
+    void clear_net_tree();
 
 private:
     void setup_pqueue();

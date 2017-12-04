@@ -7,9 +7,10 @@
 #ifndef INC_GEOMETRY_H
 #define INC_GEOMETRY_H
 
-#include <utility>
-#include <cstdlib>
+#include <array>
 #include <cassert>
+#include <cstdlib>
+#include <utility>
 
 /**
  * @brief Defined the flags about position, i.e. Direction, Corner
@@ -198,7 +199,7 @@ public:
             x { x }, y { y } {
     }
 
-    Coordinate_2d(Coordinate_2d& c) :
+    Coordinate_2d(const Coordinate_2d& c) :
             x { c.x }, y { c.y } {
     }
 
@@ -237,6 +238,14 @@ public:
         }
     }
 
+    Coordinate_2d operator +(const Coordinate_2d& a) {
+        return Coordinate_2d(x + a.x, y + a.y);
+    }
+
+    static const std::array<Coordinate_2d, 4> dir_array() {
+        static std::array<Coordinate_2d, 4> arr { { { 0, 1 }, { 0, -1 }, { -1, 0 }, { 1, 0 } } };
+        return arr; ////FRONT,BACK,LEFT,RIGHT; //FRONT,BACK,LEFT,RIGHT
+    }
 };
 
 class Coordinate_3d {

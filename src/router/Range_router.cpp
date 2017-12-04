@@ -55,7 +55,7 @@ void RangeRouter::define_interval() {
 #endif
 }
 
-void RangeRouter::insert_to_interval(double cong_value, Coordinate_2d& coor_2d, OrientationType dir) {
+void RangeRouter::insert_to_interval(double cong_value, Coordinate_2d coor_2d, OrientationType dir) {
 
     for (int i = interval_list.size() - 1; i >= 0; --i) {
         Interval_element& ele = interval_list[i];
@@ -73,12 +73,12 @@ void RangeRouter::divide_grid_edge_into_interval() {
             {
                 double tmp = congestion.congestionMap2d.edge(i, j, DIR_EAST).congestion();
                 if (tmp > 1)
-                    insert_to_interval(tmp, construct_2d_tree.coor_array[i][j], RIGHT);
+                    insert_to_interval(tmp, Coordinate_2d(i, j), RIGHT);
             }
             {
                 double tmp = congestion.congestionMap2d.edge(i, j, DIR_SOUTH).congestion();
                 if (tmp > 1)
-                    insert_to_interval(tmp, construct_2d_tree.coor_array[i][j], BACK);
+                    insert_to_interval(tmp, Coordinate_2d(i, j), BACK);
             }
         }
     }
@@ -228,46 +228,29 @@ void RangeRouter::expand_range(int x1, int y1, int x2, int y2, int interval_inde
 //routing or multi-source multi-sink routing.
 //If there is no overflowed path by using the two methods above, then remain 
 //the original path.
-void RangeRouter::range_router(Two_pin_element_2d& two_pin) {
+void RangeRouter::range_router(Two_pin_element_2d& two_pin, int version) {
     if (!congestion.check_path_no_overflow(two_pin.path, two_pin.net_id, false)) {
         ++total_twopin;
 
         construct_2d_tree.NetDirtyBit[two_pin.net_id] = true;
-        construct_2d_tree.update_congestion_map_remove_two_pin_net(two_pin);
+
+        congestion.update_congestion_map_remove_two_pin_net(two_pin);
 
         std::vector<Coordinate_2d> bound_path(two_pin.path);
 
-        Monotonic_element mn;
-        monotonicRouter.compute_path_total_cost_and_distance(two_pin, mn);
         Bound bound;
+        bool find_path_flag = monotonicRouter.monotonicRoute(two_pin, bound, bound_path);
 
-        bound.cost = mn.total_cost;
-        bound.distance = mn.distance;
-        bound.via_num = mn.via_num;
-        bound.flag = true;
-        two_pin.path.clear();
-
-        bool find_path_flag = false;
-
-        if (construct_2d_tree.routing_parameter.get_monotonic_en()) {
-            bool find_path_flag = monotonicRouter.monotonic_pattern_route(two_pin.pin1.x, two_pin.pin1.y, two_pin.pin2.x, two_pin.pin2.y, two_pin, two_pin.net_id, bound);
-
-            if (find_path_flag) {
-                bound_path.clear();
-                bound.cost = monotonicRouter.cong_monotonic[two_pin.path[0].x][two_pin.path[0].y].total_cost;
-                bound.distance = monotonicRouter.cong_monotonic[two_pin.path[0].x][two_pin.path[0].y].distance;
-                bound.via_num = monotonicRouter.cong_monotonic[two_pin.path[0].x][two_pin.path[0].y].via_num;
-            }
+        if (version == 2) {
+            two_pin.done = construct_2d_tree.done_iter;
         }
-
-        two_pin.done = construct_2d_tree.done_iter;
-
         if ((find_path_flag == false) || !congestion.check_path_no_overflow(bound_path, two_pin.net_id, true)) {
-            Coordinate_2d start, end;
+            Coordinate_2d start;
+            Coordinate_2d end;
 
             start.x = min(two_pin.pin1.x, two_pin.pin2.x);
-            end.x = max(two_pin.pin1.x, two_pin.pin2.x);
             start.y = min(two_pin.pin1.y, two_pin.pin2.y);
+            end.x = max(two_pin.pin1.x, two_pin.pin2.x);
             end.y = max(two_pin.pin1.y, two_pin.pin2.y);
 
             int size = construct_2d_tree.BOXSIZE_INC;
@@ -276,14 +259,14 @@ void RangeRouter::range_router(Two_pin_element_2d& two_pin) {
             end.x = min(construct_2d_tree.rr_map.get_gridx() - 1, end.x + size);
             end.y = min(construct_2d_tree.rr_map.get_gridy() - 1, end.y + size);
 
-            find_path_flag = construct_2d_tree.mazeroute_in_range.mm_maze_route_p(two_pin, bound.cost, bound.distance, bound.via_num, start, end, 2);
+            find_path_flag = construct_2d_tree.mazeroute_in_range.mm_maze_route_p(two_pin, bound.cost, bound.distance, bound.via_num, start, end, version);
 
             if (find_path_flag == false) {
                 two_pin.path.insert(two_pin.path.begin(), bound_path.begin(), bound_path.end());
             }
         }
-
-        construct_2d_tree.update_congestion_map_insert_two_pin_net(two_pin);
+        construct_2d_tree.NetDirtyBit[two_pin.net_id] = true;
+        congestion.update_congestion_map_insert_two_pin_net(two_pin);
 
     }
 }
@@ -377,7 +360,7 @@ void RangeRouter::specify_all_range(boost::multi_array<Point_fc, 2>& gridCell) {
             return Two_pin_element_2d::comp_stn_2pin(*a,*b);});
 
         for (int j = 0; j < (int) twopin_list.size(); ++j) {
-            range_router(*twopin_list[j]);
+            range_router(*twopin_list[j], 2);
         }
     }
 
@@ -394,14 +377,14 @@ void RangeRouter::specify_all_range(boost::multi_array<Point_fc, 2>& gridCell) {
     for (int i = 0; i < (int) twopin_list.size(); ++i) {
         if (twopin_list[i]->boxSize() == 1)
             break;
-        range_router(*twopin_list[i]);
+        range_router(*twopin_list[i], 2);
     }
     construct_2d_tree.mazeroute_in_range.clear_net_tree();
 }
 
-RangeRouter::RangeRouter(Construct_2d_tree& construct2dTree, Congestion& congestion) :
+RangeRouter::RangeRouter(Construct_2d_tree& construct2dTree, Congestion& congestion, bool monotonic_enable) :
         total_twopin(0),	//
 
         construct_2d_tree { construct2dTree }, //
-        congestion { congestion }, monotonicRouter { congestion } {
+        congestion { congestion }, monotonicRouter { congestion, monotonic_enable } {
 }

@@ -25,12 +25,11 @@ using std::map;
 
 struct Construct_2d_tree {
 
-    boost::multi_array<Coordinate_2d, 2> coor_array;
     int par_ind;
     ParameterSet& parameter_set;
     RoutingParameters& routing_parameter;
 
-    const std::array<std::array<int, 2>, 4> dir_array; //FRONT,BACK,LEFT,RIGHT
+
 
     vector<Two_pin_element_2d> two_pin_list;
     int two_pin_list_size;
@@ -65,11 +64,7 @@ struct Construct_2d_tree {
 
     double adjust_value;
 
-    void update_congestion_map_insert_two_pin_net(Two_pin_element_2d& element);
-    void update_congestion_map_remove_two_pin_net(Two_pin_element_2d& element);
     void insert_all_two_pin_list(Two_pin_element_2d& mn_path_2d);
-
-
 
     void printMemoryUsage(const char* msg);
 

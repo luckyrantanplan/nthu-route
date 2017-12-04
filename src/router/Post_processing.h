@@ -1,13 +1,8 @@
 #ifndef _Post_processing_H_
 #define _Post_processing_H_
-
-#include <vector>
-
-#include "../misc/geometry.h"
-
+class Congestion;
+struct RangeRouter;
 struct Route_2pinnets;
-
-
 
 struct COUNTER {
     int id;
@@ -20,7 +15,7 @@ class Two_pin_element_2d;
 class Monotonic_element;
 
 struct Post_processing {
-
+    Congestion& congestion;
     int cur_overflow;
     int pre_overflow;
 
@@ -29,13 +24,11 @@ struct Post_processing {
     bool total_no_overflow;
 
     Construct_2d_tree& construct_2d_tree;
-
+    RangeRouter& rangeRouter;
     int comp(const COUNTER& a, const COUNTER& b);
 
-
-
-   void initial_for_post_processing();
-    Post_processing(Construct_2d_tree& construct_2d_tree);
+    void initial_for_post_processing();
+    Post_processing(Congestion& congestion, Construct_2d_tree& construct_2d_tree, RangeRouter& rangeRouter);
     void process(Route_2pinnets& route_2pinnets);
 };
 #endif

@@ -59,8 +59,17 @@ public:
     /// (North, South, East, West)
     const T& edge(int x, int y, OrientationType dir) const;
 
+    ///@brief Get the specified edge between 2 vertices
+    T& edge(Coordinate_2d& c1, Coordinate_2d& c2);
+
+    ///@brief Get the specified edge between 2 vertices, and the edge is read-only.
+    const T& edge(Coordinate_2d& c1, Coordinate_2d& c2) const;
+
+    ///@brief Test if the vertex is inside the EdgeGraph
+    bool isVertexInside(Coordinate_2d& c1) const;
+
     template<typename F>
-    void foreach(F& f);
+    void foreach(const F& f);
 private:
     ///The real data structure of plane
     boost::multi_array<T, 2> edgePlane_;
@@ -156,10 +165,24 @@ void EdgePlane<T>::reset() {
 
 template<class T>
 template<typename F>
-void EdgePlane<T>::foreach(F& f) {
+void EdgePlane<T>::foreach(const F& f) {
     for (int i = 0; i < edgePlane_.num_elements(); ++i) {
         f(edgePlane_.data()[i]);
     }
+}
+template<class T>
+T& EdgePlane<T>::edge(Coordinate_2d& c1, Coordinate_2d& c2) {
+    return edge(c1.x, c1.y, Coordinate_2d::get_direction(c1, c2));
+}
+
+template<class T>
+const T& EdgePlane<T>::edge(Coordinate_2d& c1, Coordinate_2d& c2) const {
+    return edge(c1, c2);
+}
+
+template<class T>
+bool EdgePlane<T>::isVertexInside(Coordinate_2d& c) const {
+    return (c.x >= 0 && c.y >= 0 && c.x < (int) edgePlane_.size() && c.y * 2 < (int) edgePlane_[0].size());
 }
 
 #endif /* SRC_GRDB_EDGEPLANE_H_ */

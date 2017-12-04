@@ -33,7 +33,7 @@ char prefer_direction[6][2] = { 0 };
 #endif
 
 void Layer_assignment::print_max_overflow() {
-    int i, j, k, lines = 0;
+    int i, lines = 0;
     int max = 0;
     int sum = 0;
 

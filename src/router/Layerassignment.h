@@ -4,6 +4,7 @@
 #include <boost/multi_array.hpp>
 #include <array>
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -76,7 +77,7 @@ struct VIADENSITY_NODE {
     int max;
 };
 struct PATH_EDGE_3D {
-    set<int> used_net;
+    std::set<int> used_net;
 };
 
 struct PATH_VERTEX_3D {
