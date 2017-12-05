@@ -120,13 +120,13 @@ void RangeRouter::expand_range(int x1, int y1, int x2, int y2, int interval_inde
         for (int j = start.y; j <= end.y; ++j) {
             total_cong += congestion.congestionMap2d.edge(i, j, DIR_EAST).congestion();
             edge_num++;
-            expandMap[i][j] = interval_index;
+            colorMap[i][j].expand = interval_index;
         }
     }
 
-//Set "visited" flag to the grid cells on the right most colum
+//Set "visited" flag to the grid cells on the right most column
     for (int j = start.y; j <= end.y; ++j) {
-        expandMap[end.x][j] = interval_index;
+        colorMap[end.x][j].expand = interval_index;
     }
 
 //Obtain the total congestion value and edge number of FRONT edges.
@@ -160,13 +160,13 @@ void RangeRouter::expand_range(int x1, int y1, int x2, int y2, int interval_inde
                 int j = cur_start.y;
                 total_cong += congestionMap2d.edge(i, j, DIR_EAST).congestion();
                 edge_num++;
-                expandMap[i][j] = interval_index;
+                colorMap[i][j].expand = interval_index;
             }
             if (cur_end.y != end.y) {
                 int j = cur_end.y;
                 total_cong += congestionMap2d.edge(i, j, DIR_EAST).congestion();
                 edge_num++;
-                expandMap[i][j] = interval_index;
+                colorMap[i][j].expand = interval_index;
             }
         }
         for (int j = start.y; j <= end.y; ++j) {
@@ -186,13 +186,13 @@ void RangeRouter::expand_range(int x1, int y1, int x2, int y2, int interval_inde
                 int i = cur_start.x;
                 total_cong += congestionMap2d.edge(i, j, DIR_NORTH).congestion();
                 edge_num++;
-                expandMap[i][j] = interval_index;
+                colorMap[i][j].expand = interval_index;
             }
             if (cur_end.x != end.x) {
                 int i = cur_end.x;
                 total_cong += congestionMap2d.edge(i, j, DIR_NORTH).congestion();
                 edge_num++;
-                expandMap[i][j] = interval_index;
+                colorMap[i][j].expand = interval_index;
             }
         }
         for (int i = start.x; i <= end.x; ++i) {
@@ -208,7 +208,7 @@ void RangeRouter::expand_range(int x1, int y1, int x2, int y2, int interval_inde
             }
         }
 
-        expandMap[cur_end.x][cur_end.y] = interval_index;
+        colorMap[cur_end.x][cur_end.y].expand = interval_index;
 
         start = cur_start;
         end = cur_end;
@@ -315,18 +315,16 @@ void RangeRouter::specify_all_range(boost::multi_array<Point_fc, 2>& gridCell) {
     std::vector<Two_pin_element_2d *> twopin_list;
     std::vector<int> twopin_range_index_list;
 
-    int x = construct_2d_tree.rr_map.get_gridx();
-    int y = construct_2d_tree.rr_map.get_gridy();
-
-    expandMap(x, y, -1);
-    routeStateMap(x, y, -1);
+    for (u_int32_t i = 0; i < colorMap.num_elements(); ++i) {
+        colorMap.data()[i].set(-1, -1);
+    }
 
     total_twopin = 0;
     for (int i = interval_list.size() - 1; i >= 0; --i) {
 
         range_vector.clear();
-        sort(interval_list[i].grid_edge_vector.begin(), interval_list[i].grid_edge_vector.end(), [&](const Grid_edge_element* a, const Grid_edge_element* b) {
-            return comp_grid_edge(*a,*b);
+        sort(interval_list[i].grid_edge_vector.begin(), interval_list[i].grid_edge_vector.end(), [&](const Grid_edge_element& a, const Grid_edge_element& b) {
+            return comp_grid_edge( a, b);
         });
 
         for (int j = 0; j < (int) interval_list[i].grid_edge_vector.size(); ++j) {
@@ -341,9 +339,9 @@ void RangeRouter::specify_all_range(boost::multi_array<Point_fc, 2>& gridCell) {
             else
                 ++nei_y;
 
-            if ((expandMap[x][y] != i) || (expandMap[nei_x][nei_y] != i)) {
-                expandMap[x][y] = i;
-                expandMap[nei_x][nei_y] = i;
+            if ((colorMap[x][y].expand != i) || (colorMap[nei_x][nei_y].expand != i)) {
+                colorMap[x][y].expand = i;
+                colorMap[nei_x][nei_y].expand = i;
 
                 expand_range(x, y, nei_x, nei_y, i);
             }

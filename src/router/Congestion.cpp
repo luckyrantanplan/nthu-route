@@ -23,7 +23,6 @@ Congestion::Congestion(int x, int y) :
     WL_Cost = 1.0;
     via_cost = 3;
     factor = 1.0;
-
     used_cost_flag = FASTROUTE_COST;    // cost function type, i.e., HISTORY_COST, HISTORY_MADEOF_COST, MADEOF_COST, FASTROUTE_COST
     pre_evaluate_congestion_cost_fp = [&](Edge_2d& edge) {pre_evaluate_congestion_cost_all( edge);};
 
@@ -43,20 +42,17 @@ double Congestion::get_cost_2d(int i, int j, OrientationType dir, int net_id, in
     if (edge.lookupNet(net_id) == false) {
         (*distance) = 1;
 
-//Used in part II
         switch (used_cost_flag) {
 
-        case HISTORY_COST: {
+        case HISTORY_COST: {    //Used in part II
             return edge.cost;
         }
 
-//Used in part III: Post processing
-        case MADEOF_COST: {
+        case MADEOF_COST: {    //Used in part III: Post processing
             return edge.isFull();
         }
 
-//Used in part I: Initial routing
-        case FASTROUTE_COST: {
+        case FASTROUTE_COST: {    //Used in part I: Initial routing
             return 1 + parameter_h / (1 + exp((-1) * parameter_k * (edge.cur_cap + 1 - edge.max_cap)));
         }
         }
@@ -73,34 +69,22 @@ int Congestion::cal_max_overflow() {
     int max_2d_of = 0;       //max. overflow (2D)
     int dif_curmax = 0;
 
-    //obtain the max. overflow and total overflowed value of RIGHT edge of every gCell
-    for (int i = congestionMap2d.getXSize() - 2; i >= 0; --i) {
-        for (int j = congestionMap2d.getYSize() - 1; j >= 0; --j) {
-            if (congestionMap2d.edge(i, j, DIR_EAST).isOverflow())  //overflow occur
-            {
-                max_2d_of = std::max(max_2d_of, congestionMap2d.edge(i, j, DIR_EAST).overUsage());
-                dif_curmax += congestionMap2d.edge(i, j, DIR_EAST).overUsage();
-            }
+    congestionMap2d.foreach([&](Edge_2d& edge) {
+        pre_evaluate_congestion_cost_fp(edge);
+        if (edge.isOverflow()) {
+            max_2d_of = std::max(max_2d_of, edge.overUsage());
+            dif_curmax +=edge.overUsage();
         }
-    }
+    });
 
-    //obtain the max. overflow and total overflowed value of FRONT edge of every gCell
-    for (int i = congestionMap2d.getXSize() - 1; i >= 0; --i) {
-        for (int j = congestionMap2d.getYSize() - 2; j >= 0; --j) {
-            if (congestionMap2d.edge(i, j, DIR_NORTH).isOverflow()) //overflow occur
-            {
-                max_2d_of = std::max(max_2d_of, congestionMap2d.edge(i, j, DIR_NORTH).overUsage());
-                dif_curmax += congestionMap2d.edge(i, j, DIR_NORTH).overUsage();
-            }
-        }
-    }
+    //obtain the max. overflow and total overflowed value of RIGHT edge of every gCell
 
     printf("\033[32mcal max overflow=%d   cur_cap-max_cap=%d\033[m\n", max_2d_of, dif_curmax);
     return dif_curmax;
 }
 /* *NOTICE*
  * You can create many different cost function for difference case easily,
- * just reassign function ponter pre_evaluate_congestion_cost_fp to your
+ * just reassign function pointer pre_evaluate_congestion_cost_fp to your
  * function in *route/route.cpp* .                                        */
 
 void Congestion::pre_evaluate_congestion_cost_all(Edge_2d& edge) {
@@ -124,7 +108,6 @@ void Congestion::pre_evaluate_congestion_cost() {
             ++edge.history;
         }
     });
-
 }
 
 //Check if the specified edge is not overflowed
@@ -155,14 +138,13 @@ bool Congestion::check_path_no_overflow(std::vector<Coordinate_2d>& path, int ne
 }
 
 int Congestion::find_overflow_max() {
-
     int overflow_max = 0;
-    for (int i = 0; i < congestionMap2d.edgePlane_.num_elements(); ++i) {
-        Edge_2d& edge = congestionMap2d.edgePlane_.data()[i];
+    congestionMap2d.foreach([& ](Edge_2d& edge) {
+        pre_evaluate_congestion_cost_fp(edge);
         if (edge.overUsage() > overflow_max) {
             overflow_max = edge.overUsage();
         }
-    }
+    });
 
     printf("2D maximum overflow = %d\n", overflow_max);
 #ifdef MAX_OVERFLOW_CONSTRAINT
@@ -196,8 +178,6 @@ int Congestion::find_overflow_max() {
 
 /*assign the estimated track# to each edge*/
 void Congestion::init_2d_map(RoutingRegion& rr_map) {
-
-    congestionMap2d(rr_map.get_gridx(), rr_map.get_gridy());
 
     for (int layer = rr_map.get_layerNumber() - 1; layer >= 0; --layer) {
         for (int x = rr_map.get_gridx() - 2; x >= 0; --x) {
@@ -235,13 +215,15 @@ void Congestion::init_2d_map(RoutingRegion& rr_map) {
 }
 
 //Sum all demand value on every edge
-//So if demand vlaue = wire length, this function can be used
+//So if demand value = wire length, this function can be used
 int Congestion::cal_total_wirelength() {
     int total_wl = 0;
-    for (int i = 0; i < congestionMap2d.edgePlane_.num_elements(); ++i) {
-        total_wl += (int) congestionMap2d.edgePlane_.data()[i].cur_cap;
-    }
-    printf("total wirelengh:%d\n", total_wl);
+    congestionMap2d.foreach([&total_wl](Edge_2d& edge) {
+        total_wl += (int) edge.cur_cap;
+
+    });
+
+    printf("total wirelength:%d\n", total_wl);
     return total_wl;
 }
 
@@ -251,18 +233,16 @@ Congestion::Statistic Congestion::stat_congestion() {
     s.min = std::numeric_limits<double>::min();
     s.avg = 0;
 
-    double edgeCongestion;
-
     congestionMap2d.foreach([&s](Edge_2d& edge) {
-        double congestion = edge.congestion;
-        if (congestion > 1.0) {
-            s.min = std::min(congestion, s.min);
-            s.max = std::max(congestion, s.max);
-            s.avg += congestion;
+        double edgeCongestion = edge.congestion();
+        if (edgeCongestion > 1.0) {
+            s.min = std::min(edgeCongestion, s.min);
+            s.max = std::max(edgeCongestion, s.max);
+            s.avg += edgeCongestion;
         }
     });
 
-    s.avg /= congestionMap2d.edgePlane_.num_elements();
+    s.avg /= congestionMap2d.num_elements();
     return s;
 }
 
@@ -275,7 +255,7 @@ void Congestion::update_congestion_map_insert_two_pin_net(Two_pin_element_2d& el
 //get an edge from congestion map - c_map_2d
 
         Edge_2d& edge = congestionMap2d.edge(element.path[i], element.path[i + 1]);
-        std::pair<RoutedNetTable::iterator, bool> insert_result = edge.used_net.insert(std::make_pair(element.net_id, 1));
+        std::pair<RoutedNetTable::iterator, bool> insert_result = edge.used_net.insert(std::pair<const int, int>(element.net_id, 1));
 
         if (!insert_result.second)
             ++((insert_result.first)->second);
@@ -294,16 +274,15 @@ void Congestion::update_congestion_map_insert_two_pin_net(Two_pin_element_2d& el
 void Congestion::update_congestion_map_remove_two_pin_net(Two_pin_element_2d& element) {
 
     for (int i = element.path.size() - 2; i >= 0; --i) {
-        OrientationType dir = Coordinate_2d::get_direction(element.path[i], element.path[i + 1]);
-
-        RoutedNetTable::iterator find_result = congestionMap2d.edge(element.path[i].x, element.path[i].y, dir).used_net.find(element.net_id);
+        Edge_2d& edge = congestionMap2d.edge(element.path[i], element.path[i + 1]);
+        RoutedNetTable::iterator find_result = edge.used_net.find(element.net_id);
 
         --(find_result->second);
         if (find_result->second == 0) {
-            congestionMap2d.edge(element.path[i].x, element.path[i].y, dir).used_net.erase(element.net_id);
-            --(congestionMap2d.edge(element.path[i].x, element.path[i].y, dir).cur_cap);
+            edge.used_net.erase(element.net_id);
+            --(edge.cur_cap);
             if (used_cost_flag != FASTROUTE_COST) {
-                pre_evaluate_congestion_cost_fp(element.path[i].x, element.path[i].y, dir);
+                pre_evaluate_congestion_cost_fp(edge);
             }
         }
     }

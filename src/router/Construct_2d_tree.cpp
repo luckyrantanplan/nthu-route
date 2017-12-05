@@ -271,7 +271,8 @@ void Construct_2d_tree::gen_FR_congestion_map() {
 
     bboxRouteStateMap = EdgeColorMap<int>(rr_map.get_gridx(), rr_map.get_gridy(), -1);
 
-    init_2d_map();          //initial congestion map: calculating every edge's capacity
+    Congestion congestion(rr_map.get_gridx(), rr_map.get_gridy());
+    congestion.init_2d_map(rr_map);          //initial congestion map: calculating every edge's capacity
     init_2pin_list();       //initial 2-pin net container
     init_flute();           //initial the information of pin's coordinate and group by net for flute
     flute_mode = NORMAL;	//wirelength driven	mode
@@ -296,7 +297,7 @@ void Construct_2d_tree::gen_FR_congestion_map() {
 //call flute to gen steiner tree and put the result in flutetree[]
         netRoutingTreeRouter.routeNet(rr_map.get_nPin(i), flutetree[i]);
 
-//The total node # in a tree, those nodes include pin and steinor point
+//The total node # in a tree, those nodes include pin and steiner point
 //And it is defined as ((2 * degree of a tree) - 2) by the authors of flute
         flutetree[i].number = 2 * flutetree[i].deg - 2;	//add 0403
 
@@ -1071,7 +1072,7 @@ void Construct_2d_tree::output_2_pin_list() {
 
 Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterSet& param, RoutingRegion& rr) :
 //
-        coor_array { boost::extents[rr.get_gridx()][rr.get_gridy()] },	//
+        //
         parameter_set { param }, //
         routing_parameter { routingparam }, //
 
@@ -1101,14 +1102,6 @@ Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterS
     NetDirtyBit = vector<bool>(rr_map.get_netNumber(), true);
     /* TroyLee: End */
 
-    // Make an 2D coordinate array which contains the (x, y) information
-    for (int i = 0; i < rr_map.get_gridx(); ++i) {
-        for (int j = 0; j < rr_map.get_gridy(); ++j) {
-            coor_array[i][j].x = i;
-            coor_array[i][j].y = j;
-        }
-    }
-
     if (routing_parameter.get_monotonic_en()) {
         //allocate_monotonic();           // Allocate the memory for storing the data while searching monotonic path
 // 1. A 2D array that stores max congestion
@@ -1129,12 +1122,12 @@ Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterS
 
 //Make a 2-pin net list without group by net
     for (int i = 0; i < rr_map.get_netNumber(); ++i) {
-        for (int j = 0; j < (int) net_2pin_list[i]->size(); ++j) {
+        for (int j = 0; j < (int) net_2pin_list[i].size(); ++j) {
             two_pin_list.push_back((*net_2pin_list[i])[j]);
         }
     }
 
-    route_2pinnets.reallocate_two_pin_list(true);
+    route_2pinnets.reallocate_two_pin_list();
     mazeroute_in_range = new Multisource_multisink_mazeroute(*this);
 
     int cur_overflow = -1;
@@ -1168,7 +1161,7 @@ Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterS
         if (cur_overflow == 0)
             break;
 
-        route_2pinnets.reallocate_two_pin_list(true);
+        route_2pinnets.reallocate_two_pin_list();
 
 #ifdef MESSAGE
         printMemoryUsage("Memory Usage:");

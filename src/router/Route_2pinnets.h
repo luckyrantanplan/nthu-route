@@ -19,6 +19,11 @@ public:
             x(x), y(y) {
     }
 
+    void set(const int ix, const int iy) {
+        x = ix;
+        y = iy;
+    }
+
 public:
     int x;
     int y;
@@ -48,6 +53,10 @@ struct ColorMap {
 };
 struct Route_2pinnets {
 
+    enum PointType {
+        oneDegreeTerminal, severalDegreeTerminal, oneDegreeNonterminal, steinerPoint, twoDegree
+    };
+
     boost::multi_array<Point_fc, 2> gridcell; //This is some kind of color map, for recording
     //which 2-pin net passed which gCell
 
@@ -60,7 +69,6 @@ struct Route_2pinnets {
     RoutingRegion& rr_map;
     RangeRouter& rangerouter;
     Congestion& congestion;
-
     Route_2pinnets(Construct_2d_tree& construct_2d_tree, RangeRouter& rangerouter, Congestion& congestion);
     void route_all_2pin_net();
     void allocate_gridcell();
@@ -69,9 +77,9 @@ struct Route_2pinnets {
 
     void reset_c_map_used_net_to_one();
     void put_terminal_color_on_colormap(int net_id);
-    int determine_is_terminal_or_steiner_point(int xx, int yy, int dir, int net_id);
-    void bfs_for_find_two_pin_list(Coordinate_2d start_coor, int net_id, bool insert_to_branch);
-    void reallocate_two_pin_list(bool insert_to_branch);
+    Coordinate_2d determine_is_terminal_or_steiner_point(Coordinate_2d& c, Coordinate_2d& head, int net_id, PointType& pointType);
+    void bfs_for_find_two_pin_list(Coordinate_2d start_coor, int net_id);
+    void reallocate_two_pin_list();
 
 };
 

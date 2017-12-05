@@ -32,7 +32,7 @@ struct Construct_2d_tree {
 
 
     vector<Two_pin_element_2d> two_pin_list;
-    int two_pin_list_size;
+
     int flute_mode;
 
     int fail_find_path_count;

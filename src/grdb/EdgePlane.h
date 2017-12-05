@@ -60,13 +60,15 @@ public:
     const T& edge(int x, int y, OrientationType dir) const;
 
     ///@brief Get the specified edge between 2 vertices
-    T& edge(Coordinate_2d& c1, Coordinate_2d& c2);
+    T& edge(const Coordinate_2d& c1, const Coordinate_2d& c2);
 
     ///@brief Get the specified edge between 2 vertices, and the edge is read-only.
-    const T& edge(Coordinate_2d& c1, Coordinate_2d& c2) const;
+    const T& edge(const Coordinate_2d& c1, const Coordinate_2d& c2) const;
 
     ///@brief Test if the vertex is inside the EdgeGraph
-    bool isVertexInside(Coordinate_2d& c1) const;
+    bool isVertexInside(const Coordinate_2d& c1) const;
+
+    std::size_t num_elements() const;
 
     template<typename F>
     void foreach(const F& f);
@@ -85,18 +87,12 @@ EdgePlane<T>::EdgePlane(int xSize, int ySize) :
 template<class T>
 EdgePlane<T>::EdgePlane(const EdgePlane& original) :
         edgePlane_(original.edgePlane_) {
-    copyPlane(original);
+
 }
 
 template<class T>
 EdgePlane<T>::~EdgePlane() {
 
-}
-
-template<class T>
-void EdgePlane<T>::operator=(const EdgePlane& original) {
-
-    copyPlane(original);
 }
 
 template<class T>
@@ -166,23 +162,26 @@ void EdgePlane<T>::reset() {
 template<class T>
 template<typename F>
 void EdgePlane<T>::foreach(const F& f) {
-    for (int i = 0; i < edgePlane_.num_elements(); ++i) {
+    for (std::size_t i = 0; i < edgePlane_.num_elements(); ++i) {
         f(edgePlane_.data()[i]);
     }
 }
 template<class T>
-T& EdgePlane<T>::edge(Coordinate_2d& c1, Coordinate_2d& c2) {
+T& EdgePlane<T>::edge(const Coordinate_2d& c1, const Coordinate_2d& c2) {
     return edge(c1.x, c1.y, Coordinate_2d::get_direction(c1, c2));
 }
 
 template<class T>
-const T& EdgePlane<T>::edge(Coordinate_2d& c1, Coordinate_2d& c2) const {
+const T& EdgePlane<T>::edge(const Coordinate_2d& c1, const Coordinate_2d& c2) const {
     return edge(c1, c2);
 }
 
 template<class T>
-bool EdgePlane<T>::isVertexInside(Coordinate_2d& c) const {
+bool EdgePlane<T>::isVertexInside(const Coordinate_2d& c) const {
     return (c.x >= 0 && c.y >= 0 && c.x < (int) edgePlane_.size() && c.y * 2 < (int) edgePlane_[0].size());
 }
-
+template<class T>
+std::size_t EdgePlane<T>::num_elements() const {
+    return edgePlane_.num_elements();
+}
 #endif /* SRC_GRDB_EDGEPLANE_H_ */

@@ -80,7 +80,7 @@ public:
 class Vertex_flute {
 public:
     int x, y;
-    int type;   //PIN, SETINER, DELETED
+    int type;   //PIN, STEINER, DELETED
     int index;
     int visit;
     std::vector<Vertex_flute *> neighbor;

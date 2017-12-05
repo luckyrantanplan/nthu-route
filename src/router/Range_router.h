@@ -54,22 +54,37 @@ public:
 struct RangeRouter {
 public:
 
+    struct ColorMap {
+        //This color map is used by
+
+        //expand_range()
+        //for recording which edges have expanded
+        //
+        int expand;
+        //This color map is used by
+        //query_range_2pin()
+        //for recording if all the 2-pin nets which
+        //locate on the same tile are routed
+
+        int routeState;
+
+        ColorMap() :
+                expand { -1 }, routeState { -1 } {
+        }
+        void set(const int iExpand, const int iRouteState) {
+            expand = iExpand;
+            routeState = iRouteState;
+        }
+    };
+
     std::vector<Range_element> range_vector;
     std::array<Interval_element, INTERVAL_NUM> interval_list;
 
     int total_twopin = 0;
 
     Construct_2d_tree& construct_2d_tree;
-    boost::multi_array<int, 2> expandMap;   //This color map is used by
-
-    //expand_range()
-    //for recording which edges have expanded
-    //
-    boost::multi_array<int, 2> routeStateMap; //This color map is used by
-    //query_range_2pin()
-    //for recording if all the 2-pin nets which
-    //locate on the same tile are routed
-
+    boost::multi_array<ColorMap, 2> colorMap;
+    boost::multi_array<int, 2> routeStateMap;
     Congestion& congestion;
     MonotonicRouting monotonicRouter;
     RangeRouter(Construct_2d_tree& construct_2d_tree, Congestion& congestion, bool monotonic_enable);
