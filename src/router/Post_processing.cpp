@@ -67,6 +67,7 @@ void Post_processing::initial_for_post_processing() {
 
 Post_processing::Post_processing(Congestion& congestion, Construct_2d_tree& construct_2d_tree, RangeRouter& rangeRouter) :
         congestion { congestion },	//
+        total_no_overflow { false },	//
         construct_2d_tree { construct_2d_tree }, //
         rangeRouter { rangeRouter } {
 }
@@ -96,13 +97,12 @@ void Post_processing::process(Route_2pinnets& route_2pinnets) {
             monotonic_solved_counter = maze_solved_counter = no_overflow_counter = 0;
             printf("no_overflow:%d monotonic:%d maze:%d\n",
                     no_overflow_counter,monotonic_solved_counter,maze_solved_counter);
-            printf("pre_of:%d cur_of:%d\n",pre_overflow,cur_overflow);
+            printf("pre_of:%d cur_of:%d\n", cur_overflow);
 #endif
             total_no_overflow = true;
 
             initial_for_post_processing();
 
-            pre_overflow = cur_overflow;
             cur_overflow = congestion.cal_max_overflow();
             congestion.cal_total_wirelength();
 

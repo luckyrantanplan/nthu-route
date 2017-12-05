@@ -254,16 +254,11 @@ void Route_2pinnets::reallocate_two_pin_list() {
 
     reset_c_map_used_net_to_one();
 
-    u_int32_t usedTwoPinListSize = 0;
-    for (u_int32_t twoPinListPos = 0; twoPinListPos < construct_2d_tree.two_pin_list.size(); ++twoPinListPos) {
-        if (construct_2d_tree.NetDirtyBit[construct_2d_tree.two_pin_list[twoPinListPos].net_id] == false) {
-            if (usedTwoPinListSize != twoPinListPos) {
-                swap(construct_2d_tree.two_pin_list[twoPinListPos], construct_2d_tree.two_pin_list[usedTwoPinListSize]);
-            }
-            ++usedTwoPinListSize;
-        }
-    }
-    construct_2d_tree.two_pin_list.resize(usedTwoPinListSize);
+    vector<Two_pin_element_2d>& v = construct_2d_tree.two_pin_list;
+    // erase-remove idiom
+    v.erase(std::remove_if(v.begin(), v.end(), [& ](const Two_pin_element_2d& pin) {
+        return construct_2d_tree.NetDirtyBit[pin.net_id];
+    }), v.end());
 
     for (int netId = 0; netId < rr_map.get_netNumber(); ++netId) {
         if (construct_2d_tree.NetDirtyBit[netId]) {

@@ -40,7 +40,7 @@ struct Construct_2d_tree {
     std::vector<Two_pin_element> all_two_pin_list;
 
     RoutingRegion& rr_map;
-    int cur_iter;
+
     int done_iter;
     double alpha;
     int total_overflow;

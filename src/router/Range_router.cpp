@@ -215,7 +215,7 @@ void RangeRouter::expand_range(int x1, int y1, int x2, int y2, int interval_inde
         avg_cong = total_cong / edge_num;
     }                                // end of while loop
 
-    int extraExpandRange = construct_2d_tree.cur_iter / 10;
+    int extraExpandRange = congestion.cur_iter / 10;
     start.x = max(start.x - extraExpandRange, 0);
     end.x = min(end.x + extraExpandRange, rr_map.get_gridx() - 1);
     start.y = max(start.y - extraExpandRange, 0);

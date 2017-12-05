@@ -86,7 +86,7 @@ public:
     std::vector<Vertex_flute *> neighbor;
 
     Vertex_flute(int x = 0, int y = 0) :
-            x(x), y(y), visit(0)/*, copy_ind(-1)*/{
+            x(x), y(y), index { }, visit(0)/*, copy_ind(-1)*/{
     }
 
     //sort by x,y,pin,steiner

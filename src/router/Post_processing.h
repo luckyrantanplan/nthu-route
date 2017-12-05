@@ -17,7 +17,6 @@ class Monotonic_element;
 struct Post_processing {
     Congestion& congestion;
     int cur_overflow;
-    int pre_overflow;
 
     int Post_processing_iteration;
     int inc_num;

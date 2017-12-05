@@ -34,7 +34,7 @@ public:
     double exponent;
     double WL_Cost;
     double factor;
-
+    int cur_iter;
     EdgePlane<Edge_2d> congestionMap2d;
 
     Congestion(int x, int y);

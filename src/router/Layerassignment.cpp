@@ -33,21 +33,18 @@ char prefer_direction[6][2] = { 0 };
 #endif
 
 void Layer_assignment::print_max_overflow() {
-    int i, lines = 0;
+    int lines = 0;
     int max = 0;
     int sum = 0;
 
-    for (i = 0; i < cur_map_3d.edgePlane_.num_elements(); ++i) {
-
-        Edge_3d& edgeLeft = cur_map_3d.edgePlane_.data()[i];
-        if (edgeLeft.cur_cap > edgeLeft.max_cap) {	// overflow
-            if (edgeLeft.cur_cap - edgeLeft.max_cap > max) {
-                max = edgeLeft.cur_cap - edgeLeft.max_cap;
+    cur_map_3d.foreach([&]( Edge_3d& edgeLeft ) {
+        if (edgeLeft.cur_cap > edgeLeft.max_cap) {  // overflow
+                max = std::max(edgeLeft.cur_cap - edgeLeft.max_cap,max);
+                sum += (edgeLeft.cur_cap - edgeLeft.max_cap);
+                ++ lines;
             }
-            sum += (edgeLeft.cur_cap - edgeLeft.max_cap);
-            lines++;
-        }
-    }
+        });
+
     printf("3D # of overflow = %d\n", sum);
     printf("3D max overflow = %d\n", max);
     printf("3D overflow edge number = %d\n", lines);

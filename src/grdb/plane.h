@@ -91,7 +91,7 @@ void Plane<VertexT, EdgeT>::operator=(const Plane& original) {
 template<class VertexT, class EdgeT>
 inline
 void Plane<VertexT, EdgeT>::resize(int xSize, int ySize) {
-    plane_.resize(xSize, ySize);
+    plane_.resize(boost::extents[xSize][ySize]);
 
 }
 

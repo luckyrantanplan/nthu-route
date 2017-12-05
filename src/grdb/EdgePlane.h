@@ -166,6 +166,7 @@ void EdgePlane<T>::foreach(const F& f) {
         f(edgePlane_.data()[i]);
     }
 }
+
 template<class T>
 T& EdgePlane<T>::edge(const Coordinate_2d& c1, const Coordinate_2d& c2) {
     return edge(c1.x, c1.y, Coordinate_2d::get_direction(c1, c2));
