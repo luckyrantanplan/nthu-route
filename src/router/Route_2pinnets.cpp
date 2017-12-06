@@ -1,12 +1,14 @@
 #include "Route_2pinnets.h"
 
-#include <bits/move.h>
 #include <boost/multi_array/base.hpp>
 #include <boost/multi_array/multi_array_ref.hpp>
 #include <boost/multi_array/subarray.hpp>
 #include <stdlib.h>
-#include <array>
-#include <unordered_map>
+#include <sys/types.h>
+#include <algorithm>
+#include <iterator>
+#include <queue>
+#include <utility>
 
 #include "../flute/flute-ds.h"
 #include "../grdb/EdgePlane.h"
@@ -134,29 +136,27 @@ Coordinate_2d Route_2pinnets::determine_is_terminal_or_steiner_point(Coordinate_
 }
 
 void Route_2pinnets::bfs_for_find_two_pin_list(Coordinate_2d start_coor, int net_id) {
-    vector<int> branch_ind;
-    vector<Coordinate_2d> branch_xy;
-    vector<int> branch_n;
 
-    vector<Coordinate_2d> queue;
-    queue.push_back(start_coor);
-    int head_index = 0;
-    int tail_index = 1;
+    vector<BranchClass> branch_xy;
 
-    colorMap[queue[head_index].x][queue[head_index].y].traverse = net_id;
+    std::queue<ElementQueue> queue;
+    uint32_t index = 0;
+    queue.emplace(start_coor, Coordinate_2d(-1, -1), index);
+    ++index;
+    {
+        Coordinate_2d& head = queue.front().coor;
+        colorMap[head.x][head.y].traverse = net_id;
 
-    branch_xy.push_back(queue[head_index]);
-    branch_n.push_back(0);
-    branch_ind.push_back(0);
+        branch_xy.emplace_back(head, queue.front().index);
+    }
 
-    while (head_index != tail_index) {
+    while (!queue.empty()) {
         for (const Coordinate_2d& cr : Coordinate_2d::dir_array()) {
-            Coordinate_2d head = queue[head_index];
+            ElementQueue& headElement = queue.front();
+            Coordinate_2d head = headElement.coor;
             Coordinate_2d c = head + cr;
-            if (head_index > 0 && c == queue[head_index - 1]) {
-                continue;
-            }
-            if (congestion.congestionMap2d.isVertexInside(c)) {
+
+            if (c != headElement.parent && congestion.congestionMap2d.isVertexInside(c)) {
                 Edge_2d& edge = congestion.congestionMap2d.edge(head, c);
                 if (edge.lookupNet(net_id)) {
                     Two_pin_element_2d two_pin;
@@ -168,8 +168,8 @@ void Route_2pinnets::bfs_for_find_two_pin_list(Coordinate_2d start_coor, int net
                     while (!exit_loop) {
                         exit_loop = true;
                         colorMap[head.x][head.y].traverse = net_id;
-                        PointType pointType;
                         two_pin.path.push_back(c);
+                        PointType pointType;
                         Coordinate_2d nextc = determine_is_terminal_or_steiner_point(c, head, net_id, pointType);
 
                         switch (pointType) {
@@ -178,8 +178,7 @@ void Route_2pinnets::bfs_for_find_two_pin_list(Coordinate_2d start_coor, int net
                                 two_pin.pin2 = c;
                                 construct_2d_tree.two_pin_list.push_back(two_pin);
 
-                                branch_xy.push_back(c);
-                                branch_n.push_back(branch_ind[head_index]);
+                                branch_xy.emplace_back(c, headElement.index);
 
                                 colorMap[c.x][c.y].traverse = net_id;
                             } else {
@@ -196,13 +195,9 @@ void Route_2pinnets::bfs_for_find_two_pin_list(Coordinate_2d start_coor, int net
                                 two_pin.pin2 = c;
                                 construct_2d_tree.two_pin_list.push_back(two_pin);
 
-                                branch_xy.push_back(c);
-                                branch_n.push_back(branch_ind[head_index]);
-
-                                queue.push_back(c);
-
-                                branch_ind.push_back(branch_xy.size() - 1);
-                                ++tail_index;
+                                branch_xy.emplace_back(c, headElement.index);
+                                queue.emplace(c, head, index);
+                                ++index;
 
                                 colorMap[c.x][c.y].traverse = net_id;
                             } else {
@@ -221,6 +216,7 @@ void Route_2pinnets::bfs_for_find_two_pin_list(Coordinate_2d start_coor, int net
                             head = c;
                             c = nextc;
                             exit_loop = false;
+                            break;
                         }
                         }
 
@@ -228,7 +224,7 @@ void Route_2pinnets::bfs_for_find_two_pin_list(Coordinate_2d start_coor, int net
                 }
             }
         }
-        ++head_index;
+        queue.pop();
     }
 
     Tree& tree = construct_2d_tree.net_flutetree[net_id];
@@ -238,10 +234,10 @@ void Route_2pinnets::bfs_for_find_two_pin_list(Coordinate_2d start_coor, int net
     }
 
     tree.number = branch_xy.size();
-    for (int i = tree.number - 1; i >= 0; --i) {
+    for (int i = 0; i < tree.number; ++i) {
         tree.branch[i].x = branch_xy[i].x;
         tree.branch[i].y = branch_xy[i].y;
-        tree.branch[i].n = branch_n[i];
+        tree.branch[i].n = branch_xy[i].n;
     }
 
 }

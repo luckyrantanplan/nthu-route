@@ -53,6 +53,26 @@ struct ColorMap {
 };
 struct Route_2pinnets {
 
+    struct ElementQueue {
+        Coordinate_2d coor;
+        Coordinate_2d parent;
+        uint32_t index;
+
+        ElementQueue(Coordinate_2d coor, Coordinate_2d parent, uint32_t index) :
+                coor { coor }, parent { parent }, index { index } {
+        }
+    };
+
+    struct BranchClass {
+        double x;
+        double y;   // starting point of the branch
+        int n;        // index of neighbor
+
+        BranchClass(Coordinate_2d c, int32_t n) :
+                x { static_cast<double>(c.x) }, y { static_cast<double>(c.y) }, n { n } {
+        }
+    };
+
     enum PointType {
         oneDegreeTerminal, severalDegreeTerminal, oneDegreeNonterminal, steinerPoint, twoDegree
     };
