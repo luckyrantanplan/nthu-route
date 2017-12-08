@@ -38,11 +38,11 @@ public:
 class Grid_edge_element {
 public:
     Coordinate_2d grid;
-    OrientationType dir;
+    Coordinate_2d c2;
 
 public:
-    Grid_edge_element(Coordinate_2d& grid, OrientationType dir) :
-            grid(grid), dir(dir) {
+    Grid_edge_element(Coordinate_2d& grid, Coordinate_2d& c2) :
+            grid(grid), c2 { c2 } {
     }
 };
 class Interval_element {
@@ -95,9 +95,9 @@ public:
     bool double_equal(double a, double b);
     bool comp_grid_edge(const Grid_edge_element& a, const Grid_edge_element& b);
 
-    void insert_to_interval(double cong_value, Coordinate_2d coor_2d, OrientationType dir);
+    void insert_to_interval(Coordinate_2d coor_2d, Coordinate_2d c2);
 
-    void expand_range(int x1, int y1, int x2, int y2, int interval_index);
+    void expand_range(Coordinate_2d c1, Coordinate_2d c2, int interval_index);
     void range_router(Two_pin_element_2d& two_pin, int version);
     bool inside_range(int left_x, int bottom_y, int right_x, int top_y, Coordinate_2d& pt);
     void query_range_2pin(int left_x, int bottom_y, int right_x, int top_y, //

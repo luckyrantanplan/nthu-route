@@ -11,7 +11,8 @@
 class Pin: public Coordinate {
 public:
     //Constructor
-    Pin(int x, int y, int z);
+    Pin(int x=0, int y=0, int z=0);
+    //  Pin();
     int get_tileX() const;
     int get_tileY() const;
     int get_layerId() const;		//get the layer id that contain this pin
@@ -50,8 +51,6 @@ private:
 };
 
 class RoutingSpace {
-    class RoutingEdge;
-    class Tile;
 
 public:
     int tileWidth;
@@ -78,37 +77,21 @@ public:
     int getZSize() const;
 
     ///@brief Get the specified tile
-    Tile& tile(int x, int y, int z);
+    Pin& tile(int x, int y, int z);
 
     ///@brief Get the specified tile, and the tile is read-only.
-    const Tile& tile(int x, int y, int z) const;
+    const Pin& tile(int x, int y, int z) const;
 
     ///@brief Get the specified edge
-    RoutingEdge& edge(int x, int y, int z, DirectionType);
+    Plane<Pin, int>& layer(int z);
 
     ///@brief Get the specified edge, and the edge is read-only.
-    const RoutingEdge& edge(int x, int y, int z, DirectionType) const;
+    const Plane<Pin, int>& layer(int z) const;
 
 private:
-    struct RoutingEdge {
-        RoutingEdge(int capacity = 0) :
-                capacity(capacity) {
-        }
-        int capacity;
-    };
-
-    struct Tile {
-        Tile(int x = 0, int y = 0, int z = 0) :
-                coordinate(x, y, z) {
-        }
-
-        const Pin& getAnchor();
-
-        Pin coordinate;         //Coordinate of the tile
-    };
 
 private:
-    std::vector<Plane<Tile, RoutingEdge> > routingSpace_;
+    std::vector<Plane<Pin, int> > routingSpace_;
 
 private:
     void assignTileCoordinate();
@@ -123,29 +106,27 @@ typedef std::vector<Net> NetList;
 inline
 void RoutingSpace::resize(int x, int y, int z) {
     //routingSpace_.resize(x, y , z);
-    routingSpace_.resize(z, Plane<Tile, RoutingEdge>(x, y));
+    routingSpace_.resize(z, Plane<Pin, int>(x, y));
     wireWidth.resize(z);
     wireSpacing.resize(z);
     viaSpacing.resize(z);
     assignTileCoordinate();
 }
 
-inline RoutingSpace::Tile& RoutingSpace::tile(int x, int y, int z) {
+inline Pin& RoutingSpace::tile(int x, int y, int z) {
     return routingSpace_[z].vertex(x, y);
 }
 
-inline const RoutingSpace::Tile& RoutingSpace::tile(int x, int y, int z) const {
+inline const Pin& RoutingSpace::tile(int x, int y, int z) const {
     return routingSpace_[z].vertex(x, y);
 }
 
-inline RoutingSpace::RoutingEdge&
-RoutingSpace::edge(int x, int y, int z, DirectionType dir) {
-    return routingSpace_[z].edge(x, y, dir);
+inline Plane<Pin, int>& RoutingSpace::layer(int z) {
+    return routingSpace_[z];
 }
 
-inline const RoutingSpace::RoutingEdge&
-RoutingSpace::edge(int x, int y, int z, DirectionType dir) const {
-    return routingSpace_[z].edge(x, y, dir);
+inline const Plane<Pin, int> & RoutingSpace::layer(int z) const {
+    return layer(z);
 }
 
 inline
@@ -166,7 +147,4 @@ int RoutingSpace::getZSize() const {
     return routingSpace_.size();
 }
 
-inline const Pin& RoutingSpace::Tile::getAnchor() {
-    return coordinate;
-}
 #endif /*INC_ROUTINGCOMPONENT_H*/

@@ -62,6 +62,12 @@ public:
     /// (North, South, East, West)
     const T& edge(int x, int y, int z, OrientationType dir) const;
 
+    ///@brief Get the specified edge between 2 vertices
+    T& edge(const Coordinate_3d& c1, const Coordinate_3d& c2);
+
+    ///@brief Get the specified edge between 2 vertices, and the edge is read-only.
+    const T& edge(const Coordinate_3d& c1, const Coordinate_3d& c2) const;
+
     template<typename F>
     void foreach(const F& f);
 private:
@@ -121,13 +127,13 @@ inline T& EdgePlane3d<T>::edge(int x, int y, int z, DirectionType dir) {
 
     switch (dir) {
     case DirectionType::DIR_EAST:
-        return edgePlane_[x][2 * y];
+        return edgePlane_[x][y][2 * z];
     case DirectionType::DIR_NORTH:
-        return edgePlane_[x][2 * y - 1];
+        return edgePlane_[x][y - 1][2 * z + 1];
     case DirectionType::DIR_SOUTH:
-        return edgePlane_[x][2 * y + 1];
+        return edgePlane_[x][y][2 * z + 1];
     case DirectionType::DIR_WEST:
-        return edgePlane_[x - 1][2 * y];
+        return edgePlane_[x - 1][y][2 * z];
     case DirectionType::DIR_UP:
         throw std::exception();
     case DirectionType::DIR_DOWN:
@@ -171,6 +177,29 @@ void EdgePlane3d<T>::foreach(const F& f) {
     for (std::size_t i = 0; i < edgePlane_.num_elements(); ++i) {
         f(edgePlane_.data()[i]);
     }
+}
+
+template<class T>
+T& EdgePlane3d<T>::edge(const Coordinate_3d& c1, const Coordinate_3d& c2) {
+
+    if (c1.x < c2.x) {
+        return edgePlane_[c1.x][c1.y][2 * c1.z];
+    }
+    if (c1.x > c2.x) {
+        return edgePlane_[c2.x][c2.y][2 * c2.z];
+    }
+    if (c1.y < c2.y) {
+        return edgePlane_[c1.x][c1.y][2 * c1.z + 1];
+    }
+    if (c1.y > c2.y) {
+        return edgePlane_[c2.x][c2.y][2 * c2.z + 1];
+    }
+    throw std::exception();
+}
+
+template<class T>
+const T& EdgePlane3d<T>::edge(const Coordinate_3d& c1, const Coordinate_3d& c2) const {
+    return edge(c1, c2);
 }
 
 #endif /* SRC_GRDB_EDGEPLANE3D_H_ */

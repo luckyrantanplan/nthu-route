@@ -8,6 +8,7 @@
 #include "Congestion.h"
 
 #include <boost/multi_array/multi_array_ref.hpp>
+#include <boost/range/combine.hpp>
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
@@ -33,11 +34,11 @@ Congestion::~Congestion() {
 }
 
 //get edge cost on a 2D layer
-double Congestion::get_cost_2d(int i, int j, OrientationType dir, int net_id, int *distance) {
+double Congestion::get_cost_2d(const Coordinate_2d& c1, const Coordinate_2d& c2, int net_id, int *distance) {
 
 //Check if the specified net pass the edge.
 //If it have passed the edge before, then the cost is 0.
-    Edge_2d& edge = congestionMap2d.edge(i, j, dir);
+    Edge_2d& edge = congestionMap2d.edge(c1, c2);
 
     if (edge.lookupNet(net_id) == false) {
         (*distance) = 1;
@@ -69,13 +70,13 @@ int Congestion::cal_max_overflow() {
     int max_2d_of = 0;       //max. overflow (2D)
     int dif_curmax = 0;
 
-    congestionMap2d.foreach([&](Edge_2d& edge) {
+    for (Edge_2d& edge : congestionMap2d.all()) {
         pre_evaluate_congestion_cost_fp(edge);
         if (edge.isOverflow()) {
             max_2d_of = std::max(max_2d_of, edge.overUsage());
-            dif_curmax +=edge.overUsage();
+            dif_curmax += edge.overUsage();
         }
-    });
+    }
 
     //obtain the max. overflow and total overflowed value of RIGHT edge of every gCell
 
@@ -102,12 +103,12 @@ void Congestion::pre_evaluate_congestion_cost_all(Edge_2d& edge) {
 
 void Congestion::pre_evaluate_congestion_cost() {
 
-    congestionMap2d.foreach([&](Edge_2d& edge) {
+    for (Edge_2d& edge : congestionMap2d.all()) {
         pre_evaluate_congestion_cost_fp(edge);
         if (edge.isOverflow()) {
             ++edge.history;
         }
-    });
+    }
 }
 
 //Check if the specified edge is not overflowed
@@ -139,12 +140,12 @@ bool Congestion::check_path_no_overflow(std::vector<Coordinate_2d>& path, int ne
 
 int Congestion::find_overflow_max() {
     int overflow_max = 0;
-    congestionMap2d.foreach([& ](Edge_2d& edge) {
+    for (Edge_2d& edge : congestionMap2d.all()) {
         pre_evaluate_congestion_cost_fp(edge);
         if (edge.overUsage() > overflow_max) {
             overflow_max = edge.overUsage();
         }
-    });
+    }
 
     printf("2D maximum overflow = %d\n", overflow_max);
 #ifdef MAX_OVERFLOW_CONSTRAINT
@@ -178,50 +179,26 @@ int Congestion::find_overflow_max() {
 
 /*assign the estimated track# to each edge*/
 void Congestion::init_2d_map(RoutingRegion& rr_map) {
-
-    for (int layer = rr_map.get_layerNumber() - 1; layer >= 0; --layer) {
-        for (int x = rr_map.get_gridx() - 2; x >= 0; --x) {
-            for (int y = rr_map.get_gridy() - 1; y >= 0; --y) {
 #ifdef IBM_CASE
-                //There is no wire spacing, so
-                //the edge capacity on congestion map = edge capacity on every layer
-                congestionMap2d.edge(x, y, DIR_EAST).max_cap += rr_map.capacity(layer, x, y, DIR_EAST);
+    int divisor=2;
 #else
-                //Because the wire width = 1 and wire spaceing = 1,
-                //the edge capacity on congestion map = edge capacity on every layer /2.
-
-                congestionMap2d.edge(x, y, DIR_EAST).max_cap += (rr_map.capacity(layer, x, y, DIR_EAST) / 2);
+    int divisor = 1;
 #endif
-            }
+    for (int layer = 0; layer < rr_map.get_layerNumber(); ++layer) {
+        for (auto pair : boost::combine(congestionMap2d.all(), rr_map.getLayer(layer).edges().all())) {
+            pair.get<0>().max_cap += pair.get<1>() / divisor;
         }
     }
-
-    for (int layer = rr_map.get_layerNumber() - 1; layer >= 0; --layer) {
-        for (int x = rr_map.get_gridx() - 1; x >= 0; --x) {
-            for (int y = rr_map.get_gridy() - 2; y >= 0; --y) {
-#ifdef IBM_CASE
-                //There is no wire spacing, so
-                //the edge capacity on congestion map = edge capacity on every layer
-                congestionMap2d.edge(x, y, DIR_NORTH).max_cap += rr_map.capacity(layer, x, y,DIR_NORTH);
-#else
-                //Because the wire width = 1 and wire spaceing = 1,
-                //the edge capacity on congestion map = edge capacity on every layer /2.
-                congestionMap2d.edge(x, y, DIR_NORTH).max_cap += (rr_map.capacity(layer, x, y, DIR_NORTH) / 2);
-#endif
-            }
-        }
-    }
-
 }
 
 //Sum all demand value on every edge
 //So if demand value = wire length, this function can be used
 int Congestion::cal_total_wirelength() {
     int total_wl = 0;
-    congestionMap2d.foreach([&total_wl](Edge_2d& edge) {
+    for (Edge_2d& edge : congestionMap2d.all()) {
         total_wl += (int) edge.cur_cap;
 
-    });
+    }
 
     printf("total wirelength:%d\n", total_wl);
     return total_wl;
@@ -233,14 +210,14 @@ Congestion::Statistic Congestion::stat_congestion() {
     s.min = std::numeric_limits<double>::min();
     s.avg = 0;
 
-    congestionMap2d.foreach([&s](Edge_2d& edge) {
+    for (Edge_2d& edge : congestionMap2d.all()) {
         double edgeCongestion = edge.congestion();
         if (edgeCongestion > 1.0) {
             s.min = std::min(edgeCongestion, s.min);
             s.max = std::max(edgeCongestion, s.max);
             s.avg += edgeCongestion;
         }
-    });
+    }
 
     s.avg /= congestionMap2d.num_elements();
     return s;

@@ -38,8 +38,7 @@ public:
     // Pin list
     const PinptrList& get_nPin(int net_id);	//get Pins by net
 
-    // Edges' capacity information
-    int capacity(int layer_id, int x, int y, DirectionType dir);
+    Plane<Pin, int>& getLayer(int z);
 
 public:
     void setGrid(unsigned int x, unsigned int y, unsigned int layerNumber);
@@ -173,4 +172,8 @@ void RoutingRegion::setViaSpacing(unsigned int layerId, unsigned int viaSpacing)
     routingSpace_.viaSpacing[layerId] = viaSpacing;
 }
 
+inline Plane<Pin, int>& RoutingRegion::getLayer(int z) {
+    return routingSpace_.layer(z);
+
+}
 #endif /*INC_ROUTINGREGION_H*/

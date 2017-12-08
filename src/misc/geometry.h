@@ -242,10 +242,20 @@ public:
         return Coordinate_2d(x + a.x, y + a.y);
     }
 
+    bool isAligned(const Coordinate_2d& c) {
+        return x == c.x || y == c.y;
+    }
+
     static const std::array<Coordinate_2d, 4> dir_array() {
-        static std::array<Coordinate_2d, 4> arr { { { 0, 1 }, { 0, -1 }, { -1, 0 }, { 1, 0 } } };
+        static std::array<Coordinate_2d, 4> arr { { { 1, 0 }, { 0, 1 }, { -1, 0 }, { 0, -1 } } };
         return arr; ////FRONT,BACK,LEFT,RIGHT; //FRONT,BACK,LEFT,RIGHT
     }
+
+    static const std::array<Coordinate_2d, 4> edge_array() {
+        static std::array<Coordinate_2d, 4> arr { { { 0, 0 }, { 0, 1 }, { -1, 0 }, { 0, -1 } } };
+        return arr; ////FRONT,BACK,LEFT,RIGHT; //FRONT,BACK,LEFT,RIGHT
+    }
+
 };
 
 class Coordinate_3d {

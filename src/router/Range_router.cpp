@@ -26,7 +26,7 @@ bool RangeRouter::double_equal(double a, double b) {
 
 /*sort grid_edge in decending order*/
 bool RangeRouter::comp_grid_edge(const Grid_edge_element& a, const Grid_edge_element& b) {
-    return congestion.congestionMap2d.edge(a.grid.x, a.grid.y, a.dir).congestion() > congestion.congestionMap2d.edge(b.grid.x, b.grid.y, b.dir).congestion();
+    return congestion.congestionMap2d.edge(a.grid, a.c2).congestion() > congestion.congestionMap2d.edge(b.grid, b.c2).congestion();
 }
 
 /*
@@ -40,9 +40,10 @@ void RangeRouter::define_interval() {
     interval_list[0].begin_value = s.max;
 
     for (u_int32_t i = 1; i < interval_list.size(); ++i) {
-        interval_list[i - 1].end_value = interval_list[i].begin_value = s.max - ((double) i / interval_list.size()) * (s.max - 1.0);
+        interval_list[i].begin_value = s.max - ((double) i / interval_list.size()) * (s.max - 1.0);
+        interval_list[i - 1].end_value = interval_list[i].begin_value;
     }
-    interval_list[interval_list.size() - 1].end_value = 1;
+    interval_list[interval_list.size() - 1].end_value = 1.;
     for (Interval_element& ele : interval_list) {
         ele.grid_edge_vector.clear();
     }
@@ -55,32 +56,32 @@ void RangeRouter::define_interval() {
 #endif
 }
 
-void RangeRouter::insert_to_interval(double cong_value, Coordinate_2d coor_2d, OrientationType dir) {
-
-    for (int i = interval_list.size() - 1; i >= 0; --i) {
-        Interval_element& ele = interval_list[i];
-        if (((cong_value < ele.begin_value) || double_equal(cong_value, ele.begin_value)) && cong_value > ele.end_value) {
-            ele.grid_edge_vector.push_back(Grid_edge_element(coor_2d, dir));
-            return;
+void RangeRouter::insert_to_interval(Coordinate_2d coor_2d, Coordinate_2d c2) {
+    double cong_value = congestion.congestionMap2d.edge(coor_2d, c2).congestion();
+    if (cong_value > 1) {
+        for (int i = interval_list.size() - 1; i >= 0; --i) {
+            Interval_element& ele = interval_list[i];
+            if (((cong_value < ele.begin_value) || double_equal(cong_value, ele.begin_value)) && //
+                    cong_value > ele.end_value) {
+                ele.grid_edge_vector.push_back(Grid_edge_element(coor_2d, c2));
+                return;
+            }
         }
     }
 }
 
 void RangeRouter::divide_grid_edge_into_interval() {
 
-    for (int i = 0; i < congestion.congestionMap2d.getXSize(); ++i) {
+    for (int i = 0; i < congestion.congestionMap2d.getXSize() - 1; ++i) {
         for (int j = 0; j < congestion.congestionMap2d.getYSize(); ++j) {
-            {
-                double tmp = congestion.congestionMap2d.edge(i, j, DIR_EAST).congestion();
-                if (tmp > 1)
-                    insert_to_interval(tmp, Coordinate_2d(i, j), RIGHT);
-            }
-            {
-                double tmp = congestion.congestionMap2d.edge(i, j, DIR_SOUTH).congestion();
-                if (tmp > 1)
-                    insert_to_interval(tmp, Coordinate_2d(i, j), BACK);
-            }
+            insert_to_interval(Coordinate_2d { i, j }, Coordinate_2d { i + 1, j });
         }
+    }
+    for (int i = 0; i < congestion.congestionMap2d.getXSize(); ++i) {
+        for (int j = 0; j < congestion.congestionMap2d.getYSize() - 1; ++j) {
+            insert_to_interval(Coordinate_2d { i, j }, Coordinate_2d { i, j + 1 });
+        }
+
     }
 
 #ifdef DEBUG_INTERVAL_LIST	
@@ -96,16 +97,16 @@ void RangeRouter::divide_grid_edge_into_interval() {
 #endif
 }
 
-void RangeRouter::expand_range(int x1, int y1, int x2, int y2, int interval_index) {
+void RangeRouter::expand_range(Coordinate_2d c1, Coordinate_2d c2, int interval_index) {
     Coordinate_2d start, end, cur_start, cur_end;
     int edge_num;
     double total_cong, avg_cong;
 
 //(x1, y1) (x2, y2) are neighbor, so we can do the following operation
-    x1 = min(x1, x2);
-    x2 = max(x1, x2);
-    y1 = min(y1, y2);
-    y2 = max(y1, y2);
+    int x1 = min(c1.x, c2.x);
+    int x2 = max(c1.x, c2.x);
+    int y1 = min(c1.y, c2.y);
+    int y2 = max(c1.y, c2.y);
 //obtain the expanded boundary. This is the very first expand, and the expand unit is 10.
     start.x = max(x1 - EXPAND_RANGE_SIZE, 0);
     RoutingRegion& rr_map = construct_2d_tree.rr_map;
@@ -138,7 +139,8 @@ void RangeRouter::expand_range(int x1, int y1, int x2, int y2, int interval_inde
     }
 
     avg_cong = total_cong / edge_num;
-    while ((avg_cong > interval_list[interval_index].end_value) && (avg_cong - interval_list[interval_index].end_value > 0.01)) {
+    while ((avg_cong > interval_list[interval_index].end_value) && //
+            (avg_cong - interval_list[interval_index].end_value > 0.01)) {
         cur_start.x = max(start.x - EXPAND_RANGE_INC, 0);
         cur_end.x = min(end.x + EXPAND_RANGE_INC, rr_map.get_gridx() - 1);
         cur_start.y = max(start.y - EXPAND_RANGE_INC, 0);
@@ -154,7 +156,7 @@ void RangeRouter::expand_range(int x1, int y1, int x2, int y2, int interval_inde
             break;
         }
         EdgePlane<Edge_2d>& congestionMap2d = congestion.congestionMap2d;
-        //Below here are four for loops, those for loops update the congestion condition
+//Below here are four for loops, those for loops update the congestion condition
         for (int i = cur_start.x; i < cur_end.x; ++i) {
             if (cur_start.y != start.y) {
                 int j = cur_start.y;
@@ -321,29 +323,21 @@ void RangeRouter::specify_all_range(boost::multi_array<Point_fc, 2>& gridCell) {
 
     total_twopin = 0;
     for (int i = interval_list.size() - 1; i >= 0; --i) {
-
+        Interval_element& ele = interval_list[i];
         range_vector.clear();
-        sort(interval_list[i].grid_edge_vector.begin(), interval_list[i].grid_edge_vector.end(), [&](const Grid_edge_element& a, const Grid_edge_element& b) {
+        sort(ele.grid_edge_vector.begin(), ele.grid_edge_vector.end(), [&](const Grid_edge_element& a, const Grid_edge_element& b) {
             return comp_grid_edge( a, b);
         });
 
-        for (int j = 0; j < (int) interval_list[i].grid_edge_vector.size(); ++j) {
-            int x = interval_list[i].grid_edge_vector[j].grid.x;
-            int y = interval_list[i].grid_edge_vector[j].grid.y;
-            int dir = interval_list[i].grid_edge_vector[j].dir;
+        for (Grid_edge_element& gridEdge : ele.grid_edge_vector) {
+            Coordinate_2d& c = gridEdge.grid;
+            Coordinate_2d& nei = gridEdge.c2;
 
-            int nei_x = x;
-            int nei_y = y;
-            if (dir == RIGHT)
-                ++nei_x;
-            else
-                ++nei_y;
+            if ((colorMap[c.x][c.y].expand != i) || (colorMap[nei.x][nei.y].expand != i)) {
+                colorMap[c.x][c.y].expand = i;
+                colorMap[nei.x][nei.y].expand = i;
 
-            if ((colorMap[x][y].expand != i) || (colorMap[nei_x][nei_y].expand != i)) {
-                colorMap[x][y].expand = i;
-                colorMap[nei_x][nei_y].expand = i;
-
-                expand_range(x, y, nei_x, nei_y, i);
+                expand_range(c, nei, i);
             }
         }
 

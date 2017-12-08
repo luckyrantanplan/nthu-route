@@ -73,11 +73,11 @@ void Route_2pinnets::route_all_2pin_net() {
 
 void Route_2pinnets::reset_c_map_used_net_to_one() {
 
-    congestion.congestionMap2d.foreach([](Edge_2d& edge) {
+    for (Edge_2d& edge : congestion.congestionMap2d.all()) {
         for (auto& routeNetTable : edge.used_net) {
-            edge.used_net[routeNetTable.first]=1;
+            edge.used_net[routeNetTable.first] = 1;
         }
-    });
+    }
 
 }
 
@@ -94,34 +94,24 @@ Coordinate_2d Route_2pinnets::determine_is_terminal_or_steiner_point(Coordinate_
 
     Coordinate_2d result;
     if (colorMap[c.x][c.y].terminal == net_id) {
-        for (const Coordinate_2d& cr : Coordinate_2d::dir_array()) {
-            const Coordinate_2d cc = c + cr;
-            if (cc != head) {
-                if (congestion.congestionMap2d.isVertexInside(cc)) {
-                    if (congestion.congestionMap2d.edge(cc, c).lookupNet(net_id)) {
-                        pointType = severalDegreeTerminal;
-                        return result;
-                    }
-                }
+        for (EdgePlane<Edge_2d>::Handle& h : congestion.congestionMap2d.neighbors(c)) {
+            if (h.vertex() != head && h.edge().lookupNet(net_id)) {
+                pointType = severalDegreeTerminal;
+                return result;
             }
         }
         pointType = oneDegreeTerminal;
 
     } else {
         int other_passed_edge = 0;
-        for (const Coordinate_2d& cr : Coordinate_2d::dir_array()) {
-            const Coordinate_2d cc = c + cr;
-            if (cc != head) {
-                if (congestion.congestionMap2d.isVertexInside(cc)) {
-                    if (congestion.congestionMap2d.edge(cc, c).lookupNet(net_id)) {
-                        ++other_passed_edge;
-                        if ((other_passed_edge & 0x02) != 0) {
-                            pointType = steinerPoint;
-                            return -1;
-                        }
-                        result = cc;
-                    }
+        for (EdgePlane<Edge_2d>::Handle& h : congestion.congestionMap2d.neighbors(c)) {
+            if (h.vertex() != head && h.edge().lookupNet(net_id)) {
+                ++other_passed_edge;
+                if (other_passed_edge > 1) {
+                    pointType = steinerPoint;
+                    return -1;
                 }
+                result = h.vertex();
             }
         }
         if (other_passed_edge == 0) {
@@ -151,74 +141,70 @@ void Route_2pinnets::bfs_for_find_two_pin_list(Coordinate_2d start_coor, int net
     }
 
     while (!queue.empty()) {
-        for (const Coordinate_2d& cr : Coordinate_2d::dir_array()) {
+        for (EdgePlane<Edge_2d>::Handle& h : congestion.congestionMap2d.neighbors(queue.front().coor)) {
             ElementQueue& headElement = queue.front();
-            Coordinate_2d head = headElement.coor;
-            Coordinate_2d c = head + cr;
+            if (h.vertex() != headElement.parent && h.edge().lookupNet(net_id)) {
 
-            if (c != headElement.parent && congestion.congestionMap2d.isVertexInside(c)) {
-                Edge_2d& edge = congestion.congestionMap2d.edge(head, c);
-                if (edge.lookupNet(net_id)) {
-                    Two_pin_element_2d two_pin;
+                Two_pin_element_2d two_pin;
+                Coordinate_2d head = headElement.coor;
+                two_pin.pin1 = head;
+                two_pin.net_id = net_id;
+                two_pin.path.push_back(head);
+                bool exit_loop = true;
+                Coordinate_2d c = h.vertex();
+                while (!exit_loop) {
+                    exit_loop = true;
+                    colorMap[head.x][head.y].traverse = net_id;
+                    two_pin.path.push_back(c);
+                    PointType pointType;
+                    Coordinate_2d nextc = determine_is_terminal_or_steiner_point(c, head, net_id, pointType);
 
-                    two_pin.pin1 = head;
-                    two_pin.net_id = net_id;
-                    two_pin.path.push_back(head);
-                    bool exit_loop = true;
-                    while (!exit_loop) {
-                        exit_loop = true;
-                        colorMap[head.x][head.y].traverse = net_id;
-                        two_pin.path.push_back(c);
-                        PointType pointType;
-                        Coordinate_2d nextc = determine_is_terminal_or_steiner_point(c, head, net_id, pointType);
+                    switch (pointType) {
+                    case oneDegreeTerminal: {
+                        if (colorMap[c.x][c.y].traverse != net_id) {
+                            two_pin.pin2 = c;
+                            construct_2d_tree.two_pin_list.push_back(two_pin);
 
-                        switch (pointType) {
-                        case oneDegreeTerminal: {
-                            if (colorMap[c.x][c.y].traverse != net_id) {
-                                two_pin.pin2 = c;
-                                construct_2d_tree.two_pin_list.push_back(two_pin);
+                            branch_xy.emplace_back(c, headElement.index);
 
-                                branch_xy.emplace_back(c, headElement.index);
+                            colorMap[c.x][c.y].traverse = net_id;
+                        } else {
 
-                                colorMap[c.x][c.y].traverse = net_id;
-                            } else {
-
-                                congestion.update_congestion_map_remove_two_pin_net(two_pin);
-                                construct_2d_tree.NetDirtyBit[two_pin.net_id] = true;
-
-                            }
-                            break;
-                        }
-                        case severalDegreeTerminal:
-                        case steinerPoint: {
-                            if (colorMap[c.x][c.y].traverse != net_id) {
-                                two_pin.pin2 = c;
-                                construct_2d_tree.two_pin_list.push_back(two_pin);
-
-                                branch_xy.emplace_back(c, headElement.index);
-                                queue.emplace(c, head, index);
-                                ++index;
-
-                                colorMap[c.x][c.y].traverse = net_id;
-                            } else {
-                                congestion.update_congestion_map_remove_two_pin_net(two_pin);
-                                construct_2d_tree.NetDirtyBit[two_pin.net_id] = true;
-                            }
-                            break;
-                        }
-                        case oneDegreeNonterminal: {
                             congestion.update_congestion_map_remove_two_pin_net(two_pin);
                             construct_2d_tree.NetDirtyBit[two_pin.net_id] = true;
 
-                            break;
                         }
-                        case twoDegree: {
-                            head = c;
-                            c = nextc;
-                            exit_loop = false;
-                            break;
+                        break;
+                    }
+                    case severalDegreeTerminal:
+                    case steinerPoint: {
+                        if (colorMap[c.x][c.y].traverse != net_id) {
+                            two_pin.pin2 = c;
+                            construct_2d_tree.two_pin_list.push_back(two_pin);
+
+                            branch_xy.emplace_back(c, headElement.index);
+                            queue.emplace(c, head, index);
+                            ++index;
+
+                            colorMap[c.x][c.y].traverse = net_id;
+                        } else {
+                            congestion.update_congestion_map_remove_two_pin_net(two_pin);
+                            construct_2d_tree.NetDirtyBit[two_pin.net_id] = true;
                         }
-                        }
+                        break;
+                    }
+                    case oneDegreeNonterminal: {
+                        congestion.update_congestion_map_remove_two_pin_net(two_pin);
+                        construct_2d_tree.NetDirtyBit[two_pin.net_id] = true;
+
+                        break;
+                    }
+                    case twoDegree: {
+                        head = c;
+                        c = nextc;
+                        exit_loop = false;
+                        break;
+                    }
 
                     }
                 }
@@ -251,7 +237,7 @@ void Route_2pinnets::reallocate_two_pin_list() {
     reset_c_map_used_net_to_one();
 
     vector<Two_pin_element_2d>& v = construct_2d_tree.two_pin_list;
-    // erase-remove idiom
+// erase-remove idiom
     v.erase(std::remove_if(v.begin(), v.end(), [& ](const Two_pin_element_2d& pin) {
         return construct_2d_tree.NetDirtyBit[pin.net_id];
     }), v.end());

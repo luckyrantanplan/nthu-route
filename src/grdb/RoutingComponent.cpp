@@ -9,10 +9,12 @@ using namespace std;
 /*******
  Pin
  ******/
-Pin::Pin(int x = 0, int y = 0, int z = 0) :
+Pin::Pin(int x, int y, int z) :
         Coordinate(x, y, z) {
 }
-
+//Pin::Pin() :
+//        Coordinate { 0, 0, 0 } {
+//}
 int Pin::get_tileX() const {
     return x();
 }
@@ -107,11 +109,12 @@ bool Net::comp_net(const Net& a, const Net& b) {
  * RoutingSpace
  *************/
 RoutingSpace::RoutingSpace(int x, int y, int z) :
-        tileWidth(1), tileHeight(1), originX(0), originY(0), wireWidth(z), wireSpacing(z), viaSpacing(z)
-//routingSpace_(z, Plane<Tile, RoutingEdge>(x, y, Tile(), RoutingEdge(0)))
+        tileWidth(1), tileHeight(1), //
+        originX(0), originY(0), wireWidth(z), wireSpacing(z), viaSpacing(z), //
+        routingSpace_ { std::vector<Plane<Pin, int> >(z, Plane<Pin, int>(x, y)) }
 
 {
-    routingSpace_ = std::vector<Plane<Tile, RoutingEdge> >(z, Plane<Tile, RoutingEdge>(x, y));
+
     assignTileCoordinate();
 }
 
@@ -124,9 +127,9 @@ void RoutingSpace::assignTileCoordinate() {
         for (int z = 0; z < getZSize(); ++z) {
             for (int x = 0; x < getXSize(); ++x) {
                 for (int y = 0; y < getYSize(); ++y) {
-                    routingSpace_[z].vertex(x, y).coordinate.x(x);
-                    routingSpace_[z].vertex(x, y).coordinate.y(y);
-                    routingSpace_[z].vertex(x, y).coordinate.z(z);
+                    routingSpace_[z].vertex(x, y).x(x);
+                    routingSpace_[z].vertex(x, y).y(y);
+                    routingSpace_[z].vertex(x, y).z(z);
                 }
             }
         }

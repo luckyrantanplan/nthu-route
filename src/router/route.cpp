@@ -6,6 +6,7 @@
 #include "../grdb/parser.h"
 #include "../grdb/RoutingRegion.h"
 #include "../misc/filehandler.h"
+#include "Congestion.h"
 #include "Construct_2d_tree.h"
 #include "Layerassignment.h"
 #include "parameter.h"
@@ -39,6 +40,8 @@ int main(int argc, char* argv[]) {
 
     dataPreparation(ap, routingData);
 
+    Congestion congestion(routingData.get_gridx(), routingData.get_gridy());
+
     clock_t t1 = clock();
     Construct_2d_tree tree(ap.routing_param(), ap.parameter(), routingData);
     clock_t t2 = clock();
@@ -50,7 +53,7 @@ int main(int argc, char* argv[]) {
         //IBM Cases
     } else {
         //ISPD'07 Cases
-        Layer_assignment(ap.output(), tree);
+        Layer_assignment(ap.output(), tree, congestion);
         clock_t t4 = clock();
         printf("time: %.2f %.2f\n", (double) (t4 - t3) / CLOCKS_PER_SEC, (double) (t4 - t0) / CLOCKS_PER_SEC);
     }

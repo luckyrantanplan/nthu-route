@@ -1,5 +1,6 @@
 #include "Layerassignment.h"
 
+#include <boost/multi_array/subarray.hpp>
 #include <sys/time.h>
 #include <unistd.h>
 #include <algorithm>
@@ -9,15 +10,14 @@
 #include <deque>
 #include <functional>
 #include <queue>
-#include <string>
 #include <unordered_map>
 
-#include "../grdb/plane.h"
+#include "../grdb/EdgePlane.h"
 #include "../grdb/RoutingComponent.h"
 #include "../grdb/RoutingRegion.h"
+#include "Congestion.h"
+#include "Construct_2d_tree.h"
 
-#define MIN(a, b) ((a < b) ? a : b)
-#define MAX(a, b) ((a > b) ? a : b)
 //#define FOLLOW_PREFER
 #define VIA_DENSITY	 // new experiment 2007/09/27
 //#define REDUCE_VIA_DENSITY	// new experiment 2007/09/29
@@ -68,11 +68,11 @@ void Layer_assignment::initial_3D_coordinate_map() {
 
 void Layer_assignment::initial_overflow_map() {
 
-    for (int i = 1; i < max_xx; ++i) {
+    for (int i = 0; i < max_xx; ++i) {
         for (int j = 0; j < max_yy; ++j) {
-            OVERFLOW_NODE& overflow = layerInfo_map[i][j].overflow;
-            overflow.edge[LEFT] = (construct_2d_tree.congestionMap2d.edge(i, j, DIR_WEST).overUsage() << 1);
-            overflow.edge[BACK] = (construct_2d_tree.congestionMap2d.edge(i, j, DIR_SOUTH).overUsage() << 1);
+
+            layerInfo_map.edge(i, j, DIR_EAST) = (congestion.congestionMap2d.edge(i, j, DIR_EAST).overUsage() * 2);
+            layerInfo_map.edge(i, j, DIR_SOUTH) = (congestion.congestionMap2d.edge(i, j, DIR_SOUTH).overUsage() * 2);
         }
     }
 
@@ -96,16 +96,10 @@ void Layer_assignment::malloc_space() {
         }
     }
 
-    for (int i = 1; i < max_xx; ++i) {
-        for (int j = 0; j < max_yy; ++j) {
-
-            layerInfo_map.edge(i - 1, j, RIGHT) = 0;
-        }
-    }
     for (int i = 0; i < max_xx; ++i) {
-        for (int j = 1; j < max_yy; ++j) {
-
-            layerInfo_map.edge(i, j - 1, FRONT) = 0;
+        for (int j = 0; j < max_yy; ++j) {
+            layerInfo_map.edge(i, j, DIR_EAST) = 0;
+            layerInfo_map.edge(i, j, DIR_SOUTH) = 0;
         }
     }
 
@@ -114,7 +108,7 @@ void Layer_assignment::malloc_space() {
 void Layer_assignment::update_cur_map_for_klat_xy(int cur_idx, const Coordinate_2d& start, const Coordinate_2d& end, int net_id) {
     OrientationType dir_idx;
 
-    Edge_3d& edge = *cur_map_3d[end.x][end.y][cur_idx].edge_list[dir_idx];
+    Edge_3d& edge = cur_map_3d.edge(end.x, end.y, cur_idx, dir_idx);
     if (start.x != end.x && start.y == end.y) {
         dir_idx = ((end.x > start.x) ? LEFT : RIGHT);
 
@@ -138,8 +132,9 @@ void Layer_assignment::update_cur_map_for_klat_xy(int cur_idx, const Coordinate_
     }
 }
 
-void Layer_assignment::update_cur_map_for_klat_z(int pre_idx, int cur_idx, Coordinate_2d *start, int net_id) {
-    int i, j, k, z_dir, dir_idx;
+void Layer_assignment::update_cur_map_for_klat_z(int pre_idx, int cur_idx, const Coordinate_2d& start, int net_id) {
+    int i, j, k, z_dir;
+    OrientationType dir_idx;
 
     if (pre_idx != cur_idx) {
         if (cur_idx > pre_idx) {
@@ -150,10 +145,10 @@ void Layer_assignment::update_cur_map_for_klat_z(int pre_idx, int cur_idx, Coord
             z_dir = -1;
             dir_idx = DOWN;
         }
-        i = start->x;
-        j = start->y;
+        i = start.x;
+        j = start.y;
         for (k = pre_idx; k != cur_idx; k += z_dir) {
-            cur_map_3d[i][j][k].edge_list[dir_idx]->used_net[net_id]++;
+            cur_map_3d.edge(i, j, k, dir_idx).used_net[net_id]++;
             if (z_dir == 1)
                 ++viadensity_map[i][j][k].cur;
             else
@@ -164,7 +159,7 @@ void Layer_assignment::update_cur_map_for_klat_z(int pre_idx, int cur_idx, Coord
 
 void Layer_assignment::update_path_for_klat(Coordinate_2d *start) {
     int i, x, y, z_min, z_max, pin_num = 0;
-    queue<std::reference_wrapper<Coordinate_3d>> q;
+    std::queue<Coordinate_3d> q;
 
 // BFS
     q.push(coord_3d_map[start->x][start->y][0]);	// enqueue
@@ -188,10 +183,10 @@ void Layer_assignment::update_path_for_klat(Coordinate_2d *start) {
                     z_max = klat_map[x][y][temp.z].pi_z;
                 if (klat_map[x][y][temp.z].pi_z < z_min)
                     z_min = klat_map[x][y][temp.z].pi_z;
-                update_cur_map_for_klat_xy(klat_map[x][y][temp.z].pi_z, construct_2d_tree.coor_array[temp.x][temp.y], construct_2d_tree.coor_array[x][y], global_net_id);
+                update_cur_map_for_klat_xy(klat_map[x][y][temp.z].pi_z, Coordinate_2d(temp.x, temp.y), Coordinate_2d(x, y), global_net_id);
                 q.push(coord_3d_map[x][y][klat_map[x][y][temp.z].pi_z]);	// enqueue
             }
-        update_cur_map_for_klat_z(z_min, z_max, construct_2d_tree.coor_array[temp.x][temp.y], global_net_id);
+        update_cur_map_for_klat_z(z_min, z_max, Coordinate_2d(temp.x, temp.y), global_net_id);
         path_map[temp.x][temp.y].val = 0;	// visited
         q.pop();	// dequeue
     }
@@ -250,7 +245,7 @@ int Layer_assignment::preprocess(int net_id) {
     for (k = 0; k < max_zz; ++k) {
         klat_map[x][y][k].val = -1;
     }
-    q.push(construct_2d_tree.coor_array[x][y]);	// enqueue
+    q.emplace(x, y);	// enqueue
     while (!q.empty()) {
         Coordinate_2d& temp = q.front();
         for (i = 0; i < 4; ++i) {
@@ -258,7 +253,7 @@ int Layer_assignment::preprocess(int net_id) {
             y = temp.y + plane_dir[i][1];
             if (x >= 0 && x < max_xx && y >= 0 &&	//
                     y < max_yy &&	//
-                    construct_2d_tree.congestionMap2d.edge(temp.x, temp.y, i).lookupNet(net_id)) {
+                    congestion.congestionMap2d.edge(temp.x, temp.y, i).lookupNet(net_id)) {
                 if (path_map[x][y].val == 0 || path_map[x][y].val == -2) {
                     ++after_xy_cost;
 #ifdef POSTPROCESS
@@ -295,7 +290,7 @@ int Layer_assignment::preprocess(int net_id) {
                         max_layer = max_zz;
                     }
 #endif
-                    q.push(construct_2d_tree.coor_array[x][y]);	// enqueue
+                    q.emplace(x, y);	// enqueue
                 } else
                     path_map[temp.x][temp.y].edge[i] = 0;
             } else
@@ -348,7 +343,7 @@ void Layer_assignment::rec_count(int level, int val, int *count_idx) {
                     max_k = count_idx[k];
                 temp_via_cost += klat_map[global_x + plane_dir[k][0]][global_y + plane_dir[k][1]][count_idx[k]].via_cost;
             }
-        temp_via_cost += ((max_k - min_k) * construct_2d_tree.via_cost);
+        temp_via_cost += ((max_k - min_k) * congestion.via_cost);
 #ifdef VIA_DENSITY
         for (k = min_k, temp_val = val; k < max_k; ++k)
             if (viadensity_map[global_x][global_y][k].cur >= viadensity_map[global_x][global_y][k].max)
@@ -405,29 +400,34 @@ void Layer_assignment::DP(int x, int y, int z) {
     bool is_end;
     int count_idx[4];
 
+    Coordinate c1(x, y);
+
     if (klat_map[x][y][z].val == -1)	// non-traversed
             {
         is_end = true;
-        for (i = 0; i < 4; ++i)	// direction
-                {
-            if (path_map[x][y].edge[i] == 1)	// check leagal
-                    {
+        for (Coordinate_2d cr : plane_dir) {	// direction
+
+            if (path_map[x][y].edge[i] == 1) {	// check legal
+
                 is_end = false;
-                temp_x = x + plane_dir[i][0];
-                temp_y = y + plane_dir[i][1];
+                Coordinate_2d c2 = c1 + cr;
                 if (*(overflow_map[x][y].edge[i]) <= 0)	// this edge could not happen overflow
                     for (k = 0; k < global_max_layer; ++k)	// use global_max_layer to substitute max_zz
                             {
-                        if (cur_map_3d[x][y][k].edge_list[i]->cur_cap < cur_map_3d[x][y][k].edge_list[i]->max_cap)	// pass without overflow
+                        Edge_3d& edge = cur_map_3d.edge(x, y, k, i);
+                        if (edge.cur_cap < cur_map_3d[x][y][k].edge_list[i]->max_cap) {	// pass without overflow
                             DP(temp_x, temp_y, k);
+                        }
                     }
                 else
                     // this edge could happen overflow
-                    for (k = 0; k < global_max_layer; ++k)	// use global_max_layer to substitute max_zz
-                            {
-                        if ((cur_map_3d[x][y][k].edge_list[i]->cur_cap - cur_map_3d[x][y][k].edge_list[i]->max_cap) < overflow_max)	// overflow, but doesn't over the overflow_max
+                    for (k = 0; k < global_max_layer; ++k) {	// use global_max_layer to substitute max_zz
+
+                        if ((cur_map_3d.edge(x, y, k, i).cur_cap - cur_map_3d[x][y][k].edge_list[i]->max_cap) < overflow_max)	// overflow, but doesn't over the overflow_max
 #ifdef FOLLOW_PREFER
-                        if (/*follow_prefer_direction == 0 || (follow_prefer_direction == 1 && */(((i == 0 || i == 1) && prefer_direction[k][1] == 1) || ((i == 2 || i == 3) && prefer_direction[k][0] == 1)))//)
+                        if (/*follow_prefer_direction == 0 || (follow_prefer_direction == 1 && */
+                                (((i == 0 || i == 1) && prefer_direction[k][1] == 1) ||
+                                        ((i == 2 || i == 3) && prefer_direction[k][0] == 1)))	//)
                         DP(temp_x, temp_y, k);
 #else
                             DP(temp_x, temp_y, k);
@@ -1098,8 +1098,10 @@ void Layer_assignment::generate_all_output() {
         generate_output(i);
 }
 
-Layer_assignment::Layer_assignment(const std::string& outputFileNamePtr, Construct_2d_tree& construct_2d_tree) :
-        construct_2d_tree { construct_2d_tree }, cur_map_3d { construct_2d_tree.cur_map_3d } {
+Layer_assignment::Layer_assignment(const std::string& outputFileNamePtr, Construct_2d_tree& construct_2d_tree,	//
+        Congestion& congestion) :
+        construct_2d_tree { construct_2d_tree }, cur_map_3d { construct_2d_tree.cur_map_3d },	//
+        congestion { congestion } {
 
     string outputFileName { outputFileNamePtr };
 //int i;

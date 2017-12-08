@@ -13,6 +13,8 @@
 #include "../misc/geometry.h"
 #include "DataDef.h"
 
+class Congestion;
+
 struct Construct_2d_tree;
 
 struct ans {
@@ -126,7 +128,7 @@ struct Layer_assignment {
     Construct_2d_tree& construct_2d_tree;
     EdgePlane3d<Edge_3d> cur_map_3d;
 
-    const int plane_dir[4][2] = { { 0, 1 }, { 0, -1 }, { -1, 0 }, { 1, 0 } };   // F B L R
+    const std::array<Coordinate_2d, 4> plane_dir { { { 0, 1 }, { 0, -1 }, { -1, 0 }, { 1, 0 } } };   // F B L R
     const int cube_dir[6][3] = { { 0, 1, 0 }, { 0, -1, 0 }, { -1, 0, 0 }, { 1, 0, 0 }, { 0, 0, 1 }, { 0, 0, -1 } }; // F B L R U D
     int global_net_id, global_x, global_y, global_max_layer, global_pin_num, global_pin_cost = 0, global_xy_reduce = 0, global_BFS_xy = 0;
     int min_DP_val, min_DP_idx[4], max_DP_k, min_DP_k, min_DP_via_cost;
@@ -138,13 +140,14 @@ struct Layer_assignment {
 
     int global_increase_vo;
 
+    Congestion& congestion;
     void print_max_overflow();
 
     void initial_3D_coordinate_map();
     void initial_overflow_map();
     void malloc_space();
     void update_cur_map_for_klat_xy(int cur_idx, const Coordinate_2d& start, const Coordinate_2d& end, int net_id);
-    void update_cur_map_for_klat_z(int pre_idx, int cur_idx, Coordinate_2d *start, int net_id);
+    void update_cur_map_for_klat_z(int pre_idx, int cur_idx, const Coordinate_2d& start, int net_id);
     void update_path_for_klat(Coordinate_2d *start);
     void cycle_reduction(int x, int y);
     int preprocess(int net_id);
@@ -168,7 +171,7 @@ struct Layer_assignment {
     void sort_net_order();
     void calculate_cap();
     void generate_all_output();
-    Layer_assignment(const std::string& outputFileNamePtr, Construct_2d_tree& onstruct_2d_tree);
+    Layer_assignment(const std::string& outputFileNamePtr, Construct_2d_tree& onstruct_2d_tree, Congestion& congestion);
     void init_3d_map();
     void output_3d_map();
 };
