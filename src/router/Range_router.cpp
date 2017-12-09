@@ -98,15 +98,15 @@ void RangeRouter::divide_grid_edge_into_interval() {
 }
 
 void RangeRouter::expand_range(Coordinate_2d c1, Coordinate_2d c2, int interval_index) {
-    Coordinate_2d start, end, cur_start, cur_end;
-    int edge_num;
-    double total_cong, avg_cong;
 
 //(x1, y1) (x2, y2) are neighbor, so we can do the following operation
     int x1 = min(c1.x, c2.x);
     int x2 = max(c1.x, c2.x);
     int y1 = min(c1.y, c2.y);
     int y2 = max(c1.y, c2.y);
+
+    Coordinate_2d start, end;
+
 //obtain the expanded boundary. This is the very first expand, and the expand unit is 10.
     start.x = max(x1 - EXPAND_RANGE_SIZE, 0);
     RoutingRegion& rr_map = construct_2d_tree.rr_map;
@@ -114,8 +114,8 @@ void RangeRouter::expand_range(Coordinate_2d c1, Coordinate_2d c2, int interval_
     start.y = max(y1 - EXPAND_RANGE_SIZE, 0);
     end.y = min(y2 + EXPAND_RANGE_SIZE, rr_map.get_gridy() - 1);
 
-    total_cong = 0;
-    edge_num = 0;
+    double total_cong = 0;
+    int edge_num = 0;
 //Obtain the total congestion value and edge number of RIGHT edges.
     for (int i = start.x; i < end.x; ++i) {
         for (int j = start.y; j <= end.y; ++j) {
@@ -138,9 +138,10 @@ void RangeRouter::expand_range(Coordinate_2d c1, Coordinate_2d c2, int interval_
         }
     }
 
-    avg_cong = total_cong / edge_num;
+    double avg_cong = total_cong / edge_num;
     while ((avg_cong > interval_list[interval_index].end_value) && //
             (avg_cong - interval_list[interval_index].end_value > 0.01)) {
+        Coordinate_2d cur_start, cur_end;
         cur_start.x = max(start.x - EXPAND_RANGE_INC, 0);
         cur_end.x = min(end.x + EXPAND_RANGE_INC, rr_map.get_gridx() - 1);
         cur_start.y = max(start.y - EXPAND_RANGE_INC, 0);
@@ -160,13 +161,13 @@ void RangeRouter::expand_range(Coordinate_2d c1, Coordinate_2d c2, int interval_
         for (int i = cur_start.x; i < cur_end.x; ++i) {
             if (cur_start.y != start.y) {
                 int j = cur_start.y;
-                total_cong += congestionMap2d.edge(i, j, DIR_EAST).congestion();
+                total_cong += congestionMap2d.edge(i, cur_start.y, DIR_EAST).congestion();
                 edge_num++;
                 colorMap[i][j].expand = interval_index;
             }
             if (cur_end.y != end.y) {
                 int j = cur_end.y;
-                total_cong += congestionMap2d.edge(i, j, DIR_EAST).congestion();
+                total_cong += congestionMap2d.edge(i, cur_end.y, DIR_EAST).congestion();
                 edge_num++;
                 colorMap[i][j].expand = interval_index;
             }
@@ -174,12 +175,12 @@ void RangeRouter::expand_range(Coordinate_2d c1, Coordinate_2d c2, int interval_
         for (int j = start.y; j <= end.y; ++j) {
             if (cur_start.x != start.x) {
                 int i = cur_start.x;
-                total_cong += congestionMap2d.edge(i, j, DIR_EAST).congestion();
+                total_cong += congestionMap2d.edge(cur_start.x, j, DIR_EAST).congestion();
                 edge_num++;
             }
             if (cur_end.x != end.x) {
-                int i = end.x;
-                total_cong += congestionMap2d.edge(i, j, DIR_EAST).congestion();
+                int i = end.x; // BUG ??
+                total_cong += congestionMap2d.edge(end.x, j, DIR_EAST).congestion();
                 edge_num++;
             }
         }
@@ -284,31 +285,27 @@ void RangeRouter::query_range_2pin(int left_x, int bottom_y, int right_x, int to
         std::vector<Two_pin_element_2d*>& twopin_list, boost::multi_array<Point_fc, 2>& gridCell) {
 
     std::vector<Point_fc *> cell_list;
-    int len;
+
     static int done_counter = 0;	//only initialize once
-    int query_twopin_num = 0; // added by grey
 
     for (int i = left_x; i <= right_x; ++i)
         for (int j = bottom_y; j <= top_y; ++j) {
             cell_list.push_back(&(gridCell[i][j]));
         }
 
-    len = cell_list.size();
-    for (int i = 0; i < len; ++i)	//for each gCell
-            {
-        for (std::vector<Two_pin_element_2d*>::iterator it = cell_list[i]->points.begin(); it != cell_list[i]->points.end(); ++it)	//for each pin or steiner point
-                {
-            if ((*it)->done != construct_2d_tree.done_iter) {
-                if (routeStateMap[(*it)->pin1.x][(*it)->pin1.y] != done_counter && routeStateMap[(*it)->pin2.x][(*it)->pin2.y] != done_counter) {
-                    if (inside_range(left_x, bottom_y, right_x, top_y, (*it)->pin1) || inside_range(left_x, bottom_y, right_x, top_y, ((*it)->pin2))) {
-                        (*it)->done = construct_2d_tree.done_iter;
-                        twopin_list.push_back(*it);
-                        query_twopin_num++;
+    for (Point_fc * cell : cell_list) {	//for each gCell
+        for (Two_pin_element_2d* twopin : cell->points) {	//for each pin or steiner point
+            if (twopin->done != construct_2d_tree.done_iter) {
+                if (routeStateMap[twopin->pin1.x][twopin->pin1.y] != done_counter && routeStateMap[twopin->pin2.x][twopin->pin2.y] != done_counter) {
+                    if (inside_range(left_x, bottom_y, right_x, top_y, twopin->pin1) || inside_range(left_x, bottom_y, right_x, top_y, (twopin->pin2))) {
+                        twopin->done = construct_2d_tree.done_iter;
+                        twopin_list.push_back(twopin);
+
                     }
                 }
             }
         }
-        routeStateMap[cell_list[i]->x][cell_list[i]->y] = done_counter;
+        routeStateMap[cell->x][cell->y] = done_counter;
     }
     ++done_counter;
 }
