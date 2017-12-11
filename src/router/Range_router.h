@@ -21,18 +21,39 @@ class Congestion;
 class Point_fc;
 struct Construct_2d_tree;
 struct Two_pin_element_2d;
-class Range_element {
+
+class Rectangle {
 public:
-    int x1;
-    int y1;
-    int x2;
-    int y2;
+    Coordinate_2d upLeft;
+    Coordinate_2d downRight;
 
 public:
-    Range_element(int x1, int y1, int x2, int y2) :
-            x1(x1), y1(y1), x2(x2), y2(y2) {
+    Rectangle(const Coordinate_2d c1, const Coordinate_2d c2) :
+            upLeft { std::min(c1.x, c2.x), std::min(c1.y, c2.y) }, //
+            downRight { std::max(c1.x, c2.x), std::max(c1.y, c2.y) } {
     }
-    ;
+    bool contains(const Coordinate_2d& c) const {
+        return (upLeft.x <= c.x && c.x <= downRight.x && upLeft.y <= c.y && c.y <= downRight.y);
+
+    }
+    bool contains(const Rectangle& r) const {
+        return (upLeft.x <= r.upLeft.x && r.downRight.x <= downRight.x && //
+                upLeft.y <= r.upLeft.y && r.downRight.y <= downRight.y);
+
+    }
+    void expand(int i) {
+        upLeft.x -= i;
+        upLeft.y -= i;
+        downRight.x += i;
+        downRight.y += i;
+    }
+
+    void clip(Rectangle r) const {
+        r.upLeft.x = std::max(upLeft.x, r.upLeft.x);
+        r.upLeft.y = std::max(upLeft.y, r.upLeft.y);
+        r.downRight.x = std::min(downRight.x, r.downRight.x);
+        r.downRight.y = std::min(downRight.y, r.downRight.y);
+    }
 
 };
 class Grid_edge_element {
@@ -77,7 +98,7 @@ public:
         }
     };
 
-    std::vector<Range_element> range_vector;
+    std::vector<Rectangle> range_vector;
     std::array<Interval_element, INTERVAL_NUM> interval_list;
 
     int total_twopin = 0;
@@ -96,12 +117,13 @@ public:
     bool comp_grid_edge(const Grid_edge_element& a, const Grid_edge_element& b);
 
     void insert_to_interval(Coordinate_2d coor_2d, Coordinate_2d c2);
+    void walkFrame(const Rectangle& r, std::function<void(Coordinate_2d& i, Coordinate_2d& before)> accumulate);
 
     void expand_range(Coordinate_2d c1, Coordinate_2d c2, int interval_index);
+
     void range_router(Two_pin_element_2d& two_pin, int version);
     bool inside_range(int left_x, int bottom_y, int right_x, int top_y, Coordinate_2d& pt);
-    void query_range_2pin(int left_x, int bottom_y, int right_x, int top_y, //
-            std::vector<Two_pin_element_2d*>& twopin_list, boost::multi_array<Point_fc, 2>& gridCell);
+    void query_range_2pin(const Rectangle& r, std::vector<Two_pin_element_2d*>& twopin_list, boost::multi_array<Point_fc, 2>& gridCell);
 
 private:
 

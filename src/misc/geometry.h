@@ -213,6 +213,11 @@ public:
         x = ix;
         y = iy;
     }
+
+    void set(const Coordinate_2d& other) {
+        x = other.x;
+        y = other.y;
+    }
     static OrientationType get_direction_simple(const Coordinate_2d& a, const Coordinate_2d& b) {
         assert(!(a.x != b.x && a.y != b.y));
 
@@ -242,7 +247,7 @@ public:
         return Coordinate_2d(x + a.x, y + a.y);
     }
 
-    bool isAligned(const Coordinate_2d& c) {
+    bool isAligned(const Coordinate_2d& c) const {
         return x == c.x || y == c.y;
     }
 
