@@ -13,6 +13,14 @@
 #include "../misc/geometry.h"
 #include "DataDef.h"
 
+//#define FOLLOW_PREFER
+#define VIA_DENSITY  // new experiment 2007/09/27
+//#define REDUCE_VIA_DENSITY    // new experiment 2007/09/29
+#define CHECK_PREFER
+#define MAX_OVERFLOW_CONSTRAINT
+#define FROM2D
+#define ALLOUTPUT
+
 class Congestion;
 
 struct Construct_2d_tree;
@@ -141,6 +149,8 @@ struct Layer_assignment {
     int global_increase_vo;
 
     Congestion& congestion;
+
+    Layer_assignment(Congestion& congestion);
     void print_max_overflow();
 
     void initial_3D_coordinate_map();
@@ -157,23 +167,18 @@ struct Layer_assignment {
     bool have_child(int pre_x, int pre_y, int pre_z, int pre_dir, int net_id);
     void generate_output(int net_id);
     void klat(int net_id);
-    int count_via_overflow_for_a_segment(int x, int y, int start, int end);
-    void greedy_layer_assignment(int x, int y, int z);
-    void greedy(int net_id);
     bool comp_temp_net_order(int p, int q);
     int backtrace(int n);
     void find_group(int max);
     void initial_BFS_color_map();
     void malloc_BFS_color_map();
     void calculate_wirelength();
-    void erase_cur_map_3d();
-    void multiply_viadensity_map_by_times(double times);
+
     void sort_net_order();
-    void calculate_cap();
     void generate_all_output();
     Layer_assignment(const std::string& outputFileNamePtr, Construct_2d_tree& onstruct_2d_tree, Congestion& congestion);
     void init_3d_map();
-    void output_3d_map();
+
 };
 
 #endif //INC_LAYER_ASSIGNMENT_H

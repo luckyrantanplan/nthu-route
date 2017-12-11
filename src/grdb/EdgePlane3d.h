@@ -32,8 +32,8 @@ public:
     ///@brief Change the size of plane. Every vertex will reset to initial value.
     void resize(int xSize, int ySize, int zSize);
 
-    ///@brief Get the map size in x-axis
     int getXSize() const;
+    ///@brief Get the map size in x-axis
 
     ///@brief Get the map size in y-axis
     int getYSize() const;

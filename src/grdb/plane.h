@@ -19,6 +19,7 @@ class Plane {
 public:
     Plane(int xSize, int ySize);
 
+    Plane(const Coordinate_2d size);
     Plane(const Plane&);
 
     ~Plane();
@@ -49,6 +50,12 @@ template<class VertexT, class EdgeT>
 Plane<VertexT, EdgeT>::Plane(int xSize, int ySize) :
         edgeplane_ { xSize, ySize },    //
         plane_(boost::extents[xSize][ySize]) {
+}
+
+template<class VertexT, class EdgeT>
+Plane<VertexT, EdgeT>::Plane(const Coordinate_2d size) :
+        edgeplane_ { size },    //
+        plane_(boost::extents[size.x][size.y]) {
 }
 
 template<class VertexT, class EdgeT>

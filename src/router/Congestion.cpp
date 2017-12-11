@@ -148,31 +148,12 @@ int Congestion::find_overflow_max() {
     }
 
     printf("2D maximum overflow = %d\n", overflow_max);
-#ifdef MAX_OVERFLOW_CONSTRAINT
-#ifdef FOLLOW_PREFER
-    if (follow_prefer_direction == 1)
-    {
-        if (overflow_max % (max_zz / 2))
-        overflow_max = ((overflow_max / (max_zz / 2)) << 1) + 2;
-        else
-        overflow_max = ((overflow_max / (max_zz / 2)) << 1);
-    }
-    else
-    {
-        if (overflow_max % max_zz)
-        overflow_max = ((overflow_max / max_zz) << 1) + 2;
-        else
-        overflow_max = ((overflow_max / max_zz) << 1);
-    }
-#else
+
     if (overflow_max % max_zz)
-    overflow_max = ((overflow_max / max_zz) << 1) + 2;
+        overflow_max = ((overflow_max / max_zz) << 1) + 2;
     else
-    overflow_max = ((overflow_max / max_zz) << 1);
-#endif
-#else
-    overflow_max <<= 1;
-#endif
+        overflow_max = ((overflow_max / max_zz) << 1);
+
     printf("overflow max = %d\n", overflow_max);
     return overflow_max;
 }
