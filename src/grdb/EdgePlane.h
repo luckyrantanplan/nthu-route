@@ -20,89 +20,91 @@
 
 #include "../misc/geometry.h"
 
-template<class RANGE>
-struct HandleT {
-
-    HandleT() :
-            v { }, //
-            e { } {
-    }
-
-    Coordinate_2d& vertex() {
-        return v;
-    }
-    const Coordinate_2d& vertex() const {
-        return v;
-    }
-
-    typename RANGE::EdgeType& edge() {
-        return *e;
-    }
-    const typename RANGE::EdgeType& edge() const {
-        return *e;
-    }
-
-    friend typename RANGE::Iterator;
-private:
-
-    Coordinate_2d v;
-    typename RANGE::EdgeType* e;
-
-};
-
-template<class RANGE>
-class IteratorExpression {
-
-public:
-
-    IteratorExpression(int index, RANGE& rangeExpression) :
-            index { index - 1 }, //
-            range { rangeExpression }, handle { } {
-        operator ++();
-    }
-
-    bool operator !=(const IteratorExpression& it) {
-        return index != it.index;
-    }
-
-    HandleT<RANGE>& operator *() {
-        return handle;
-    }
-
-    IteratorExpression& operator ++() { //prefix increment
-        const std::array<Coordinate_2d, 4>& around = Coordinate_2d::dir_array();
-        const std::array<Coordinate_2d, 4>& aroundEdge = Coordinate_2d::edge_array();
-
-        do {
-            ++index;
-            handle.v = range.c + around[index % 4];
-        } while (index < 4 && !isVertexInside(handle.v));
-
-        if (index < 4) {
-
-            handle.e = &range.edgePlane[range.c.x + aroundEdge[index].x][range.c.y * 2 + aroundEdge[index].y];
-        }
-        return *this;
-    }
-
-private:
-    bool isVertexInside(const Coordinate_2d& c) const {
-        return (c.x >= 0 && c.y >= 0 && c.x < (int) range.edgePlane.size() && //
-                c.y * 2 < (int) range.edgePlane[0].size());
-    }
-    int index;
-    RANGE& range;
-
-    HandleT<RANGE> handle;
-
-};
 template<class T>
 class RangeExpression {
+
+    template<class RANGE>
+    struct HandleT {
+
+        HandleT() :
+                v { }, //
+                e { } {
+        }
+
+        Coordinate_2d& vertex() {
+            return v;
+        }
+        const Coordinate_2d& vertex() const {
+            return v;
+        }
+
+        typename RANGE::EdgeType& edge() {
+            return *e;
+        }
+        const typename RANGE::EdgeType& edge() const {
+            return *e;
+        }
+
+        friend typename RANGE::Iterator;
+    private:
+
+        Coordinate_2d v;
+        typename RANGE::EdgeType* e;
+
+    };
+
+    template<class RANGE>
+    class IteratorExpression {
+
+    public:
+
+        IteratorExpression(int index, RANGE& rangeExpression) :
+                index { index - 1 }, //
+                range { rangeExpression }, handle { } {
+            operator ++();
+        }
+
+        bool operator !=(const IteratorExpression& it) {
+            return index != it.index;
+        }
+
+        HandleT<RANGE>& operator *() {
+            return handle;
+        }
+
+        IteratorExpression& operator ++() { //prefix increment
+            const std::array<Coordinate_2d, 4>& around = Coordinate_2d::dir_array();
+            const std::array<Coordinate_2d, 4>& aroundEdge = Coordinate_2d::edge_array();
+
+            do {
+                ++index;
+                handle.v = range.c + around[index % 4];
+            } while (index < 4 && !isVertexInside(handle.v));
+
+            if (index < 4) {
+
+                handle.e = &range.edgePlane[range.c.x + aroundEdge[index].x][range.c.y * 2 + aroundEdge[index].y];
+            }
+            return *this;
+        }
+
+    private:
+        bool isVertexInside(const Coordinate_2d& c) const {
+            return (c.x >= 0 && c.y >= 0 && c.x < (int) range.edgePlane.size() && //
+                    c.y * 2 < (int) range.edgePlane[0].size());
+        }
+        int index;
+        RANGE& range;
+
+        HandleT<RANGE> handle;
+
+    };
 
 public:
 
     typedef T EdgeType;
     typedef IteratorExpression<RangeExpression<T>> Iterator;
+    typedef RangeExpression<T>::HandleT<RangeExpression<T>> Handle;
     RangeExpression(const Coordinate_2d& c, boost::multi_array<T, 2>& edgePlane_) :
             c { c }, //
             edgePlane { edgePlane_ }  //
@@ -130,7 +132,7 @@ template<class T>
 class EdgePlane {
 public:
 
-    typedef HandleT<RangeExpression<T>> Handle;
+    typedef typename RangeExpression<T>::Handle Handle;
 
     EdgePlane(const int xSize, const int ySize);
 

@@ -173,7 +173,7 @@ struct Layer_assignment {
     void initial_BFS_color_map();
     void malloc_BFS_color_map();
     void calculate_wirelength();
-
+    void calculate_cap();
     void sort_net_order();
     void generate_all_output();
     Layer_assignment(const std::string& outputFileNamePtr, Construct_2d_tree& onstruct_2d_tree, Congestion& congestion);

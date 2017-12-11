@@ -721,11 +721,9 @@ void Layer_assignment::find_group(int max) {
         }
     for (i = 0; i < max; ++i) {
         if (temp_buf[2] == '0' || temp_buf[2] == '1')	// normal and random
-#ifdef VIA_DENSITY
+
             average_order[i].average = (double) (construct_2d_tree.rr_map.get_netPinNumber(i)) / (average_order[i].times + average_order[i].bends);
-#else
-        average_order[i].average = (double)(construct_2d_tree.rr_map.get_netPinNumber(i)) / (average_order[i].times);
-#endif
+
         else if (temp_buf[2] == '2')	// length
             average_order[i].average = (1.0 / (average_order[i].times));
         else if (temp_buf[2] == '3')	// pinnum
@@ -817,26 +815,16 @@ void Layer_assignment::sort_net_order() {
 }
 
 void Layer_assignment::calculate_cap() {
-    int i, j, overflow = 0, max = 0;
 
-    for (i = 1; i < max_xx; ++i)
-        for (j = 0; j < max_yy; ++j) {
-            Edge_2d& edge = construct_2d_tree.congestionMap2d.edge(i, j, DIR_WEST);
-            if (edge.isOverflow()) {
-                overflow += (edge.overUsage() << 1);
-                if (max < edge.overUsage())
-                    max = edge.overUsage() << 1;
-            }
+    int overflow = 0;
+    int max = 0;
+    for (Edge_2d& edge : congestion.congestionMap2d.all()) {
+        if (edge.isOverflow()) {
+            overflow += (edge.overUsage() * 2);
+            if (max < edge.overUsage())
+                max = edge.overUsage() * 2;
         }
-    for (i = 0; i < max_xx; ++i)
-        for (j = 1; j < max_yy; ++j) {
-            Edge_2d& edge = construct_2d_tree.congestionMap2d.edge(i, j, DIR_SOUTH);
-            if (edge.isOverflow()) {
-                overflow += (edge.overUsage() << 1);  // Why multiply by 2 ?
-                if (max < edge.overUsage())
-                    max = edge.overUsage() << 1;
-            }
-        }
+    }
     printf("2D overflow = %d\n", overflow);
     printf("2D max overflow = %d\n", max);
 }
