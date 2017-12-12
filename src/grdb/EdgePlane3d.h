@@ -174,7 +174,7 @@ public:
 
 private:
 
-    T& get(Coordinate_3d& c, EdgeDir dir);
+    T& get(const Coordinate_3d& c, const EdgeDir dir);
 ///The real data structure of plane
     boost::multi_array<T, 4> edgePlane_;
 
@@ -274,7 +274,7 @@ const std::size_t EdgePlane3d<T>::num_elements() const {
 ///@details User can specify the data structure of routing edges by their own, and
 ///         the default data structure of routing edges is a integer.
 template<class T>
-inline T& EdgePlane3d<T>::get(Coordinate_3d& c, EdgeDir dir) {
+inline T& EdgePlane3d<T>::get(const Coordinate_3d& c, const EdgeDir dir) {
     return edgePlane_[c.x][c.y][c.z][dir];
 }
 

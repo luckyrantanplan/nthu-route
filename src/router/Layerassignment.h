@@ -193,7 +193,7 @@ struct Layer_assignment {
     void cycle_reduction(const Coordinate_2d& c, const Coordinate_2d& parent);
     void preprocess(int net_id);
     void rec_count(int level, int val, std::array<int, 4>& count_idx);
-    void DP(int x, int y, int z);
+    void DP(const Coordinate_3d& c, const Coordinate_3d& parent);
     bool in_cube_and_have_edge(int x, int y, int z, int dir, int net_id);
     bool have_child(int pre_x, int pre_y, int pre_z, int pre_dir, int net_id);
     void generate_output(int net_id);

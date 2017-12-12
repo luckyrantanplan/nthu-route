@@ -190,7 +190,7 @@ void Layer_assignment::preprocess(int net_id) {
                         }
                         q.emplace(handle.vertex(), front.coor);	// enqueue coor + parent
                     } else {
-                        // already visited : we cut
+                        // already visited : we cut to avoid loop
                         handle.edge().path = 0;
                     }
                 } else {
@@ -223,8 +223,8 @@ void Layer_assignment::rec_count(int level, int val, std::array<int, 4>& count_i
                 rec_count(level + 1, val, temp_idx);
             }
         }
-    } else	// level == 4
-    {
+    } else {	// level == 4
+
         int min_k = min_DP_k;
         int max_k = max_DP_k;
         int temp_via_cost = 0;
@@ -273,48 +273,36 @@ void Layer_assignment::rec_count(int level, int val, std::array<int, 4>& count_i
     }
 }
 
-void Layer_assignment::DP(int x, int y, int z) {
-    int i, k, temp_x, temp_y;
+void Layer_assignment::DP(const Coordinate_3d& c, const Coordinate_3d& parent) {
+    int i, temp_x, temp_y;
     bool is_end;
     std::array<int, 4> count_idx;
 
-    Coordinate c1(x, y);
-
-    if (klat_map[x][y][z].val == -1) {	// non-traversed
-
+    Coordinate_2d c1(c.xy());
+    KLAT_NODE& klatNode = layerInfo_map.vertex(c1).zLayerInfo[c.z].klat;
+    if (klatNode.val == -1) {	// non-traversed
         is_end = true;
-        for (Coordinate_2d cr : plane_dir) {	// direction
-
-            if (path_map[x][y].edge[i] == 1) {	// check legal
-
+        for (EdgePlane<EdgeInfo>::Handle& handle : layerInfo_map.edges().neighbors(c1)) {	// direction
+            if (handle.edge().path == 1 && handle.vertex() != parent) {	// check legal
                 is_end = false;
-                Coordinate_2d c2 = c1 + cr;
-                if (*(overflow_map[x][y].edge[i]) <= 0)	// this edge could not happen overflow
-                    for (k = 0; k < global_max_layer; ++k) {	// use global_max_layer to substitute max_zz
-
-                        Edge_3d& edge = cur_map_3d.edge(x, y, k, i);
-                        if (edge.cur_cap < cur_map_3d[x][y][k].edge_list[i]->max_cap) {	// pass without overflow
-                            DP(temp_x, temp_y, k);
-                        }
+                for (Coordinate_3d c2 { handle.vertex(), 0 }; c2.z < cur_map_3d.getZSize(); ++c2.z) {	// use global_max_layer to substitute max_zz
+                    Edge_3d& edge = cur_map_3d.edge(Coordinate_3d { c1, c2.z }, c2);
+                    if (((handle.edge().overflow <= 0) && !edge.isOverflow()) ||	//
+                            ((edge.overUsage()) < overflow_max)) {	// pass without overflow
+                        DP(c2, c);
                     }
-                else
-                    // this edge could happen overflow
-                    for (k = 0; k < global_max_layer; ++k) {	// use global_max_layer to substitute max_zz
-
-                        if ((cur_map_3d.edge(x, y, k, i).cur_cap - cur_map_3d[x][y][k].edge_list[i]->max_cap) < overflow_max)	// overflow, but doesn't over the overflow_max
-
-                            DP(temp_x, temp_y, k);
-
-                    }
+                }
             }
         }
-        if (is_end == true) {
-            klat_map[x][y][z].via_cost = construct_2d_tree.via_cost * z;
-
-            for (k = klat_map[x][y][z].via_overflow = 0; k < z; ++k)
-                if (viadensity_map[x][y][k].cur >= viadensity_map[x][y][k].max)
-                    ++klat_map[x][y][z].via_overflow;
-            klat_map[x][y][z].val = klat_map[x][y][z].via_overflow;
+        if (is_end) {
+            klatNode.via_cost = congestion.via_cost * c.z;
+            klatNode.via_overflow = 0;
+            for (int k = 0; k < c.z; ++k) {
+                if (viadensity_map[x][y][k].cur >= viadensity_map[x][y][k].max) {
+                    ++klatNode.via_overflow;
+                }
+            }
+            klatNode.val = klatNode.via_overflow;
 
         } else {	// is_end == false
 
@@ -763,7 +751,7 @@ Layer_assignment::Layer_assignment(const std::string& outputFileNamePtr, Constru
 
     string outputFileName { outputFileNamePtr };
 
-    construct_2d_tree.via_cost = 1;
+    congestion.via_cost = 1;
 
     max_xx = construct_2d_tree.rr_map.get_gridx();
     max_yy = construct_2d_tree.rr_map.get_gridy();

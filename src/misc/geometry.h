@@ -281,6 +281,10 @@ public:
     Coordinate_2d xy() const {
         return Coordinate_2d { x, y };
     }
+
+    bool operator!=(const Coordinate_3d& other) const {
+        return (x != other.x || y != other.y || z != other.z);
+    }
 };
 
 //namespace Jalamorm
