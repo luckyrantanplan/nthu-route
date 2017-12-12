@@ -35,10 +35,14 @@ public:
     ///@brief Get the specified vertex
     VertexT& vertex(int x, int y);    //, int z);
 
+    VertexT& vertex(const Coordinate_2d& c);
+
     ///@brief Get the specified vertex, and the vertex is read-only.
     const VertexT& vertex(int x, int y) const;
 
     EdgePlane<EdgeT>& edges();
+
+    boost::iterator_range<VertexT*> allVertex();
 
 private:
 
@@ -92,6 +96,11 @@ inline VertexT& Plane<VertexT, EdgeT>::vertex(int x, int y) {
 }
 
 template<class VertexT, class EdgeT>
+inline VertexT& Plane<VertexT, EdgeT>::vertex(const Coordinate_2d& c) {
+    return plane_[c.x][c.y];
+}
+
+template<class VertexT, class EdgeT>
 inline const VertexT& Plane<VertexT, EdgeT>::vertex(int x, int y) const {
     return plane_[x][y];
 }
@@ -100,4 +109,10 @@ template<class VertexT, class EdgeT>
 inline EdgePlane<EdgeT>& Plane<VertexT, EdgeT>::edges() {
     return edgeplane_;
 }
+
+template<class VertexT, class EdgeT>
+inline boost::iterator_range<VertexT*> Plane<VertexT, EdgeT>::allVertex() {
+    return boost::iterator_range<VertexT*>(plane_.data(), &plane_.data()[plane_.num_elements()]);
+}
+
 #endif //INC_PLANE_H

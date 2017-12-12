@@ -25,6 +25,40 @@ class Congestion;
 
 struct Construct_2d_tree;
 
+typedef std::unordered_map<int, int> LRoutedNetTable;
+
+struct VIADENSITY_NODE {
+    int cur;
+    int max;
+};
+
+struct KLAT_NODE {
+    int val;
+    int via_cost;
+    int via_overflow;
+    int pi_z;
+};
+
+class Edge_3d {
+public:
+    Edge_3d();
+
+public:
+
+    bool isOverflow() {
+        return (cur_cap > max_cap);
+    }
+    int overUsage() {
+        return (cur_cap - max_cap);
+    }
+    int max_cap;
+    int cur_cap;
+    std::set<Two_pin_element *> used_two_pin;
+    LRoutedNetTable used_net;
+
+    VIADENSITY_NODE viadensity;
+};
+
 struct ans {
     int idx;
     int val;
@@ -60,16 +94,6 @@ struct MULTIPIN_NET_NODE {
     Two_pin_list_2d two_pin_net_list;
 };
 
-struct PATH_NODE {
-    char val;
-    char edge[4];
-};
-struct KLAT_NODE {
-    int val;
-    int via_cost;
-    int via_overflow;
-    int pi_z;
-};
 struct OVERFLOW_NODE {
     std::array<std::shared_ptr<int>, 4> edge;
 };
@@ -82,10 +106,7 @@ struct LENGTH_NODE {
     int xy;
     int z;
 };
-struct VIADENSITY_NODE {
-    int cur;
-    int max;
-};
+
 struct PATH_EDGE_3D {
     std::set<int> used_net;
 };
@@ -96,18 +117,30 @@ struct PATH_VERTEX_3D {
 
 struct ZLayerInfo {
     KLAT_NODE klat;
-    VIADENSITY_NODE viadensity;
-    Coordinate_3d coord_3d;
 };
 
 struct LayerInfo {
-    PATH_NODE path;
+    char path;
 
     std::vector<ZLayerInfo> zLayerInfo;
 
 };
 
+struct EdgeInfo {
+    char path;
+    int overflow;
+};
+
 struct Layer_assignment {
+
+    struct ElementQueue {
+        Coordinate_2d coor;
+        Coordinate_2d parent;
+
+        ElementQueue(Coordinate_2d coor, Coordinate_2d parent) :
+                coor { coor }, parent { parent } {
+        }
+    };
     int tar = -2;
     char follow_prefer_direction;
     //enum {GREEDY, SHORT_PATH};
@@ -117,7 +150,7 @@ struct Layer_assignment {
     int max_zz;
     int overflow_max;
     int *prefer_idx;
-    boost::multi_array<Coordinate_3d, 3> coord_3d_map;
+
     int i_router, i_test_case, i_order, i_method;
     const char temp_buf[1000] = "1000";
 
@@ -126,23 +159,23 @@ struct Layer_assignment {
     std::vector<AVERAGE_NODE> average_order;
     std::vector<NET_INFO_NODE> net_info;
     std::vector<MULTIPIN_NET_NODE> multi_pin_net;
-    boost::multi_array<PATH_NODE, 2> path_map;
+    // boost::multi_array<PATH_NODE, 2> path_map;
     boost::multi_array<KLAT_NODE, 3> klat_map;
     boost::multi_array<OVERFLOW_NODE, 2> overflow_map;
     std::vector<UNION_NODE> group_set;
     std::array<LENGTH_NODE, 1000> length_count;
     boost::multi_array<VIADENSITY_NODE, 3> viadensity_map;
-    Plane<LayerInfo, int> layerInfo_map;  //edge are overflow
+    Plane<LayerInfo, EdgeInfo> layerInfo_map;  //edge are overflow
     Construct_2d_tree& construct_2d_tree;
     EdgePlane3d<Edge_3d> cur_map_3d;
 
     const std::array<Coordinate_2d, 4> plane_dir { { { 0, 1 }, { 0, -1 }, { -1, 0 }, { 1, 0 } } };   // F B L R
     const int cube_dir[6][3] = { { 0, 1, 0 }, { 0, -1, 0 }, { -1, 0, 0 }, { 1, 0, 0 }, { 0, 0, 1 }, { 0, 0, -1 } }; // F B L R U D
-    int global_net_id, global_x, global_y, global_max_layer, global_pin_num, global_pin_cost = 0, global_xy_reduce = 0, global_BFS_xy = 0;
+    int global_net_id, global_x, global_y, global_pin_num, global_pin_cost = 0;
     int min_DP_val, min_DP_idx[4], max_DP_k, min_DP_k, min_DP_via_cost;
     int total_pin_number = 0;
     boost::multi_array<int, 3> BFS_color_map;
-    int temp_global_pin_cost, temp_global_xy_cost, after_xy_cost;
+    int temp_global_pin_cost, temp_global_xy_cost;
 
     int is_used_for_BFS[1300][1300];
 
@@ -150,18 +183,16 @@ struct Layer_assignment {
 
     Congestion& congestion;
 
-    Layer_assignment(Congestion& congestion);
     void print_max_overflow();
 
-    void initial_3D_coordinate_map();
     void initial_overflow_map();
     void malloc_space();
     void update_cur_map_for_klat_xy(int cur_idx, const Coordinate_2d& start, const Coordinate_2d& end, int net_id);
-    void update_cur_map_for_klat_z(int pre_idx, int cur_idx, const Coordinate_2d& start, int net_id);
-    void update_path_for_klat(Coordinate_2d *start);
-    void cycle_reduction(int x, int y);
-    int preprocess(int net_id);
-    void rec_count(int level, int val, int *count_idx);
+    void update_cur_map_for_klat_z(int min, int max, const Coordinate_2d& start, int net_id);
+    void update_path_for_klat(const Coordinate_2d& start);
+    void cycle_reduction(const Coordinate_2d& c, const Coordinate_2d& parent);
+    void preprocess(int net_id);
+    void rec_count(int level, int val, std::array<int, 4>& count_idx);
     void DP(int x, int y, int z);
     bool in_cube_and_have_edge(int x, int y, int z, int dir, int net_id);
     bool have_child(int pre_x, int pre_y, int pre_z, int pre_dir, int net_id);
@@ -176,7 +207,7 @@ struct Layer_assignment {
     void calculate_cap();
     void sort_net_order();
     void generate_all_output();
-    Layer_assignment(const std::string& outputFileNamePtr, Construct_2d_tree& onstruct_2d_tree, Congestion& congestion);
+    Layer_assignment(const std::string& outputFileNamePtr, Construct_2d_tree& construct_2d_tree, Congestion& congestion);
     void init_3d_map();
 
 };

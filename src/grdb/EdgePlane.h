@@ -20,10 +20,16 @@
 
 #include "../misc/geometry.h"
 
+///@brief The data structure for presenting the routing edges in global routing area.
+///@details User can specify the data structure of routing edges by their own, and
+///         the default data structure of routing edges is a integer.
 template<class T>
-class RangeExpression {
+class EdgePlane {
 
-    template<class RANGE>
+    enum EdgeDir {
+        EAST = 0, SOUTH = 1
+    };
+
     struct HandleT {
 
         HandleT() :
@@ -38,27 +44,27 @@ class RangeExpression {
             return v;
         }
 
-        typename RANGE::EdgeType& edge() {
+        T& edge() {
             return *e;
         }
-        const typename RANGE::EdgeType& edge() const {
+        const T& edge() const {
             return *e;
         }
 
-        friend typename RANGE::Iterator;
+        friend typename EdgePlane<T>::IteratorExpression;
     private:
 
         Coordinate_2d v;
-        typename RANGE::EdgeType* e;
+        T* e;
 
     };
+    class RangeExpression;
 
-    template<class RANGE>
     class IteratorExpression {
 
     public:
 
-        IteratorExpression(int index, RANGE& rangeExpression) :
+        IteratorExpression(int index, RangeExpression& rangeExpression) :
                 index { index - 1 }, //
                 range { rangeExpression }, handle { } {
             operator ++();
@@ -68,13 +74,12 @@ class RangeExpression {
             return index != it.index;
         }
 
-        HandleT<RANGE>& operator *() {
+        HandleT& operator *() {
             return handle;
         }
 
         IteratorExpression& operator ++() { //prefix increment
             const std::array<Coordinate_2d, 4>& around = Coordinate_2d::dir_array();
-            const std::array<Coordinate_2d, 4>& aroundEdge = Coordinate_2d::edge_array();
 
             do {
                 ++index;
@@ -83,7 +88,25 @@ class RangeExpression {
 
             if (index < 4) {
 
-                handle.e = &range.edgePlane[range.c.x + aroundEdge[index].x][range.c.y * 2 + aroundEdge[index].y];
+                switch (index) {
+                case 0: {
+                    handle.e = &range.edgePlane[range.c.x][range.c.y][EAST];
+                    break;
+                }
+                case 1: {
+                    handle.e = &range.edgePlane[range.c.x][range.c.y][SOUTH];
+                    break;
+                }
+                case 2: {
+                    handle.e = &range.edgePlane[range.c.x - 1][range.c.y][EAST];
+                    break;
+                }
+                case 3: {
+                    handle.e = &range.edgePlane[range.c.x][range.c.y - 1][SOUTH];
+                    break;
+                }
+                }
+
             }
             return *this;
         }
@@ -94,45 +117,37 @@ class RangeExpression {
                     c.y * 2 < (int) range.edgePlane[0].size());
         }
         int index;
-        RANGE& range;
+        RangeExpression& range;
 
-        HandleT<RANGE> handle;
+        HandleT handle;
 
+    };
+
+    class RangeExpression {
+
+    public:
+
+        RangeExpression(const Coordinate_2d& c, boost::multi_array<T, 3>& edgePlane_) :
+                c { c }, //
+                edgePlane { edgePlane_ }  //
+        {
+        }
+
+        IteratorExpression begin() {
+            return IteratorExpression { 0, *this };
+        }
+
+        IteratorExpression end() {
+            return IteratorExpression { 4, *this };
+        }
+
+        Coordinate_2d c;
+        boost::multi_array<T, 3>& edgePlane;
     };
 
 public:
 
-    typedef T EdgeType;
-    typedef IteratorExpression<RangeExpression<T>> Iterator;
-    typedef RangeExpression<T>::HandleT<RangeExpression<T>> Handle;
-    RangeExpression(const Coordinate_2d& c, boost::multi_array<T, 2>& edgePlane_) :
-            c { c }, //
-            edgePlane { edgePlane_ }  //
-    {
-
-    }
-
-    IteratorExpression<RangeExpression<T>> begin() {
-        return IteratorExpression<RangeExpression<T>> { 0, *this };
-    }
-
-    IteratorExpression<RangeExpression<T>> end() {
-        return IteratorExpression<RangeExpression<T>> { 4, *this };
-    }
-
-public:
-    Coordinate_2d c;
-    boost::multi_array<T, 2>& edgePlane;
-};
-
-///@brief The data structure for presenting the routing edges in global routing area.
-///@details User can specify the data structure of routing edges by their own, and
-///         the default data structure of routing edges is a integer.
-template<class T>
-class EdgePlane {
-public:
-
-    typedef typename RangeExpression<T>::Handle Handle;
+    typedef HandleT Handle;
 
     EdgePlane(const int xSize, const int ySize);
 
@@ -155,7 +170,7 @@ public:
 
 ///@brief Get the neighbors
 
-    RangeExpression<T> neighbors(const Coordinate_2d& c);
+    RangeExpression neighbors(const Coordinate_2d& c);
 
     boost::iterator_range<T*> all();
 
@@ -173,19 +188,19 @@ public:
 
 private:
 ///The real data structure of plane
-    boost::multi_array<T, 2> edgePlane_;
+    boost::multi_array<T, 3> edgePlane_;
 
 };
 
 template<class T>
 EdgePlane<T>::EdgePlane(int xSize, int ySize) :
-        edgePlane_(boost::extents[xSize][2 * ySize]) {
+        edgePlane_(boost::extents[xSize][ySize][2]) {
 
 }
 
 template<class T>
 EdgePlane<T>::EdgePlane(const Coordinate_2d& size) :
-        edgePlane_(boost::extents[size.x][2 * size.y]) {
+        edgePlane_(boost::extents[size.x][size.y][2]) {
 
 }
 
@@ -209,7 +224,7 @@ int EdgePlane<T>::getXSize() const {
 template<class T>
 inline
 int EdgePlane<T>::getYSize() const {
-    return edgePlane_[0].size() / 2;
+    return edgePlane_[0].size();
 }
 
 template<class T>
@@ -233,23 +248,23 @@ auto EdgePlane<T>::allHorizontal() {
 }
 
 template<class T>
-RangeExpression<T> EdgePlane<T>::neighbors(const Coordinate_2d& c) {
-    return RangeExpression<T>(c, edgePlane_);
+typename EdgePlane<T>::RangeExpression EdgePlane<T>::neighbors(const Coordinate_2d& c) {
+    return RangeExpression(c, edgePlane_);
 }
 
 template<class T>
 T& EdgePlane<T>::edge(const Coordinate_2d& c1, const Coordinate_2d& c2) {
     if (c1.x < c2.x) {
-        return edgePlane_[c1.x][2 * c1.y];
+        return edgePlane_[c1.x][c1.y][EAST];
     }
     if (c1.x > c2.x) {
-        return edgePlane_[c2.x][2 * c2.y];
+        return edgePlane_[c2.x][c2.y][EAST];
     }
     if (c1.y < c2.y) {
-        return edgePlane_[c1.x][2 * c1.y + 1];
+        return edgePlane_[c1.x][c1.y][SOUTH];
     }
     if (c1.y > c2.y) {
-        return edgePlane_[c2.x][2 * c2.y + 1];
+        return edgePlane_[c2.x][c2.y][SOUTH];
     }
     throw std::exception();
 }

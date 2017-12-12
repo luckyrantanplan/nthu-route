@@ -11,11 +11,12 @@
 class Pin: public Coordinate {
 public:
     //Constructor
-    Pin(int x=0, int y=0, int z=0);
+    Pin(int x = 0, int y = 0, int z = 0);
     //  Pin();
     int get_tileX() const;
     int get_tileY() const;
     int get_layerId() const;		//get the layer id that contain this pin
+    Coordinate_2d get_tileXY() const;
 };
 
 typedef std::vector<const Pin*> PinptrList;

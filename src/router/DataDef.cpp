@@ -15,10 +15,7 @@ Edge_2d::Edge_2d() :
 
 }
 
-Edge_3d::Edge_3d() :
-        max_cap(0), cur_cap(0), used_net(5) {
 
-}
 
 bool Vertex_flute::comp_vertex_fl(const Vertex_flute& a, const Vertex_flute& b) {
     if (a.x < b.x)

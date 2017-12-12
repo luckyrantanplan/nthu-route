@@ -256,11 +256,6 @@ public:
         return arr; ////FRONT,BACK,LEFT,RIGHT; //FRONT,BACK,LEFT,RIGHT
     }
 
-    static const std::array<Coordinate_2d, 4> edge_array() {
-        static std::array<Coordinate_2d, 4> arr { { { 0, 0 }, { 0, 1 }, { -1, 0 }, { 0, -1 } } };
-        return arr; ////FRONT,BACK,LEFT,RIGHT; //FRONT,BACK,LEFT,RIGHT
-    }
-
 };
 
 class Coordinate_3d {
@@ -273,12 +268,19 @@ public:
     Coordinate_3d(int x = 0, int y = 0, int z = 0) :
             x(x), y(y), z(z) {
     }
+
+    Coordinate_3d(const Coordinate_2d& c, int z = 0) :
+            x { c.x }, y { c.y }, z { z } {
+    }
     void set(int ix, int iy, int iz) {
         x = ix;
         y = iy;
         z = iz;
     }
 
+    Coordinate_2d xy() const {
+        return Coordinate_2d { x, y };
+    }
 };
 
 //namespace Jalamorm

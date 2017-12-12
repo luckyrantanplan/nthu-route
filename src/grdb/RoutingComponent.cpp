@@ -27,6 +27,9 @@ int Pin::get_layerId() const {
     return z();
 }
 
+Coordinate_2d Pin::get_tileXY() const {
+    return Coordinate_2d { x(), y() };
+}
 /******
  Net
  *****/

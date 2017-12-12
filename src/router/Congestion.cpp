@@ -138,7 +138,7 @@ bool Congestion::check_path_no_overflow(std::vector<Coordinate_2d>& path, int ne
     return true;
 }
 
-int Congestion::find_overflow_max() {
+int Congestion::find_overflow_max(int max_zz) {
     int overflow_max = 0;
     for (Edge_2d& edge : congestionMap2d.all()) {
         pre_evaluate_congestion_cost_fp(edge);

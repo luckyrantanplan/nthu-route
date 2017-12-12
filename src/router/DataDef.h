@@ -127,26 +127,9 @@ public:
     }
 };
 
-typedef std::unordered_map<int, int> LRoutedNetTable;
-class Edge_3d {
-public:
-    Edge_3d();
 
-public:
-    int max_cap;
-    int cur_cap;
-    std::set<Two_pin_element *> used_two_pin;
-    LRoutedNetTable used_net;
-};
-
-typedef Edge_2d* Edge_2d_ptr;
 
 typedef std::vector<Two_pin_element_2d> Two_pin_list_2d;
 typedef Vertex_flute *Vertex_flute_ptr;
-
-class Vertex_3d {
-public:
-    std::shared_ptr<Edge_3d> edge_list[6];  //FRONT,BACK,LEFT,RIGHT,UP,DOWN
-};
 
 #endif /* SRC_DATADEF_H_ */

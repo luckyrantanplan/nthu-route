@@ -8,20 +8,137 @@
 #ifndef SRC_GRDB_EDGEPLANE3D_H_
 #define SRC_GRDB_EDGEPLANE3D_H_
 
+#include <boost/multi_array/base.hpp>
 #include <boost/multi_array.hpp>
-#include <stddef.h>
-#include <cassert>
-#include <vector>
+#include <boost/range/iterator_range_core.hpp>
+#include <boost/range/adaptor/strided.hpp>
+#include <array>
+#include <cstddef>
+#include <exception>
 
 #include "../misc/geometry.h"
+
+namespace boost {
+namespace adaptors {
+struct sliced;
+} /* namespace adaptors */
+} /* namespace boost */
 
 ///@brief The data structure for presenting the routing edges in global routing area.
 ///@details User can specify the data structure of routing edges by their own, and
 ///         the default data structure of routing edges is a integer.
 template<class T>
 class EdgePlane3d {
+    /*
+     struct HandleT {
+
+     HandleT() :
+     v { }, //
+     e { } {
+     }
+
+     Coordinate_3d& vertex() {
+     return v;
+     }
+     const Coordinate_3d& vertex() const {
+     return v;
+     }
+
+     T& edge() {
+     return *e;
+     }
+     const T& edge() const {
+     return *e;
+     }
+
+     friend typename EdgePlane3d<T>::IteratorExpression;
+     private:
+
+     Coordinate_3d v;
+     T* e;
+
+     };
+     class RangeExpression;
+
+     class IteratorExpression {
+
+     public:
+
+     IteratorExpression(int index, RangeExpression& rangeExpression) :
+     index { index - 1 }, //
+     range { rangeExpression }, handle { } {
+     operator ++();
+     }
+
+     bool operator !=(const IteratorExpression& it) {
+     return index != it.index;
+     }
+
+     HandleT& operator *() {
+     return handle;
+     }
+
+     IteratorExpression& operator ++() { //prefix increment
+     const std::array<Coordinate_3d, 4>& around = Coordinate_3d::dir_array();
+     const std::array<Coordinate_3d, 4>& aroundEdge = Coordinate_3d::edge_array();
+
+     do {
+     ++index;
+     handle.v = range.c + around[index % 4];
+     } while (index < 4 && !isVertexInside(handle.v));
+
+     if (index < 4) {
+
+     handle.e = &range.edgePlane[range.c.x + aroundEdge[index].x][range.c.y * 2 + aroundEdge[index].y];
+     }
+     return *this;
+     }
+
+     private:
+     bool isVertexInside(const Coordinate_3d& c) const {
+     return (c.x >= 0 && c.y >= 0 && c.x < (int) range.edgePlane.size() && //
+     c.y * 2 < (int) range.edgePlane[0].size());
+     }
+     int index;
+     RangeExpression& range;
+
+     HandleT handle;
+
+     };
+
+     class RangeExpression {
+
+     public:
+
+     RangeExpression(const Coordinate_3d& c, boost::multi_array<T, 2>& edgePlane_) :
+     c { c }, //
+     edgePlane { edgePlane_ }  //
+     {
+     }
+
+     IteratorExpression begin() {
+     return IteratorExpression { 0, *this };
+     }
+
+     IteratorExpression end() {
+     return IteratorExpression { 4, *this };
+     }
+
+     Coordinate_3d c;
+     boost::multi_array<T, 2>& edgePlane;
+     };
+     */
 public:
-    EdgePlane3d(int xSize, int ySize, int zSize);
+
+    /*typedef HandleT Handle;*/
+
+    enum EdgeDir {
+        EAST = 0, SOUTH = 1, FRONT = 2
+    };
+
+    EdgePlane3d(const int xSize, const int ySize, const int zSize);
+
+    EdgePlane3d(const Coordinate_3d& size);
 
     EdgePlane3d(const EdgePlane3d&);
 
@@ -29,38 +146,23 @@ public:
 
     void operator=(const EdgePlane3d&);
 
-    ///@brief Change the size of plane. Every vertex will reset to initial value.
-    void resize(int xSize, int ySize, int zSize);
+    ///@brief Get the map size in x-axis and y-axis
+    Coordinate_3d getSize() const;
 
+///@brief Get the map size in x-axis
     int getXSize() const;
-    ///@brief Get the map size in x-axis
 
-    ///@brief Get the map size in y-axis
+///@brief Get the map size in y-axis
     int getYSize() const;
 
-    ///@brief Get the map size in y-axis
+    ///@brief Get the map size in z-axis
     int getZSize() const;
+    /*
+     ///@brief Get the neighbors
 
-    ///@brief Reset every vertex to initial value.
-    void reset();
-
-    ///@brief Get the specified edge
-    T& edge(int x, int y, int z, DirectionType);
-
-    ///@brief Get the specified edge, and the edge is read-only.
-    const T& edge(int x, int y, int z, DirectionType) const;
-
-    ///@brief Get the specified edge.
-    ///The direction id is using JR Direction
-    /// (North, South, West, East) which is different from JR Direction
-    /// (North, South, East, West)
-    T& edge(int x, int y, int z, OrientationType dir);
-
-    ///@brief Get the specified edge, and the edge is read-only.
-    ///The direction id is using JR Direction
-    /// (North, South, West, East) which is different from JR Direction
-    /// (North, South, East, West)
-    const T& edge(int x, int y, int z, OrientationType dir) const;
+     RangeExpression neighbors(const Coordinate_3d& c);
+     */
+    boost::iterator_range<T*> all();
 
     ///@brief Get the specified edge between 2 vertices
     T& edge(const Coordinate_3d& c1, const Coordinate_3d& c2);
@@ -68,37 +170,37 @@ public:
     ///@brief Get the specified edge between 2 vertices, and the edge is read-only.
     const T& edge(const Coordinate_3d& c1, const Coordinate_3d& c2) const;
 
-    template<typename F>
-    void foreach(const F& f);
-private:
-    ///The real data structure of plane
-    boost::multi_array<T, 3> edgePlane_;
+    const std::size_t num_elements() const;
 
 private:
+
+    T& get(Coordinate_3d& c, EdgeDir dir);
+///The real data structure of plane
+    boost::multi_array<T, 4> edgePlane_;
 
 };
 
 template<class T>
 EdgePlane3d<T>::EdgePlane3d(int xSize, int ySize, int zSize) :
-        edgePlane_(boost::extents[xSize][ySize][2 * zSize]) {
+        edgePlane_(boost::extents[xSize][ySize][zSize][3]) {
+
+}
+
+template<class T>
+EdgePlane3d<T>::EdgePlane3d(const Coordinate_3d& size) :
+        edgePlane_(boost::extents[size.x][size.y][size.z][3]) {
 
 }
 
 template<class T>
 EdgePlane3d<T>::EdgePlane3d(const EdgePlane3d& original) :
         edgePlane_(original.edgePlane_) {
-    copyPlane(original);
+
 }
 
 template<class T>
 EdgePlane3d<T>::~EdgePlane3d() {
 
-}
-
-template<class T>
-void EdgePlane3d<T>::operator=(const EdgePlane3d& original) {
-
-    copyPlane(original);
 }
 
 template<class T>
@@ -116,83 +218,45 @@ int EdgePlane3d<T>::getYSize() const {
 template<class T>
 inline
 int EdgePlane3d<T>::getZSize() const {
-    return edgePlane_[0][0].size() / 2;
+    return edgePlane_[0][0].size();
 }
 
 template<class T>
-inline T& EdgePlane3d<T>::edge(int x, int y, int z, DirectionType dir) {
-
-    //If the direction is South, West, Down edges, we will need to change it
-    //to available direction (North, East, Up) and coordinate
-
-    switch (dir) {
-    case DirectionType::DIR_EAST:
-        return edgePlane_[x][y][2 * z];
-    case DirectionType::DIR_NORTH:
-        return edgePlane_[x][y - 1][2 * z + 1];
-    case DirectionType::DIR_SOUTH:
-        return edgePlane_[x][y][2 * z + 1];
-    case DirectionType::DIR_WEST:
-        return edgePlane_[x - 1][y][2 * z];
-    case DirectionType::DIR_UP:
-        throw std::exception();
-    case DirectionType::DIR_DOWN:
-        throw std::exception();
-
-    }
-
+inline Coordinate_3d EdgePlane3d<T>::getSize() const {
+    return Coordinate_3d(getXSize(), getYSize(), getZSize());
 }
 
 template<class T>
-inline const T& EdgePlane3d<T>::edge(int x, int y, int z, DirectionType dir) const {
-    return edge(x, y, z, dir);
+boost::iterator_range<T*> EdgePlane3d<T>::all() {
+    return boost::iterator_range<T*>(edgePlane_.data(), &edgePlane_.data()[edgePlane_.num_elements()]);
 }
 
-template<class T>
-inline T& EdgePlane3d<T>::edge(int x, int y, int z, OrientationType JrDir) {
-    static const int Jr2JmTransferTable[4] = { 0, 1, 3, 2 };  //FRONT,BACK,LEFT,RIGHT <-> North, South, East, West
-    DirectionType dir = static_cast<DirectionType>(Jr2JmTransferTable[JrDir]);
-    return edge(x, y, z, dir);
-}
-
-template<class T>
-inline const T& EdgePlane3d<T>::edge(int x, int y, int z, OrientationType JrDir) const {
-    return edge(x, y, z, JrDir);
-}
-
-template<class T>
-void EdgePlane3d<T>::resize(int xSize, int ySize, int zSize) {
-    edgePlane_.resize(boost::extents[xSize][ySize][2 * zSize]);
-}
-
-template<class T>
-inline
-void EdgePlane3d<T>::reset() {
-    edgePlane_.clear();
-}
-
-template<class T>
-template<typename F>
-void EdgePlane3d<T>::foreach(const F& f) {
-    for (std::size_t i = 0; i < edgePlane_.num_elements(); ++i) {
-        f(edgePlane_.data()[i]);
-    }
-}
-
+/*
+ *
+ template<class T>
+ typename EdgePlane3d<T>::RangeExpression EdgePlane3d<T>::neighbors(const Coordinate_3d& c) {
+ return RangeExpression(c, edgePlane_);
+ }
+ */
 template<class T>
 T& EdgePlane3d<T>::edge(const Coordinate_3d& c1, const Coordinate_3d& c2) {
-
     if (c1.x < c2.x) {
-        return edgePlane_[c1.x][c1.y][2 * c1.z];
+        return get(c1, EAST);
     }
     if (c1.x > c2.x) {
-        return edgePlane_[c2.x][c2.y][2 * c2.z];
+        return get(c2, EAST);
     }
     if (c1.y < c2.y) {
-        return edgePlane_[c1.x][c1.y][2 * c1.z + 1];
+        return get(c1, SOUTH);
     }
     if (c1.y > c2.y) {
-        return edgePlane_[c2.x][c2.y][2 * c2.z + 1];
+        return get(c2, SOUTH);
+    }
+    if (c1.z < c2.z) {
+        return get(c1, FRONT);
+    }
+    if (c1.z > c2.z) {
+        return get(c2, FRONT);
     }
     throw std::exception();
 }
@@ -200,6 +264,18 @@ T& EdgePlane3d<T>::edge(const Coordinate_3d& c1, const Coordinate_3d& c2) {
 template<class T>
 const T& EdgePlane3d<T>::edge(const Coordinate_3d& c1, const Coordinate_3d& c2) const {
     return edge(c1, c2);
+}
+template<class T>
+const std::size_t EdgePlane3d<T>::num_elements() const {
+    return edgePlane_.num_elements();
+}
+
+///@brief The data structure for presenting the routing edges in global routing area.
+///@details User can specify the data structure of routing edges by their own, and
+///         the default data structure of routing edges is a integer.
+template<class T>
+inline T& EdgePlane3d<T>::get(Coordinate_3d& c, EdgeDir dir) {
+    return edgePlane_[c.x][c.y][c.z][dir];
 }
 
 #endif /* SRC_GRDB_EDGEPLANE3D_H_ */

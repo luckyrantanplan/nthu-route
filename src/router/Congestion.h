@@ -44,7 +44,7 @@ public:
     void pre_evaluate_congestion_cost_all(Edge_2d& edge);
     void pre_evaluate_congestion_cost();
     bool check_path_no_overflow(std::vector<Coordinate_2d>&path, int net_id, int inc_flag);
-    int find_overflow_max();
+    int find_overflow_max(int max_zz);
     void init_2d_map(RoutingRegion& rr_map);
     int cal_total_wirelength();
     Statistic stat_congestion();
