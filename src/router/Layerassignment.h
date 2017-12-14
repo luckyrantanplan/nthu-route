@@ -3,9 +3,8 @@
 
 #include <boost/multi_array.hpp>
 #include <algorithm>
-#include <array>
+#include <deque>
 #include <limits>
-#include <memory>
 #include <set>
 #include <string>
 #include <tuple>
@@ -35,13 +34,12 @@ typedef std::unordered_map<int, int> LRoutedNetTable;
 
 struct VIADENSITY_NODE {
     int cur;
-    int max;
 
     bool isOverflow() const {
-        return (cur > max);
+        return (cur > 0);
     }
     int overUsage() const {
-        return (cur - max);
+        return cur;
     }
 };
 
@@ -66,7 +64,6 @@ public:
     }
     int max_cap;
     int cur_cap;
-    std::set<Two_pin_element *> used_two_pin;
     LRoutedNetTable used_net;
 
     VIADENSITY_NODE viadensity;
@@ -79,16 +76,6 @@ struct AVERAGE_NODE {
     int vo_times;
     double average;
     int bends;
-};
-
-struct MULTIPIN_NET_NODE {
-    Two_pin_list_2d two_pin_net_list;
-};
-
-struct UNION_NODE {
-    int pi;
-    int sx, sy, bx, by;
-    int num;
 };
 
 struct ZLayerInfo {
@@ -169,16 +156,13 @@ struct Layer_assignment {
         }
     };
 
-    int l_option;
     int max_xx;
     int max_yy;
     int max_zz;
     int overflow_max;
 
     std::vector<AVERAGE_NODE> average_order;
-    std::vector<MULTIPIN_NET_NODE> multi_pin_net;
 
-    std::vector<UNION_NODE> group_set;
     Plane<LayerInfo, EdgeInfo> layerInfo_map; //edge are overflow
     RoutingRegion& rr_map;
     EdgePlane3d<Edge_3d> cur_map_3d;
@@ -216,7 +200,9 @@ struct Layer_assignment {
     void generate_all_output();
     Layer_assignment(const std::string& outputFileNamePtr, RoutingRegion& rr_map, Congestion& congestion);
     void init_3d_map();
-
+private:
+    bool test(const Coordinate_2d& c1, const Coordinate_2d& c2);
+    void init_union(const Coordinate_2d& c1, const Coordinate_2d& c2, int& max_layer);
 };
 
 #endif //INC_LAYER_ASSIGNMENT_H

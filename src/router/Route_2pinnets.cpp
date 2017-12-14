@@ -131,7 +131,7 @@ void Route_2pinnets::bfs_for_find_two_pin_list(Coordinate_2d start_coor, int net
 
     std::queue<ElementQueue> queue;
     uint32_t index = 0;
-    queue.emplace(start_coor, Coordinate_2d(-1, -1), index);
+    queue.emplace(start_coor, start_coor, index);
     ++index;
     {
         Coordinate_2d& head = queue.front().coor;
@@ -245,10 +245,8 @@ void Route_2pinnets::reallocate_two_pin_list() {
     for (int netId = 0; netId < rr_map.get_netNumber(); ++netId) {
         if (construct_2d_tree.NetDirtyBit[netId]) {
             put_terminal_color_on_colormap(netId);
-            int xx = rr_map.get_nPin(netId)[0]->get_tileX();
-            int yy = rr_map.get_nPin(netId)[0]->get_tileY();
 
-            bfs_for_find_two_pin_list(Coordinate_2d(xx, yy), netId);
+            bfs_for_find_two_pin_list(rr_map.get_nPin(netId)[0]->get_tileXY(), netId);
 
             construct_2d_tree.NetDirtyBit[netId] = false;
 
