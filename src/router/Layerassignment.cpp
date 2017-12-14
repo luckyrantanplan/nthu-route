@@ -1,23 +1,23 @@
 #include "Layerassignment.h"
 
-#include <boost/multi_array/subarray.hpp>
+#include <boost/multi_array/multi_array_ref.hpp>
 #include <boost/range/combine.hpp>
-#include <sys/time.h>
+#include <boost/range/detail/combine_cxx11.hpp>
+#include <boost/range/iterator_range_core.hpp>
+#include <sys/types.h>
 #include <unistd.h>
-#include <algorithm>
+#include <chrono>
+#include <cstddef>
 #include <cstdio>
-#include <cstdlib>
-#include <ctime>
 #include <deque>
-#include <functional>
+#include <iostream>
 #include <queue>
-#include <unordered_map>
+#include <stack>
 
 #include "../grdb/EdgePlane.h"
 #include "../grdb/RoutingComponent.h"
 #include "../grdb/RoutingRegion.h"
 #include "Congestion.h"
-#include "Construct_2d_tree.h"
 
 using namespace std;
 
@@ -139,21 +139,19 @@ void Layer_assignment::cycle_reduction(const Coordinate_2d& c, const Coordinate_
     // border effect, we need to loop again
     bool isLeaf = true;
     for (EdgePlane<EdgeInfo>::Handle& handle : layerInfo_map.edges().neighbors(c)) {
-        if (handle.edge().path == 1) {   // check legal
+        if (parent != handle.vertex() && handle.edge().path == 1) {   // check legal
             isLeaf = false;
         }
     }
     if (isLeaf && layerInfo_map.vertex(c).path == 1) {	// a leaf && it is not a pin
         layerInfo_map.vertex(c).path = 0;
-        for (EdgePlane<EdgeInfo>::Handle& handle : layerInfo_map.edges().neighbors(c)) {
-            handle.edge().path = 0;
-        }
+        layerInfo_map.edges().edge(c, parent).path = 0;
     }
 }
 
 void Layer_assignment::preprocess(int net_id) {
 
-    const PinptrList& pin_list = construct_2d_tree.rr_map.get_nPin(net_id);
+    const PinptrList& pin_list = rr_map.get_nPin(net_id);
 
     for (const Pin* pin : pin_list) {
         layerInfo_map.vertex(pin->get_tileXY()).path = -2;	// pin
@@ -162,7 +160,6 @@ void Layer_assignment::preprocess(int net_id) {
     Coordinate_2d c = pin_list[0]->get_tileXY();
     layerInfo_map.vertex(c).path = 2;	// visited
 
-    // initial klat_map[x][y][k]
     for (ZLayerInfo& k : layerInfo_map.vertex(c).zLayerInfo) {
         k.klat.val = -1;
     }
@@ -184,7 +181,6 @@ void Layer_assignment::preprocess(int net_id) {
                             pathV = 2;	// visited pin
 
                         }
-                        // initial klat_map[x][y][k]
                         for (ZLayerInfo& k : layerInfo_map.vertex(handle.vertex()).zLayerInfo) {
                             k.klat.val = -1;
                         }
@@ -204,86 +200,81 @@ void Layer_assignment::preprocess(int net_id) {
     cycle_reduction(c, c);
 }
 
-void Layer_assignment::rec_count(int level, int val, std::array<int, 4>& count_idx) {
-// level is orientation
-    if (level < 4) {
-        if (val <= min_DP_val) {
-            std::array<int, 4> temp_idx = count_idx;
+void Layer_assignment::VertexCost::addCost(const Coordinate_2d& o, const ElementStack& e, const Layer_assignment& l) {
+    for (const Coordinate_3d& c : e.choice) {
+        interval.add(c.z);
+    }
 
-            if (path_map[global_x][global_y].edge[level] == 1) {
-                int temp_x = global_x + plane_dir[level][0];
-                int temp_y = global_y + plane_dir[level][1];
-                for (k = 0; k < global_max_layer; ++k)	// use global_max_layer to substitue max_zz
-                    if (klat_map[temp_x][temp_y][k].val >= 0) {
-                        temp_idx[level] = k;
-                        rec_count(level + 1, val + klat_map[temp_x][temp_y][k].val, temp_idx);
-                    }
-            } else {
-                temp_idx[level] = -1;
-                rec_count(level + 1, val, temp_idx);
-            }
-        }
-    } else {	// level == 4
-
-        int min_k = min_DP_k;
-        int max_k = max_DP_k;
-        int temp_via_cost = 0;
-        for (int k = temp_via_cost = 0; k < 4; ++k)
-            if (count_idx[k] != -1) {
-                if (count_idx[k] < min_k)
-                    min_k = count_idx[k];
-                if (count_idx[k] > max_k)
-                    max_k = count_idx[k];
-                temp_via_cost += klat_map[global_x + plane_dir[k][0]][global_y + plane_dir[k][1]][count_idx[k]].via_cost;
-            }
-        temp_via_cost += ((max_k - min_k) * congestion.via_cost);
-
-        int temp_val = val;
-        for (int k = min_k; k < max_k; ++k)
-            if (viadensity_map[global_x][global_y][k].cur >= viadensity_map[global_x][global_y][k].max)
-                ++temp_val;
-
-        if (temp_val < min_DP_val) {
-            min_DP_val = temp_val;
-            min_DP_via_cost = temp_via_cost;
-            for (int k = 0; k < 4; ++k)
-                min_DP_idx[k] = count_idx[k];
-        } else if (temp_val == min_DP_val) {
-
-            if (temp_via_cost < min_DP_via_cost) {
-                min_DP_via_cost = temp_via_cost;
-                for (int k = 0; k < 4; ++k)
-                    min_DP_idx[k] = count_idx[k];
-            } else if (temp_via_cost == min_DP_via_cost) {
-                int temp_min_k = min_DP_k;
-                int temp_max_k = max_DP_k;
-                for (k = 0; k < 4; ++k)
-                    if (min_DP_idx[k] != -1) {
-                        if (min_DP_idx[k] < temp_min_k)
-                            temp_min_k = min_DP_idx[k];
-                        if (min_DP_idx[k] > temp_max_k)
-                            temp_max_k = min_DP_idx[k];
-                    }
-                if (max_k > temp_max_k || min_k > temp_min_k)
-                    for (int k = 0; k < 4; ++k)
-                        min_DP_idx[k] = count_idx[k];
-            }
-
+    cost = e.cost;
+    for (Coordinate_3d c2 { o, interval.min }; c2.z < interval.max; ++c2.z) {
+        if (l.cur_map_3d.edge(c2, Coordinate_3d { o, c2.z + 1 }).viadensity.isOverflow()) {
+            ++cost;
         }
     }
+    via_cost = 0;
+    for (const Coordinate_3d& c : e.choice) {
+        via_cost += l.layerInfo_map.vertex(c.xy()).zLayerInfo[c.z].klat.via_cost; // does not understand this
+    }
+    via_cost += (interval.length() * l.congestion.via_cost);
+
+}
+
+std::vector<Coordinate_3d> Layer_assignment::rec_count(const Coordinate_3d& o, KLAT_NODE& klatNode) {
+    Interval int_DP_k { 0, o.z };
+    if (layerInfo_map.vertex(o.xy()).path == 1) { // not a pin
+        int_DP_k.min = o.z;
+    }     // pin
+    VertexCost vertexCost(int_DP_k);
+
+    std::vector<Coordinate_2d> neighbors;
+    std::stack<ElementStack, std::vector<ElementStack>> stack;
+
+    for (EdgePlane<EdgeInfo>::Handle& handle : layerInfo_map.edges().neighbors(o.xy())) {
+        if (handle.edge().path == 1) {
+            neighbors.push_back(handle.vertex());
+        }
+    }
+    stack.emplace(neighbors.size() - 1, 0);
+    while (!stack.empty()) {
+        ElementStack e = stack.top();
+        stack.pop();
+        if (e.cost <= vertexCost.cost) {
+            if (e.others >= 0) {
+                Coordinate_2d child = neighbors[e.others];
+                --e.others;
+
+                for (std::size_t k = 0; k < layerInfo_map.vertex(child).zLayerInfo.size(); ++k) {
+                    int cost = layerInfo_map.vertex(child).zLayerInfo[k].klat.val;
+                    if (cost >= 0) {
+                        ElementStack e1 = e;
+                        e1.choice.push_back(Coordinate_3d { child, static_cast<int32_t>(k) });
+                        e1.cost += cost;
+                        stack.push(std::move(e1));
+                    }
+                }
+            } else {
+                VertexCost vcost(int_DP_k);
+                vcost.addCost(o.xy(), e, *this);
+                if (vcost < vertexCost) {
+                    vertexCost = std::move(vcost);
+                }
+            }
+        }     // current e.val is >   min : we do nothing
+    }
+    klatNode.via_cost = vertexCost.via_cost;
+    klatNode.via_overflow = vertexCost.cost;
+    klatNode.val = vertexCost.cost;
+    return vertexCost.vertices;
 }
 
 void Layer_assignment::DP(const Coordinate_3d& c, const Coordinate_3d& parent) {
-    int i, temp_x, temp_y;
-    bool is_end;
-    std::array<int, 4> count_idx;
 
     Coordinate_2d c1(c.xy());
     KLAT_NODE& klatNode = layerInfo_map.vertex(c1).zLayerInfo[c.z].klat;
     if (klatNode.val == -1) {	// non-traversed
-        is_end = true;
+        bool is_end = true;
         for (EdgePlane<EdgeInfo>::Handle& handle : layerInfo_map.edges().neighbors(c1)) {	// direction
-            if (handle.edge().path == 1 && handle.vertex() != parent) {	// check legal
+            if (handle.edge().path == 1 && handle.vertex() != parent.xy()) {	// check legal
                 is_end = false;
                 for (Coordinate_3d c2 { handle.vertex(), 0 }; c2.z < cur_map_3d.getZSize(); ++c2.z) {	// use global_max_layer to substitute max_zz
                     Edge_3d& edge = cur_map_3d.edge(Coordinate_3d { c1, c2.z }, c2);
@@ -297,40 +288,17 @@ void Layer_assignment::DP(const Coordinate_3d& c, const Coordinate_3d& parent) {
         if (is_end) {
             klatNode.via_cost = congestion.via_cost * c.z;
             klatNode.via_overflow = 0;
-            for (int k = 0; k < c.z; ++k) {
-                if (viadensity_map[x][y][k].cur >= viadensity_map[x][y][k].max) {
+            for (Coordinate_3d c2 { c1, 0 }; c2.z < c.z; ++c2.z) {
+                if (cur_map_3d.edge(c2, Coordinate_3d { c1, c.z + 1 }).viadensity.isOverflow()) {
                     ++klatNode.via_overflow;
                 }
             }
             klatNode.val = klatNode.via_overflow;
 
         } else {	// is_end == false
-
-            // special purpose
-            min_DP_val = 1000000000;
-            min_DP_via_cost = 1000000000;
-            global_x = x;
-            global_y = y;
-            max_DP_k = z;
-            if (path_map[x][y].val == 1)	// not a pin
-                min_DP_k = z;
-            else
-                // pin
-                min_DP_k = 0;
-            for (i = 0; i < 4; ++i)
-                min_DP_idx[i] = -1;
-            rec_count(0, 0, count_idx);
-            klat_map[x][y][z].via_cost = min_DP_via_cost;
-
-            klat_map[x][y][z].via_overflow = min_DP_val;
-
-            klat_map[x][y][z].val = min_DP_val;
-            for (i = 0; i < 4; ++i)	// direction
-                if (min_DP_idx[i] >= 0) {
-                    temp_x = x + plane_dir[i][0];
-                    temp_y = y + plane_dir[i][1];
-                    klat_map[temp_x][temp_y][z].pi_z = min_DP_idx[i];
-                }
+            for (const Coordinate_3d& n : rec_count(c, klatNode)) {
+                layerInfo_map.vertex(n.xy()).zLayerInfo[c.z].klat.pi_z = n.z;
+            }
         }
     }
 }
@@ -366,8 +334,6 @@ bool Layer_assignment::have_child(int pre_x, int pre_y, int pre_z, int pre_dir, 
 
 void Layer_assignment::generate_output(int net_id) {
     int i, j;
-
-    RoutingRegion& rr_map = construct_2d_tree.rr_map;
 
     const PinptrList& pin_list = rr_map.get_nPin(net_id);
     const char *p;
@@ -428,8 +394,7 @@ void Layer_assignment::generate_output(int net_id) {
                     break;
                 }
             }
-            if (i >= 2 || j >= 2)	// have edge
-                    {
+            if (i >= 2 || j >= 2) {	// have edge
 
                 start.x = start.x * rr_map.get_tileWidth() + xDetailShift;
                 start.y = start.y * rr_map.get_tileHeight() + yDetailShift;
@@ -446,26 +411,27 @@ void Layer_assignment::generate_output(int net_id) {
     printf("!\n");
 }
 
-void Layer_assignment::klat(int net_id) { //SOLAC + APEC
-    const PinptrList& pin_list = construct_2d_tree.rr_map.get_nPin(net_id);
+int Layer_assignment::klat(int net_id) { //SOLAC + APEC
+    const PinptrList& pin_list = rr_map.get_nPin(net_id);
 
     Coordinate_2d start = pin_list[0]->get_tileXY();
-    global_net_id = net_id;	// LAZY global variable
-    global_pin_num = construct_2d_tree.rr_map.get_netPinNumber(net_id);
+    global_net_id = net_id; // LAZY global variable
+    global_pin_num = rr_map.get_netPinNumber(net_id);
     preprocess(net_id);
-// fina a pin as starting point
+// Find a pin as starting point
 // klat start with a pin
-    DP(start.x, start.y, 0);
+    DP(start, start);
 
-    global_pin_cost += klat_map[start.x][start.y][0].val;
     update_path_for_klat(start);
+
+    return layerInfo_map.vertex(start).zLayerInfo[0].klat.val;
 }
 
 bool Layer_assignment::comp_temp_net_order(int p, int q) {
 
     return average_order[q].average < average_order[p].average || //
             (!(average_order[p].average < average_order[q].average) && //
-                    construct_2d_tree.rr_map.get_netPinNumber(p) < construct_2d_tree.rr_map.get_netPinNumber(q));
+                    rr_map.get_netPinNumber(p) < rr_map.get_netPinNumber(q));
 }
 
 int Layer_assignment::backtrace(int n) {
@@ -485,10 +451,6 @@ void Layer_assignment::find_group(int max) {
 
     group_set = std::vector<UNION_NODE>(max);
 
-// intitial for is_used_for_BFS
-    for (i = 0; i < max_xx; ++i)
-        for (j = 0; j < max_yy; ++j)
-            is_used_for_BFS[i][j] = -1;
 // initial for average_order
     average_order = std::vector<AVERAGE_NODE>(max);
     for (i = 0; i < max; ++i) {
@@ -547,7 +509,7 @@ void Layer_assignment::find_group(int max) {
         }
     for (i = 0; i < max_xx; ++i)
         for (j = 1; j < max_yy; ++j) {
-            Edge_2d& edgeSouth = construct_2d_tree.congestionMap2d.edge(i, j, DIR_SOUTH);
+            Edge_2d& edgeSouth = congestion.congestionMap2d.edge(i, j, DIR_SOUTH);
             temp_cap = (edgeSouth.used_net.size() << 1);
             for (k = 0; k < max_zz && temp_cap > 0; ++k)
                 if (cur_map_3d[i][j][k].edge_list[BACK]->max_cap > 0)
@@ -595,7 +557,7 @@ void Layer_assignment::find_group(int max) {
         for (j = 0; j < max_yy; ++j) {
             for (k = 0; k < max_zz && cur_map_3d[i][j][k].edge_list[LEFT]->max_cap == 0; ++k) {
             }
-            Edge_2d& edgeWest = construct_2d_tree.congestionMap2d.edge(i, j, DIR_WEST);
+            Edge_2d& edgeWest = congestion.congestionMap2d.edge(i, j, DIR_WEST);
             if ((int) (edgeWest.used_net.size() << 1) > cur_map_3d[i][j][k].edge_list[LEFT]->max_cap) {
                 if (edgeWest.used_net.size() > 1) {
                     RoutedNetTable::iterator iter = edgeWest.used_net.begin();
@@ -614,7 +576,7 @@ void Layer_assignment::find_group(int max) {
         for (j = 1; j < max_yy; ++j) {
             for (k = 0; k < max_zz && cur_map_3d[i][j][k].edge_list[BACK]->max_cap == 0; ++k) {
             }
-            Edge_2d& edgeSouth = construct_2d_tree.congestionMap2d.edge(i, j, DIR_SOUTH);
+            Edge_2d& edgeSouth = congestion.congestionMap2d.edge(i, j, DIR_SOUTH);
             if ((int) (edgeSouth.used_net.size() << 1) > cur_map_3d[i][j][k].edge_list[BACK]->max_cap) {
                 if (edgeSouth.used_net.size() > 1) {
                     RoutedNetTable::iterator iter = edgeSouth.used_net.begin();
@@ -630,95 +592,64 @@ void Layer_assignment::find_group(int max) {
             }
         }
     for (i = 0; i < max; ++i) {
-        if (temp_buf[2] == '0' || temp_buf[2] == '1')	// normal and random
 
-            average_order[i].average = (double) (construct_2d_tree.rr_map.get_netPinNumber(i)) / (average_order[i].times + average_order[i].bends);
+        average_order[i].average = (double) (rr_map.get_netPinNumber(i)) / (average_order[i].times + average_order[i].bends);
 
-        else if (temp_buf[2] == '2')	// length
-            average_order[i].average = (1.0 / (average_order[i].times));
-        else if (temp_buf[2] == '3')	// pinnum
-            average_order[i].average = (double) (construct_2d_tree.rr_map.get_netPinNumber(i));
-        else
-            // avgdensity
-            average_order[i].average = (double) (average_order[i].val) / (average_order[i].times);
         if (pre_solve[i] == true)
             pre_solve_counter++;
     }
 }
 
 void Layer_assignment::initial_BFS_color_map() {
-    int i, j, k;
-
-    for (i = 0; i < max_xx; ++i)
-        for (j = 0; j < max_yy; ++j)
-            for (k = 0; k < max_zz; ++k)
-                BFS_color_map[i][j][k] = -1;
-}
-
-void Layer_assignment::malloc_BFS_color_map() {
-    int i, j;
-
-    BFS_color_map = std::vector<std::vector<std::vector<int>>>(max_xx);
-    for (i = 0; i < max_xx; ++i) {
-        BFS_color_map[i] = std::vector<std::vector<int>>(max_yy);
-        for (j = 0; j < max_yy; ++j)
-            BFS_color_map[i][j] = std::vector<int>(max_zz);
+    for (int& e : boost::iterator_range<int*>(BFS_color_map.data(), &BFS_color_map.data()[BFS_color_map.num_elements()])) {
+        e = -1;
     }
 }
 
 void Layer_assignment::calculate_wirelength() {
-    int i, j, k, xy = 0, z = 0;
-    LRoutedNetTable::iterator iter;
 
-    for (k = 0; k < max_zz; ++k) {
-        for (i = 1; i < max_xx; ++i)
-            for (j = 0; j < max_yy; ++j)
-                if (cur_map_3d[i][j][k].edge_list[LEFT]->used_net.size()) {
-                    xy += cur_map_3d[i][j][k].edge_list[LEFT]->used_net.size();
-                }
-        for (i = 0; i < max_xx; ++i)
-            for (j = 1; j < max_yy; ++j)
-                if (cur_map_3d[i][j][k].edge_list[BACK]->used_net.size()) {
-                    xy += cur_map_3d[i][j][k].edge_list[BACK]->used_net.size();
-                }
+    int xy = 0;
+    int z = 0;
+
+    for (Coordinate_3d c { 0, 0, 0 }; c.x < cur_map_3d.getXSize(); ++c.x) {
+        for (c.y = 0; c.y < cur_map_3d.getYSize(); ++c.y) {
+            for (c.z = 0; c.z < cur_map_3d.getZSize(); ++c.z) {
+                xy += cur_map_3d.east(c).used_net.size();
+                xy += cur_map_3d.south(c).used_net.size();
+                z += cur_map_3d.front(c).used_net.size();
+            }
+        }
     }
-    for (i = 0; i < max_xx; ++i)
-        for (j = 0; j < max_yy; ++j)
-            for (k = 1; k < max_zz; ++k)
-                z += (construct_2d_tree.via_cost * cur_map_3d[i][j][k].edge_list[DOWN]->used_net.size());
-
-    printf("total wirelength = %d + %d = %d\n", xy, z, xy + z);
+    z *= congestion.via_cost;
+    std::cout << "total wirelength = " << xy << " + " << z << " = " << (xy + z) << std::endl;
 
 }
 
 void Layer_assignment::sort_net_order() {
-    int i, max;
-    LRoutedNetTable count_data;
-    LRoutedNetTable::iterator iter;
-    LRoutedNetTable two_pin_data;
-//vector<Pin*>* pin_list;
-    clock_t start, finish;
 
-    max = construct_2d_tree.rr_map.get_netNumber();
+    int max = rr_map.get_netNumber();
 // re-distribute net
     multi_pin_net = std::vector<MULTIPIN_NET_NODE>(max);
     find_group(max);
     initial_overflow_map();
     std::vector<int> temp_net_order(max);
-    for (i = 0; i < max; ++i) {
+    for (int i = 0; i < max; ++i) {
         temp_net_order[i] = i;
     }
     std::sort(temp_net_order.begin(), temp_net_order.end(), [&](int a,int b) {return comp_temp_net_order(a,b);});
-
-    start = clock();
-
-    for (i = 0; i < max; ++i) {
-        klat(temp_net_order[i]);	// others
+    int global_pin_cost = 0;
+    auto start = std::chrono::system_clock::now();
+    for (int i = 0; i < max; ++i) {
+        global_pin_cost += klat(temp_net_order[i]);	// others
     }
 
-    printf("cost = %d\n", global_pin_cost);
-    finish = clock();
-    printf("time = %lf\n", (double) (finish - start) / CLOCKS_PER_SEC);
+    auto end = std::chrono::system_clock::now();
+
+    std::chrono::duration<double> elapsed_seconds = end - start;
+
+    std::cout << "cost = " << global_pin_cost << "\n" << std::endl;
+
+    std::cout << "time = " << elapsed_seconds.count() << "\n" << std::endl;
 
 }
 
@@ -738,24 +669,25 @@ void Layer_assignment::calculate_cap() {
 }
 
 void Layer_assignment::generate_all_output() {
-    int i, max = construct_2d_tree.rr_map.get_netNumber();
+    int i, max = rr_map.get_netNumber();
 
     for (i = 0; i < max; ++i)
         generate_output(i);
 }
 
-Layer_assignment::Layer_assignment(const std::string& outputFileNamePtr, Construct_2d_tree& construct_2d_tree,	//
+Layer_assignment::Layer_assignment(const std::string& outputFileNamePtr, RoutingRegion& rr_map,	//
         Congestion& congestion) :
-        construct_2d_tree { construct_2d_tree }, cur_map_3d { construct_2d_tree.cur_map_3d },	//
+        rr_map { rr_map }, //
+        cur_map_3d { },	//
         congestion { congestion } {
 
     string outputFileName { outputFileNamePtr };
 
     congestion.via_cost = 1;
 
-    max_xx = construct_2d_tree.rr_map.get_gridx();
-    max_yy = construct_2d_tree.rr_map.get_gridy();
-    max_zz = construct_2d_tree.rr_map.get_layerNumber();
+    max_xx = rr_map.get_gridx();
+    max_yy = rr_map.get_gridy();
+    max_zz = rr_map.get_layerNumber();
     malloc_space();
 
     calculate_cap();

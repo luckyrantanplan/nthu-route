@@ -2,16 +2,22 @@
 #define INC_LAYER_ASSIGNMENT_H
 
 #include <boost/multi_array.hpp>
+#include <algorithm>
 #include <array>
+#include <limits>
 #include <memory>
 #include <set>
 #include <string>
+#include <tuple>
+#include <unordered_map>
 #include <vector>
 
 #include "../grdb/EdgePlane3d.h"
 #include "../grdb/plane.h"
 #include "../misc/geometry.h"
 #include "DataDef.h"
+
+class RoutingRegion;
 
 //#define FOLLOW_PREFER
 #define VIA_DENSITY  // new experiment 2007/09/27
@@ -30,6 +36,13 @@ typedef std::unordered_map<int, int> LRoutedNetTable;
 struct VIADENSITY_NODE {
     int cur;
     int max;
+
+    bool isOverflow() const {
+        return (cur > max);
+    }
+    int overUsage() const {
+        return (cur - max);
+    }
 };
 
 struct KLAT_NODE {
@@ -59,23 +72,6 @@ public:
     VIADENSITY_NODE viadensity;
 };
 
-struct ans {
-    int idx;
-    int val;
-    void update(int itar, int ival) {
-        idx = itar;
-        val = ival;
-    }
-
-};
-struct DP_NODE {
-    int val;
-    Coordinate_3d *pi;
-};
-struct NET_NODE {
-    int id;
-    int val;
-};
 struct AVERAGE_NODE {
     int id;
     int times;
@@ -84,35 +80,15 @@ struct AVERAGE_NODE {
     double average;
     int bends;
 };
-struct NET_INFO_NODE {
-    int xy;
-    int z;
-    double val;
-};
 
 struct MULTIPIN_NET_NODE {
     Two_pin_list_2d two_pin_net_list;
 };
 
-struct OVERFLOW_NODE {
-    std::array<std::shared_ptr<int>, 4> edge;
-};
 struct UNION_NODE {
     int pi;
     int sx, sy, bx, by;
     int num;
-};
-struct LENGTH_NODE {
-    int xy;
-    int z;
-};
-
-struct PATH_EDGE_3D {
-    std::set<int> used_net;
-};
-
-struct PATH_VERTEX_3D {
-    std::array<std::shared_ptr<PATH_EDGE_3D>, 6> edge_list;
 };
 
 struct ZLayerInfo {
@@ -141,45 +117,76 @@ struct Layer_assignment {
                 coor { coor }, parent { parent } {
         }
     };
-    int tar = -2;
-    char follow_prefer_direction;
-    //enum {GREEDY, SHORT_PATH};
+
+    struct ElementStack {
+
+        std::vector<Coordinate_3d> choice;
+        int others;
+        int cost;
+
+        ElementStack(int parent, int val) :
+                choice { }, others { parent }, cost { val } {
+        }
+    };
+
+    struct Interval {
+        int min;
+        int max;
+
+        Interval(int min, int max) :
+                min { min }, max { max } {
+        }
+
+        void add(int i) {
+            min = std::min(i, min);
+            max = std::max(i, max);
+        }
+        int length() {
+            return max - min;
+        }
+        bool operator<(const Interval& i) const {
+            return (max > i.max || min > i.max);
+        }
+    };
+
+    struct VertexCost {
+        int cost;
+        int via_cost;
+        Interval interval;
+        std::vector<Coordinate_3d> vertices;
+
+        VertexCost(const Interval& interval) :
+                cost { std::numeric_limits<int>::max() }, //
+                via_cost { std::numeric_limits<int>::max() }, //
+                interval { interval }, //
+                vertices { } {
+        }
+
+        void addCost(const Coordinate_2d& o, const ElementStack& e, const Layer_assignment& l);
+
+        bool operator<(const VertexCost& v) const {
+            return std::tie(cost, via_cost, interval) < std::tie(v.cost, v.via_cost, v.interval);
+        }
+    };
+
     int l_option;
     int max_xx;
     int max_yy;
     int max_zz;
     int overflow_max;
-    int *prefer_idx;
 
-    int i_router, i_test_case, i_order, i_method;
-    const char temp_buf[1000] = "1000";
-
-    NET_NODE *net_order;
-    DP_NODE ***dp_map;
     std::vector<AVERAGE_NODE> average_order;
-    std::vector<NET_INFO_NODE> net_info;
     std::vector<MULTIPIN_NET_NODE> multi_pin_net;
-    // boost::multi_array<PATH_NODE, 2> path_map;
-    boost::multi_array<KLAT_NODE, 3> klat_map;
-    boost::multi_array<OVERFLOW_NODE, 2> overflow_map;
+
     std::vector<UNION_NODE> group_set;
-    std::array<LENGTH_NODE, 1000> length_count;
-    boost::multi_array<VIADENSITY_NODE, 3> viadensity_map;
-    Plane<LayerInfo, EdgeInfo> layerInfo_map;  //edge are overflow
-    Construct_2d_tree& construct_2d_tree;
+    Plane<LayerInfo, EdgeInfo> layerInfo_map; //edge are overflow
+    RoutingRegion& rr_map;
     EdgePlane3d<Edge_3d> cur_map_3d;
 
-    const std::array<Coordinate_2d, 4> plane_dir { { { 0, 1 }, { 0, -1 }, { -1, 0 }, { 1, 0 } } };   // F B L R
     const int cube_dir[6][3] = { { 0, 1, 0 }, { 0, -1, 0 }, { -1, 0, 0 }, { 1, 0, 0 }, { 0, 0, 1 }, { 0, 0, -1 } }; // F B L R U D
-    int global_net_id, global_x, global_y, global_pin_num, global_pin_cost = 0;
-    int min_DP_val, min_DP_idx[4], max_DP_k, min_DP_k, min_DP_via_cost;
-    int total_pin_number = 0;
+    int global_net_id, global_pin_num;
+
     boost::multi_array<int, 3> BFS_color_map;
-    int temp_global_pin_cost, temp_global_xy_cost;
-
-    int is_used_for_BFS[1300][1300];
-
-    int global_increase_vo;
 
     Congestion& congestion;
 
@@ -192,12 +199,12 @@ struct Layer_assignment {
     void update_path_for_klat(const Coordinate_2d& start);
     void cycle_reduction(const Coordinate_2d& c, const Coordinate_2d& parent);
     void preprocess(int net_id);
-    void rec_count(int level, int val, std::array<int, 4>& count_idx);
+    std::vector<Coordinate_3d> rec_count(const Coordinate_3d& o, KLAT_NODE& klatNode);
     void DP(const Coordinate_3d& c, const Coordinate_3d& parent);
     bool in_cube_and_have_edge(int x, int y, int z, int dir, int net_id);
     bool have_child(int pre_x, int pre_y, int pre_z, int pre_dir, int net_id);
     void generate_output(int net_id);
-    void klat(int net_id);
+    int klat(int net_id);
     bool comp_temp_net_order(int p, int q);
     int backtrace(int n);
     void find_group(int max);
@@ -207,7 +214,7 @@ struct Layer_assignment {
     void calculate_cap();
     void sort_net_order();
     void generate_all_output();
-    Layer_assignment(const std::string& outputFileNamePtr, Construct_2d_tree& construct_2d_tree, Congestion& congestion);
+    Layer_assignment(const std::string& outputFileNamePtr, RoutingRegion& rr_map, Congestion& congestion);
     void init_3d_map();
 
 };

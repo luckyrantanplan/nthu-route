@@ -37,6 +37,8 @@ public:
 
     VertexT& vertex(const Coordinate_2d& c);
 
+    const VertexT& vertex(const Coordinate_2d& c) const;
+
     ///@brief Get the specified vertex, and the vertex is read-only.
     const VertexT& vertex(int x, int y) const;
 
@@ -97,6 +99,11 @@ inline VertexT& Plane<VertexT, EdgeT>::vertex(int x, int y) {
 
 template<class VertexT, class EdgeT>
 inline VertexT& Plane<VertexT, EdgeT>::vertex(const Coordinate_2d& c) {
+    return plane_[c.x][c.y];
+}
+
+template<class VertexT, class EdgeT>
+inline const VertexT& Plane<VertexT, EdgeT>::vertex(const Coordinate_2d& c) const {
     return plane_[c.x][c.y];
 }
 

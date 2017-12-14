@@ -172,9 +172,20 @@ public:
 
     const std::size_t num_elements() const;
 
+    ///@brief Get the specified edge
+    const T& east(const Coordinate_3d& c) const;
+
+    ///@brief Get the specified edge
+    const T& south(const Coordinate_3d& c) const;
+
+    const T& front(const Coordinate_3d& c) const;
+
 private:
 
     T& get(const Coordinate_3d& c, const EdgeDir dir);
+
+    const T& get(const Coordinate_3d& c, const EdgeDir dir) const;
+
 ///The real data structure of plane
     boost::multi_array<T, 4> edgePlane_;
 
@@ -274,8 +285,39 @@ const std::size_t EdgePlane3d<T>::num_elements() const {
 ///@details User can specify the data structure of routing edges by their own, and
 ///         the default data structure of routing edges is a integer.
 template<class T>
+inline const T& EdgePlane3d<T>::east(const Coordinate_3d& c) const {
+    return get(c, EAST);
+}
+
+///@brief The data structure for presenting the routing edges in global routing area.
+///@details User can specify the data structure of routing edges by their own, and
+///         the default data structure of routing edges is a integer.
+template<class T>
+inline const T& EdgePlane3d<T>::south(const Coordinate_3d& c) const {
+    return get(c, SOUTH);
+}
+
+///@brief The data structure for presenting the routing edges in global routing area.
+///@details User can specify the data structure of routing edges by their own, and
+///         the default data structure of routing edges is a integer.
+template<class T>
+inline const T& EdgePlane3d<T>::front(const Coordinate_3d& c) const {
+    return get(c, FRONT);
+}
+
+///@brief The data structure for presenting the routing edges in global routing area.
+///@details User can specify the data structure of routing edges by their own, and
+///         the default data structure of routing edges is a integer.
+template<class T>
 inline T& EdgePlane3d<T>::get(const Coordinate_3d& c, const EdgeDir dir) {
     return edgePlane_[c.x][c.y][c.z][dir];
 }
 
+///@brief The data structure for presenting the routing edges in global routing area.
+///@details User can specify the data structure of routing edges by their own, and
+///         the default data structure of routing edges is a integer.
+template<class T>
+inline const T& EdgePlane3d<T>::get(const Coordinate_3d& c, const EdgeDir dir) const {
+    return edgePlane_[c.x][c.y][c.z][dir];
+}
 #endif /* SRC_GRDB_EDGEPLANE3D_H_ */
