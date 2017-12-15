@@ -64,8 +64,8 @@ void Layer_assignment::malloc_space() {
     }
 
     for (Edge_3d& edge : cur_map_3d.all()) {
-
-        edge.viadensity.cur = 0;
+        edge.cur_cap = 0;
+        edge.max_cap = 0;
     }
 }
 
@@ -85,7 +85,7 @@ void Layer_assignment::update_cur_map_for_klat_z(int min, int max, const Coordin
     for (Coordinate_3d k { start, min + 1 }; k.z < max; ++k.z) {
         Edge_3d& edge = cur_map_3d.edge(k, previous);
         ++edge.used_net[net_id];
-        ++edge.viadensity.cur;
+        ++edge.cur_cap;
         previous = k;
     }
 
@@ -113,7 +113,7 @@ void Layer_assignment::update_path_for_klat(const Coordinate_2d& start) {
                 if (layerInfo_map.vertex(c).path == 0) {
                     puts("ERROR");
                 }
-                int pi_z = layerInfo_map.vertex(c).zLayerInfo[head3d.z].klat.pi_z;
+                int pi_z = layerInfo_map.vertex(c).klat[head3d.z].pi_z;
                 z_max = std::max(z_max, pi_z);
                 z_min = std::min(z_min, pi_z);
                 update_cur_map_for_klat_xy(pi_z, h, c, global_net_id);
@@ -159,8 +159,8 @@ void Layer_assignment::preprocess(int net_id) {
     Coordinate_2d c = pin_list[0]->get_tileXY();
     layerInfo_map.vertex(c).path = 2;	// visited
 
-    for (ZLayerInfo& k : layerInfo_map.vertex(c).zLayerInfo) {
-        k.klat.val = -1;
+    for (KLAT_NODE& k : layerInfo_map.vertex(c).klat) {
+        k.val = -1;
     }
 
     std::queue<ElementQueue> q;
@@ -180,8 +180,8 @@ void Layer_assignment::preprocess(int net_id) {
                             pathV = 2;	// visited pin
 
                         }
-                        for (ZLayerInfo& k : layerInfo_map.vertex(handle.vertex()).zLayerInfo) {
-                            k.klat.val = -1;
+                        for (KLAT_NODE& k : layerInfo_map.vertex(handle.vertex()).klat) {
+                            k.val = -1;
                         }
                         q.emplace(handle.vertex(), front.coor);	// enqueue coor + parent
                     } else {
@@ -206,13 +206,13 @@ void Layer_assignment::VertexCost::addCost(const Coordinate_2d& o, const Element
 
     cost = e.cost;
     for (Coordinate_3d c2 { o, interval.min }; c2.z < interval.max; ++c2.z) {
-        if (l.cur_map_3d.edge(c2, Coordinate_3d { o, c2.z + 1 }).viadensity.isOverflow()) {
+        if (l.cur_map_3d.edge(c2, Coordinate_3d { o, c2.z + 1 }).isOverflow()) {
             ++cost;
         }
     }
     via_cost = 0;
     for (const Coordinate_3d& c : e.choice) {
-        via_cost += l.layerInfo_map.vertex(c.xy()).zLayerInfo[c.z].klat.via_cost; // does not understand this
+        via_cost += l.layerInfo_map.vertex(c.xy()).klat[c.z].via_cost; // does not understand this
     }
     via_cost += (interval.length() * l.congestion.via_cost);
 
@@ -242,8 +242,8 @@ std::vector<Coordinate_3d> Layer_assignment::rec_count(const Coordinate_3d& o, K
                 Coordinate_2d child = neighbors[e.others];
                 --e.others;
 
-                for (std::size_t k = 0; k < layerInfo_map.vertex(child).zLayerInfo.size(); ++k) {
-                    int cost = layerInfo_map.vertex(child).zLayerInfo[k].klat.val;
+                for (std::size_t k = 0; k < layerInfo_map.vertex(child).klat.size(); ++k) {
+                    int cost = layerInfo_map.vertex(child).klat[k].val;
                     if (cost >= 0) {
                         ElementStack e1 = e;
                         e1.choice.push_back(Coordinate_3d { child, static_cast<int32_t>(k) });
@@ -269,7 +269,7 @@ std::vector<Coordinate_3d> Layer_assignment::rec_count(const Coordinate_3d& o, K
 void Layer_assignment::DP(const Coordinate_3d& c, const Coordinate_3d& parent) {
 
     Coordinate_2d c1(c.xy());
-    KLAT_NODE& klatNode = layerInfo_map.vertex(c1).zLayerInfo[c.z].klat;
+    KLAT_NODE& klatNode = layerInfo_map.vertex(c1).klat[c.z];
     if (klatNode.val == -1) {	// non-traversed
         bool is_end = true;
         for (EdgePlane<EdgeInfo>::Handle& handle : layerInfo_map.edges().neighbors(c1)) {	// direction
@@ -288,7 +288,7 @@ void Layer_assignment::DP(const Coordinate_3d& c, const Coordinate_3d& parent) {
             klatNode.via_cost = congestion.via_cost * c.z;
             klatNode.via_overflow = 0;
             for (Coordinate_3d c2 { c1, 0 }; c2.z < c.z; ++c2.z) {
-                if (cur_map_3d.edge(c2, Coordinate_3d { c1, c.z + 1 }).viadensity.isOverflow()) {
+                if (cur_map_3d.edge(c2, Coordinate_3d { c1, c.z + 1 }).isOverflow()) {
                     ++klatNode.via_overflow;
                 }
             }
@@ -296,116 +296,50 @@ void Layer_assignment::DP(const Coordinate_3d& c, const Coordinate_3d& parent) {
 
         } else {	// is_end == false
             for (const Coordinate_3d& n : rec_count(c, klatNode)) {
-                layerInfo_map.vertex(n.xy()).zLayerInfo[c.z].klat.pi_z = n.z;
+                layerInfo_map.vertex(n.xy()).klat[c.z].pi_z = n.z;
             }
         }
     }
 }
 
-bool Layer_assignment::in_cube_and_have_edge(int x, int y, int z, int dir, int net_id) {
-// F B L R U D
-    int anti_dir[6] = { 1, 0, 3, 2, 5, 4 };
-// B F R L D U
-
-    if (x >= 0 && x < max_xx && y >= 0 && y < max_yy && z >= 0 && z < max_zz) {
-        if (cur_map_3d[x][y][z].edge_list[anti_dir[dir]]->used_net.find(net_id) != cur_map_3d[x][y][z].edge_list[anti_dir[dir]]->used_net.end()) {
-            return true;
-        } else
-            return false;
-    } else
-        return false;
-}
-
-bool Layer_assignment::have_child(int pre_x, int pre_y, int pre_z, int pre_dir, int net_id) {
-    int dir, x, y, z;
-    int anti_dir[6] = { 1, 0, 3, 2, 5, 4 };
-
-    for (dir = 0; dir < 6; ++dir)
-        if (dir != pre_dir && dir != anti_dir[pre_dir]) {
-            x = pre_x + cube_dir[dir][0];
-            y = pre_y + cube_dir[dir][1];
-            z = pre_z + cube_dir[dir][2];
-            if (in_cube_and_have_edge(x, y, z, dir, net_id) == true && BFS_color_map[x][y][z] != net_id)
-                return true;
+void Layer_assignment::collectComb(Coordinate_3d c2, Coordinate_3d& c, std::vector<std::vector<Segment3d> >& comb) {
+    for (pair<const int, int>& net : cur_map_3d.edge(c, c2).used_net) {
+        std::vector<Segment3d>& v = comb[net.first];
+        if (v.empty()) {
+            v.push_back(Segment3d { c2, c });
+        } else {
+            Segment3d& interval = v.back();
+            if (interval.last == c2 && interval.first.isAligned(c)) {
+                interval.last = c;
+            } else {
+                v.push_back(Segment3d { c2, c });
+            }
         }
-    return false;
+    }
 }
 
-void Layer_assignment::generate_output(int net_id) {
-    int i, j;
+void Layer_assignment::generate_output(int net_id, const std::vector<Segment3d>& v) {
 
-    const PinptrList& pin_list = rr_map.get_nPin(net_id);
-    const char *p;
-    queue<Coordinate_3d> q;
-    int dir;
-
-    Coordinate_3d start;
-    Coordinate_3d end;
-
-    int xDetailShift = rr_map.get_llx() + (rr_map.get_tileWidth() >> 1);
-    int yDetailShift = rr_map.get_lly() + (rr_map.get_tileHeight() >> 1);
+    int xDetailShift = rr_map.get_llx() + (rr_map.get_tileWidth() / 2);
+    int yDetailShift = rr_map.get_lly() + (rr_map.get_tileHeight() / 2);
 
 // the beginning of a net of output file
-    p = rr_map.get_netName(net_id);
-    printf("%s", p);
-    for (i = 0; p[i] && (p[i] < '0' || p[i] > '9'); ++i)
-        ;
-    printf(" %s\n", p + i);
-// BFS
-    q.push(Coordinate_3d { pin_list[0]->get_tileXY(), 0 });	// enqueue
-    Coordinate_3d& temp = q.front();
-    BFS_color_map[temp.x][temp.y][temp.z] = net_id;
-    while (!q.empty()) {
-        temp = q.front();
-        for (dir = 0; dir < 6; dir += 2) {
-            int dirPlusOne = dir + 1;
-            start.x = end.x = temp.x;
-            start.y = end.y = temp.y;
-            start.z = end.z = temp.z;
 
-            for (i = 1;; ++i) {
-                start.x += cube_dir[dir][0];
-                start.y += cube_dir[dir][1];
-                start.z += cube_dir[dir][2];
-                if (in_cube_and_have_edge(start.x, start.y, start.z, dir, net_id) == true && BFS_color_map[start.x][start.y][start.z] != net_id) {
-                    BFS_color_map[start.x][start.y][start.z] = net_id;
-                    if (have_child(start.x, start.y, start.z, dir, net_id) == true)
-                        q.push(start);	// enqueue
-                } else {
-                    start.x -= cube_dir[dir][0];
-                    start.y -= cube_dir[dir][1];
-                    start.z -= cube_dir[dir][2];
-                    break;
-                }
-            }
-            for (j = 1;; ++j) {
-                end.x += cube_dir[dirPlusOne][0];
-                end.y += cube_dir[dirPlusOne][1];
-                end.z += cube_dir[dirPlusOne][2];
-                if (in_cube_and_have_edge(end.x, end.y, end.z, dirPlusOne, net_id) == true && BFS_color_map[end.x][end.y][end.z] != net_id) {
-                    BFS_color_map[end.x][end.y][end.z] = net_id;
-                    if (have_child(end.x, end.y, end.z, dirPlusOne, net_id) == true)
-                        q.push(end);	// enqueue
-                } else {
-                    end.x -= cube_dir[dirPlusOne][0];
-                    end.y -= cube_dir[dirPlusOne][1];
-                    end.z -= cube_dir[dirPlusOne][2];
-                    break;
-                }
-            }
-            if (i >= 2 || j >= 2) {	// have edge
+    std::cout << " p " << rr_map.get_netName(net_id) << std::endl;
 
-                start.x = start.x * rr_map.get_tileWidth() + xDetailShift;
-                start.y = start.y * rr_map.get_tileHeight() + yDetailShift;
-                ++start.z;
-                end.x = end.x * rr_map.get_tileWidth() + xDetailShift;
-                end.y = end.y * rr_map.get_tileHeight() + yDetailShift;
-                ++end.z;
-                printf("(%d,%d,%d)-(%d,%d,%d)\n", start.x, start.y, start.z, end.x, end.y, end.z);
-            }
-        }
-        q.pop();
+    // have edge
+    for (const Segment3d& seg : v) {
+        Coordinate_3d o = seg.first;
+        Coordinate_3d d = seg.last;
+        o.x = o.x * rr_map.get_tileWidth() + xDetailShift;
+        o.y = o.y * rr_map.get_tileHeight() + yDetailShift;
+        ++o.z;
+        d.x = d.x * rr_map.get_tileWidth() + xDetailShift;
+        d.y = d.y * rr_map.get_tileHeight() + yDetailShift;
+        ++d.z;
+        printf("(%d,%d,%d)-(%d,%d,%d)\n", o.x, o.y, o.z, d.x, d.y, d.z);
     }
+
 // the end of a net of output file
     printf("!\n");
 }
@@ -423,7 +357,7 @@ int Layer_assignment::klat(int net_id) { //SOLAC + APEC
 
     update_path_for_klat(start);
 
-    return layerInfo_map.vertex(start).zLayerInfo[0].klat.val;
+    return layerInfo_map.vertex(start).klat[0].val;
 }
 
 bool Layer_assignment::comp_temp_net_order(int p, int q) {
@@ -436,7 +370,7 @@ bool Layer_assignment::comp_temp_net_order(int p, int q) {
 void Layer_assignment::init_union(const Coordinate_2d& c1, const Coordinate_2d& c2, int& max_layer) {
     Edge_2d& edgeWest = congestion.congestionMap2d.edge(c1, c2);
     int temp_cap = (edgeWest.used_net.size() * 2);
-    for (int k = 0; k < max_zz && temp_cap > 0; ++k) {
+    for (int k = 0; k < cur_map_3d.getZSize() && temp_cap > 0; ++k) {
         Edge_3d& edge3d = cur_map_3d.edge(Coordinate_3d { c1, k }, Coordinate_3d { c2, k });
         if (edge3d.max_cap > 0) {
             temp_cap -= edge3d.max_cap;
@@ -483,12 +417,6 @@ void Layer_assignment::find_group(int max) {
     for (int i = 0; i < max; ++i) {
         AVERAGE_NODE& a = average_order[i];
         a.average = static_cast<double>(rr_map.get_netPinNumber(i)) / static_cast<double>((a.times + a.bends));
-    }
-}
-
-void Layer_assignment::initial_BFS_color_map() {
-    for (int& e : boost::iterator_range<int*>(BFS_color_map.data(), &BFS_color_map.data()[BFS_color_map.num_elements()])) {
-        e = -1;
     }
 }
 
@@ -555,10 +483,40 @@ void Layer_assignment::calculate_cap() {
 }
 
 void Layer_assignment::generate_all_output() {
-    int i, max = rr_map.get_netNumber();
 
-    for (i = 0; i < max; ++i)
-        generate_output(i);
+    std::vector<std::vector<Segment3d> > comb { rr_map.get_netNumber() };
+    Coordinate_3d c2;
+    for (Coordinate_3d c { 0, 0, 0 }; c.x < cur_map_3d.getXSize(); ++c.x) {
+        c2.x = c.x;
+        for (c.y = 0; c.y < cur_map_3d.getYSize(); ++c.y) {
+            c2.y = c.y;
+            for (c.z = 1; c.z < cur_map_3d.getZSize(); ++c.z) {
+                c2.z = c.z - 1;
+                collectComb(c2, c, comb);
+            }
+        }
+        for (c.z = 0; c.z < cur_map_3d.getZSize(); ++c.z) {
+            c2.z = c.z;
+            for (c.y = 1; c.y < cur_map_3d.getYSize(); ++c.y) {
+                c2.y = c.y - 1;
+                collectComb(c2, c, comb);
+            }
+        }
+    }
+    for (Coordinate_3d c { 0, 0, 0 }; c.y < cur_map_3d.getYSize(); ++c.y) {
+        c2.y = c.y;
+        for (c.z = 0; c.z < cur_map_3d.getZSize(); ++c.z) {
+            c2.z = c.z;
+            for (c.x = 1; c.x < cur_map_3d.getXSize(); ++c.x) {
+                c2.x = c.x - 1;
+                collectComb(c2, c, comb);
+            }
+        }
+    }
+
+    for (int i = 0; i < rr_map.get_netNumber(); ++i) {
+        generate_output(i, comb[i]);
+    }
 }
 
 Layer_assignment::Layer_assignment(const std::string& outputFileNamePtr, RoutingRegion& rr_map,	//
@@ -573,12 +531,12 @@ Layer_assignment::Layer_assignment(const std::string& outputFileNamePtr, Routing
 
     max_xx = rr_map.get_gridx();
     max_yy = rr_map.get_gridy();
-    max_zz = rr_map.get_layerNumber();
+    //max_zz = rr_map.get_layerNumber();
     malloc_space();
 
     calculate_cap();
     initial_3D_coordinate_map();
-    congestion.find_overflow_max(max_zz);
+    overflow_max = congestion.find_overflow_max(cur_map_3d.getZSize());
     puts("Layer assignment processing...");
 
     sort_net_order();
@@ -589,8 +547,6 @@ Layer_assignment::Layer_assignment(const std::string& outputFileNamePtr, Routing
     calculate_wirelength();
 
     printf("Outputing result file to %s\n", outputFileName.c_str());
-    malloc_BFS_color_map();
-    initial_BFS_color_map();
 
     int stdout_fd = dup(1);
     FILE* outputFile = freopen(outputFileName.c_str(), "w", stdout);

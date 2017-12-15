@@ -65,8 +65,8 @@ const PinptrList& Net::get_pinList() {
     return this->pin_list;
 }
 
-const char* Net::get_name() const {
-    return this->name.c_str();
+const std::string& Net::get_name() const {
+    return this->name ;
 }
 
 int Net::get_pinNumber() const {

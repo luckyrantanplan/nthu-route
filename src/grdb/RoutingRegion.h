@@ -27,7 +27,7 @@ public:
     int get_tileWidth();			//get tile width
     int get_tileHeight();			//get tile height
     int get_netNumber();			//get net number
-    const char* get_netName(int netPos);	//get net name
+    const std::string& get_netName(int netPos);	//get net name
     int get_netSerialNumber(int netId);
     int get_netId(int netSerial);
     //int get_netPos(int net_id);	//get net's list position by net id
@@ -124,8 +124,7 @@ int RoutingRegion::get_netNumber() {
     return netList_.size();
 }
 
-inline
-const char* RoutingRegion::get_netName(int netId) {
+inline const std::string& RoutingRegion::get_netName(int netId) {
     return netList_[netId].get_name();
 }
 

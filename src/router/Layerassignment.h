@@ -3,9 +3,7 @@
 
 #include <boost/multi_array.hpp>
 #include <algorithm>
-#include <deque>
 #include <limits>
-#include <set>
 #include <string>
 #include <tuple>
 #include <unordered_map>
@@ -14,34 +12,12 @@
 #include "../grdb/EdgePlane3d.h"
 #include "../grdb/plane.h"
 #include "../misc/geometry.h"
-#include "DataDef.h"
 
 class RoutingRegion;
 
-//#define FOLLOW_PREFER
-#define VIA_DENSITY  // new experiment 2007/09/27
-//#define REDUCE_VIA_DENSITY    // new experiment 2007/09/29
-#define CHECK_PREFER
-#define MAX_OVERFLOW_CONSTRAINT
-#define FROM2D
-#define ALLOUTPUT
-
 class Congestion;
 
-struct Construct_2d_tree;
-
 typedef std::unordered_map<int, int> LRoutedNetTable;
-
-struct VIADENSITY_NODE {
-    int cur;
-
-    bool isOverflow() const {
-        return (cur > 0);
-    }
-    int overUsage() const {
-        return cur;
-    }
-};
 
 struct KLAT_NODE {
     int val;
@@ -56,42 +32,35 @@ public:
 
 public:
 
-    bool isOverflow() {
+    bool isOverflow() const {
         return (cur_cap > max_cap);
     }
-    int overUsage() {
+    int overUsage() const {
         return (cur_cap - max_cap);
     }
     int max_cap;
     int cur_cap;
     LRoutedNetTable used_net;
 
-    VIADENSITY_NODE viadensity;
 };
 
 struct AVERAGE_NODE {
+    double average;
     int id;
     int times;
     int val;
     int vo_times;
-    double average;
     int bends;
 };
 
-struct ZLayerInfo {
-    KLAT_NODE klat;
-};
-
 struct LayerInfo {
+    std::vector<KLAT_NODE> klat;
     char path;
-
-    std::vector<ZLayerInfo> zLayerInfo;
-
 };
 
 struct EdgeInfo {
-    char path;
     int overflow;
+    char path;
 };
 
 struct Layer_assignment {
@@ -114,6 +83,11 @@ struct Layer_assignment {
         ElementStack(int parent, int val) :
                 choice { }, others { parent }, cost { val } {
         }
+    };
+
+    struct Segment3d {
+        Coordinate_3d first;
+        Coordinate_3d last;
     };
 
     struct Interval {
@@ -158,7 +132,6 @@ struct Layer_assignment {
 
     int max_xx;
     int max_yy;
-    int max_zz;
     int overflow_max;
 
     std::vector<AVERAGE_NODE> average_order;
@@ -167,10 +140,8 @@ struct Layer_assignment {
     RoutingRegion& rr_map;
     EdgePlane3d<Edge_3d> cur_map_3d;
 
-    const int cube_dir[6][3] = { { 0, 1, 0 }, { 0, -1, 0 }, { -1, 0, 0 }, { 1, 0, 0 }, { 0, 0, 1 }, { 0, 0, -1 } }; // F B L R U D
-    int global_net_id, global_pin_num;
-
-    boost::multi_array<int, 3> BFS_color_map;
+    int global_net_id;
+    int global_pin_num;
 
     Congestion& congestion;
 
@@ -185,15 +156,13 @@ struct Layer_assignment {
     void preprocess(int net_id);
     std::vector<Coordinate_3d> rec_count(const Coordinate_3d& o, KLAT_NODE& klatNode);
     void DP(const Coordinate_3d& c, const Coordinate_3d& parent);
-    bool in_cube_and_have_edge(int x, int y, int z, int dir, int net_id);
-    bool have_child(int pre_x, int pre_y, int pre_z, int pre_dir, int net_id);
-    void generate_output(int net_id);
+
+    void generate_output(int net_id, const std::vector<Segment3d>& v);
     int klat(int net_id);
     bool comp_temp_net_order(int p, int q);
-    int backtrace(int n);
+
     void find_group(int max);
-    void initial_BFS_color_map();
-    void malloc_BFS_color_map();
+
     void calculate_wirelength();
     void calculate_cap();
     void sort_net_order();
@@ -203,6 +172,7 @@ struct Layer_assignment {
 private:
     bool test(const Coordinate_2d& c1, const Coordinate_2d& c2);
     void init_union(const Coordinate_2d& c1, const Coordinate_2d& c2, int& max_layer);
+    void collectComb(Coordinate_3d c2, Coordinate_3d& c, std::vector<std::vector<Segment3d> >& comb);
 };
 
 #endif //INC_LAYER_ASSIGNMENT_H

@@ -149,10 +149,11 @@ int Congestion::find_overflow_max(int max_zz) {
 
     printf("2D maximum overflow = %d\n", overflow_max);
 
-    if (overflow_max % max_zz)
-        overflow_max = ((overflow_max / max_zz) << 1) + 2;
-    else
-        overflow_max = ((overflow_max / max_zz) << 1);
+    if (overflow_max % max_zz) {
+        overflow_max = ((overflow_max / max_zz) * 2) + 2;
+    } else {
+        overflow_max = ((overflow_max / max_zz) * 2);
+    }
 
     printf("overflow max = %d\n", overflow_max);
     return overflow_max;

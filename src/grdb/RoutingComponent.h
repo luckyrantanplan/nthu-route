@@ -34,7 +34,7 @@ public:
     void set_name(const char*);	//set net name
     void add_pin(const Pin* pin_ptr); //add pin pointer that point to pin
     const PinptrList& get_pinList(); //get the pin pointer list of this net
-    const char* get_name() const;	//get net name
+    const std::string& get_name() const;	//get net name
     int get_pinNumber() const;		//get pin number in this net
     int get_bboxSize() const;      //get the bounding box size
     int get_boundaryN() const;

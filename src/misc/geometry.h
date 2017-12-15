@@ -218,30 +218,6 @@ public:
         x = other.x;
         y = other.y;
     }
-    static OrientationType get_direction_simple(const Coordinate_2d& a, const Coordinate_2d& b) {
-        assert(!(a.x != b.x && a.y != b.y));
-
-        if (a.x != b.x)
-            return LEFT;
-        else
-            return FRONT;
-    }
-
-    static OrientationType get_direction(const Coordinate_2d& a, const Coordinate_2d& b) {
-        assert(!(a.x != b.x && a.y != b.y));
-
-        if (a.x != b.x) {
-            if (a.x > b.x)
-                return LEFT;
-            else
-                return RIGHT;
-        } else {
-            if (a.y > b.y)
-                return BACK;
-            else
-                return FRONT;
-        }
-    }
 
     Coordinate_2d operator +(const Coordinate_2d& a) {
         return Coordinate_2d(x + a.x, y + a.y);
@@ -284,6 +260,50 @@ public:
 
     bool operator!=(const Coordinate_3d& other) const {
         return (x != other.x || y != other.y || z != other.z);
+    }
+
+    static const std::array<Coordinate_3d, 6> dir_array() {
+        static std::array<Coordinate_3d, 6> arr { { { 0, 1, 0 }, { 0, -1, 0 }, { -1, 0, 0 }, { 1, 0, 0 }, { 0, 0, 1 }, { 0, 0, -1 } } }; // F B L R U D
+        return arr;
+    }
+
+    Coordinate_3d operator +(const Coordinate_3d& a) const {
+        return Coordinate_3d(x + a.x, y + a.y, z + a.z);
+    }
+
+    Coordinate_3d& operator +=(const Coordinate_3d& a) {
+        x += a.x;
+        y += a.y;
+        z += a.z;
+        return *this;
+    }
+
+    Coordinate_3d& operator -=(const Coordinate_3d& a) {
+        x -= a.x;
+        y -= a.y;
+        z -= a.z;
+        return *this;
+    }
+
+    Coordinate_3d operator -(const Coordinate_3d& a) const {
+        return Coordinate_3d(x - a.x, y - a.y, z - a.z);
+    }
+
+    bool isInCube(const Coordinate_3d& min, const Coordinate_3d& max) const {
+        return x >= min.x && //
+                y >= min.y && //
+                z >= min.z && //
+                x < max.x && //
+                y < max.y && //
+                z < max.z;
+
+    }
+    bool isAligned(const Coordinate_3d& c) const {
+        return x == c.x || y == c.y || z == c.z;
+    }
+
+    bool operator==(const Coordinate_3d& other) const {
+        return (x == other.x && y == other.y && z == other.z);
     }
 };
 
