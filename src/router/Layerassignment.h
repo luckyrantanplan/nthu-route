@@ -46,11 +46,7 @@ public:
 
 struct AVERAGE_NODE {
     double average;
-    int id;
     int times;
-    int val;
-    int vo_times;
-    int bends;
 };
 
 struct LayerInfo {
@@ -154,7 +150,7 @@ struct Layer_assignment {
     std::vector<Coordinate_3d> rec_count(const Coordinate_3d& o, KLAT_NODE& klatNode);
     void DP(const Coordinate_3d& c, const Coordinate_3d& parent);
 
-    void generate_output(int net_id, const std::vector<Segment3d>& v);
+    void generate_output(int net_id, const std::vector<Segment3d>& v, std::ostream & output);
     int klat(int net_id);
     bool comp_temp_net_order(int p, int q);
 
@@ -163,12 +159,12 @@ struct Layer_assignment {
     void calculate_wirelength();
     void calculate_cap();
     void sort_net_order();
-    void generate_all_output();
+    void generate_all_output(std::ostream & output);
     Layer_assignment(const Congestion& congestion, const RoutingRegion& rr_map, const std::string& outputFileNamePtr);
 
 private:
     bool test(const Coordinate_2d& c1, const Coordinate_2d& c2);
-    void init_union(const Coordinate_2d& c1, const Coordinate_2d& c2, int& max_layer);
+    void init_union(const Coordinate_2d& c1, const Coordinate_2d& c2);
     void collectComb(Coordinate_3d c2, Coordinate_3d& c, std::vector<std::vector<Segment3d> >& comb);
 };
 

@@ -318,14 +318,14 @@ void Layer_assignment::collectComb(Coordinate_3d c2, Coordinate_3d& c, std::vect
     }
 }
 
-void Layer_assignment::generate_output(int net_id, const std::vector<Segment3d>& v) {
+void Layer_assignment::generate_output(int net_id, const std::vector<Segment3d>& v, std::ostream & output) {
 
     int xDetailShift = rr_map.get_llx() + (rr_map.get_tileWidth() / 2);
     int yDetailShift = rr_map.get_lly() + (rr_map.get_tileHeight() / 2);
 
 // the beginning of a net of output file
 
-    std::cout << " p " << rr_map.get_netName(net_id) << std::endl;
+    output << " p " << rr_map.get_netName(net_id) << "\n";
 
     // have edge
     for (const Segment3d& seg : v) {
@@ -337,11 +337,12 @@ void Layer_assignment::generate_output(int net_id, const std::vector<Segment3d>&
         d.x = d.x * rr_map.get_tileWidth() + xDetailShift;
         d.y = d.y * rr_map.get_tileHeight() + yDetailShift;
         ++d.z;
-        printf("(%d,%d,%d)-(%d,%d,%d)\n", o.x, o.y, o.z, d.x, d.y, d.z);
+        output << "(" << o.x << "," << o.y << "," << o.z << ")-(" << d.x << "," << d.y << "," << d.z << ")\n";
+
     }
 
 // the end of a net of output file
-    printf("!\n");
+    output << "!\n";
 }
 
 int Layer_assignment::klat(int net_id) { //SOLAC + APEC
@@ -367,56 +368,39 @@ bool Layer_assignment::comp_temp_net_order(int p, int q) {
                     rr_map.get_netPinNumber(p) < rr_map.get_netPinNumber(q));
 }
 
-void Layer_assignment::init_union(const Coordinate_2d& c1, const Coordinate_2d& c2, int& max_layer) {
+void Layer_assignment::init_union(const Coordinate_2d& c1, const Coordinate_2d& c2) {
     const Edge_2d& edgeWest = congestion.congestionMap2d.edge(c1, c2);
-    int temp_cap = (edgeWest.used_net.size() * 2);
-    for (int k = 0; k < cur_map_3d.getZSize() && temp_cap > 0; ++k) {
-        Edge_3d& edge3d = cur_map_3d.edge(Coordinate_3d { c1, k }, Coordinate_3d { c2, k });
-        if (edge3d.max_cap > 0) {
-            temp_cap -= edge3d.max_cap;
-        }
-        max_layer = k;
-    }
     for (const std::pair<int, int>& iter : edgeWest.used_net) {
-        average_order[iter.first].val += max_layer;
         ++average_order[iter.first].times;
     }
 }
 
 void Layer_assignment::find_group(int max) {
 
-    int max_layer;
-
 // initial for average_order
     average_order.resize(max);
-    {
-        int i = 0;
-        for (AVERAGE_NODE& a : average_order) {
-            a.id = i;
-            ++i;
-            a.val = 0;
-            a.times = 0;
-            a.vo_times = 0;
-        }
+    for (AVERAGE_NODE& a : average_order) {
+        a.times = 0;
     }
+
     for (int i = 1; i < max_xx; ++i) {
         for (int j = 0; j < max_yy; ++j) {
             Coordinate_2d c1 { i, j };
             Coordinate_2d c2 { i - 1, j };
-            init_union(c1, c2, max_layer);
+            init_union(c1, c2);
         }
     }
     for (int i = 0; i < max_xx; ++i) {
         for (int j = 1; j < max_yy; ++j) {
             Coordinate_2d c1 { i, j };
             Coordinate_2d c2 { i, j - 1 };
-            init_union(c1, c2, max_layer);
+            init_union(c1, c2);
         }
     }
 
     for (int i = 0; i < max; ++i) {
         AVERAGE_NODE& a = average_order[i];
-        a.average = static_cast<double>(rr_map.get_netPinNumber(i)) / static_cast<double>((a.times + a.bends));
+        a.average = static_cast<double>(rr_map.get_netPinNumber(i)) / static_cast<double>((a.times));
     }
 }
 
@@ -482,7 +466,7 @@ void Layer_assignment::calculate_cap() {
     printf("2D max overflow = %d\n", max);
 }
 
-void Layer_assignment::generate_all_output() {
+void Layer_assignment::generate_all_output(std::ostream & output) {
 
     std::vector<std::vector<Segment3d> > comb { static_cast<std::size_t>(rr_map.get_netNumber()) };
     Coordinate_3d c2;
@@ -515,16 +499,9 @@ void Layer_assignment::generate_all_output() {
     }
 
     for (int i = 0; i < rr_map.get_netNumber(); ++i) {
-        generate_output(i, comb[i]);
+        generate_output(i, comb[i], output);
     }
 }
-/*
- *   Congestion& congestion;
- RoutingRegion& rr_map;
- std::vector<AVERAGE_NODE> average_order;
- Plane<LayerInfo, EdgeInfo> layerInfo_map; //edge are overflow
- EdgePlane3d<Edge_3d> cur_map_3d;
- */
 
 Layer_assignment::Layer_assignment(const Congestion& congestion, const RoutingRegion& rr_map, const std::string& outputFileNamePtr) :
         congestion { congestion }, rr_map { rr_map }, //
@@ -551,15 +528,11 @@ Layer_assignment::Layer_assignment(const Congestion& congestion, const RoutingRe
     puts("Layer assignment complete.");
 
     calculate_wirelength();
-
-    printf("Outputing result file to %s\n", outputFileName.c_str());
-
-    int stdout_fd = dup(1);
-    FILE* outputFile = freopen(outputFileName.c_str(), "w", stdout);
-    generate_all_output();
-    fclose(outputFile);
-
-    stdout = fdopen(stdout_fd, "w");
+    std::cout << "Outputing result file to " << outputFileName << std::endl;
+    generate_all_output(std::cout);
+    std::ofstream ofs(outputFileName, std::ofstream::out | std::ofstream::trunc);
+    generate_all_output(ofs);
+    ofs << std::flush;
 
 }
 
