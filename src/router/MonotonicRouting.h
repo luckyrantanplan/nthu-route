@@ -37,7 +37,6 @@ class MonotonicRouting {
 public:
 
     Monotonic_element* compare_cost(Monotonic_element* m1, Monotonic_element* m2);
-    Monotonic_element L_pattern_max_cong(int x1, int y1, int x2, int y2, int dir1, int dir2, Two_pin_element_2d& two_pin_L_path, int net_id);
 
     MonotonicRouting(Congestion& congestion, bool enable);
     virtual ~MonotonicRouting();

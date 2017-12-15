@@ -1,14 +1,13 @@
 #ifndef _CONSTRUCT_2D_TREE_H_
 #define _CONSTRUCT_2D_TREE_H_
 
-#include <boost/multi_array.hpp>
-#include <array>
 #include <map>
 #include <set>
 #include <vector>
 
 #include "../flute/flute-ds.h"
-#include "../util/traversemap.h"
+#include "../grdb/EdgePlane.h"
+#include "Congestion.h"
 #include "DataDef.h"
 #include "MM_mazeroute.h"
 #include "parameter.h"
@@ -28,8 +27,6 @@ struct Construct_2d_tree {
     int par_ind;
     ParameterSet& parameter_set;
     RoutingParameters& routing_parameter;
-
-
 
     vector<Two_pin_element_2d> two_pin_list;
 
@@ -60,10 +57,10 @@ struct Construct_2d_tree {
     Tree global_flutetree;
     vector<Two_pin_list_2d> bbox_2pin_list;    //store bbox 2pin list of each net
     vector<Vertex_flute_ptr> vertex_fl;
-    EdgeColorMap<int> bboxRouteStateMap;
+    EdgePlane<int> bboxRouteStateMap;
 
     double adjust_value;
-
+    Congestion congestion;
     void insert_all_two_pin_list(Two_pin_element_2d& mn_path_2d);
 
     void printMemoryUsage(const char* msg);
@@ -72,8 +69,9 @@ struct Construct_2d_tree {
     void init_flute();
     void free_memory_con2d();
     void bbox_route(Two_pin_list_2d& list, const double value);
+    Monotonic_element L_pattern_max_cong(const Coordinate_2d& c1, const Coordinate_2d& c2, Two_pin_element_2d& two_pin_L_path, int net_id);
 
-    void L_pattern_route(int x1, int y1, int x2, int y2, Two_pin_element_2d& two_pin_L_path, int net_id);
+    void L_pattern_route(const Coordinate_2d& c1, const Coordinate_2d& c2, Two_pin_element_2d& two_pin_L_path, int net_id);
 
     void update_congestion_map_remove_multipin_net(Two_pin_list_2d& list);
 
@@ -86,8 +84,10 @@ struct Construct_2d_tree {
     void dfs_output_tree(Vertex_flute_ptr node, Tree *t);
     void edge_shifting(Tree *t);
     void output_2_pin_list();
-    Construct_2d_tree(RoutingParameters& routingparam, ParameterSet& param, RoutingRegion& rr);
+    Construct_2d_tree(RoutingParameters & routingparam, ParameterSet & param, RoutingRegion & rr);
+    void walkL(const Coordinate_2d& a, const Coordinate_2d& b, std::function<void(const Coordinate_2d& e1, const Coordinate_2d& e2)> f);
 
-};
+}
+;
 
 #endif /* _CONSTRUCT_2D_TREE_H_ */

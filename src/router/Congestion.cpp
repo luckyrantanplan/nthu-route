@@ -34,14 +34,14 @@ Congestion::~Congestion() {
 }
 
 //get edge cost on a 2D layer
-double Congestion::get_cost_2d(const Coordinate_2d& c1, const Coordinate_2d& c2, int net_id, int *distance) {
+double Congestion::get_cost_2d(const Coordinate_2d& c1, const Coordinate_2d& c2, int net_id, int& distance) {
 
 //Check if the specified net pass the edge.
 //If it have passed the edge before, then the cost is 0.
     Edge_2d& edge = congestionMap2d.edge(c1, c2);
 
     if (edge.lookupNet(net_id) == false) {
-        (*distance) = 1;
+        distance = 1;
 
         switch (used_cost_flag) {
 
@@ -59,7 +59,7 @@ double Congestion::get_cost_2d(const Coordinate_2d& c1, const Coordinate_2d& c2,
         }
         return 0;
     } else {
-        (*distance) = 0;
+        distance = 0;
         return 0;
     }
 }

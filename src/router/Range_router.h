@@ -22,40 +22,7 @@ class Point_fc;
 struct Construct_2d_tree;
 struct Two_pin_element_2d;
 
-class Rectangle {
-public:
-    Coordinate_2d upLeft;
-    Coordinate_2d downRight;
 
-public:
-    Rectangle(const Coordinate_2d c1, const Coordinate_2d c2) :
-            upLeft { std::min(c1.x, c2.x), std::min(c1.y, c2.y) }, //
-            downRight { std::max(c1.x, c2.x), std::max(c1.y, c2.y) } {
-    }
-    bool contains(const Coordinate_2d& c) const {
-        return (upLeft.x <= c.x && c.x <= downRight.x && upLeft.y <= c.y && c.y <= downRight.y);
-
-    }
-    bool contains(const Rectangle& r) const {
-        return (upLeft.x <= r.upLeft.x && r.downRight.x <= downRight.x && //
-                upLeft.y <= r.upLeft.y && r.downRight.y <= downRight.y);
-
-    }
-    void expand(int i) {
-        upLeft.x -= i;
-        upLeft.y -= i;
-        downRight.x += i;
-        downRight.y += i;
-    }
-
-    void clip(Rectangle r) const {
-        r.upLeft.x = std::max(upLeft.x, r.upLeft.x);
-        r.upLeft.y = std::max(upLeft.y, r.upLeft.y);
-        r.downRight.x = std::min(downRight.x, r.downRight.x);
-        r.downRight.y = std::min(downRight.y, r.downRight.y);
-    }
-
-};
 class Grid_edge_element {
 public:
     Coordinate_2d grid;

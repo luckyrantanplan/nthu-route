@@ -39,7 +39,7 @@ public:
 
     Congestion(int x, int y);
     ~Congestion();
-    double get_cost_2d(const Coordinate_2d& c1, const Coordinate_2d& c2, int net_id, int *distance);
+    double get_cost_2d(const Coordinate_2d& c1, const Coordinate_2d& c2, int net_id, int& distance);
     int cal_max_overflow();
     void pre_evaluate_congestion_cost_all(Edge_2d& edge) const;
     void pre_evaluate_congestion_cost();

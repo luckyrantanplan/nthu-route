@@ -1,21 +1,19 @@
 #include "Construct_2d_tree.h"
 
 #include <bits/move.h>
-#include <boost/multi_array/base.hpp>
+#include <ext/type_traits.h>
 #include <algorithm>
 #include <climits>
 #include <cmath>
+#include <complex>
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
 #include <iterator>
 #include <string>
-#include <unordered_map>
-#include <utility>
 
 #include "../flute/flute-function.h"
 #include "../flute/flute4nthuroute.h"
-#include "../grdb/EdgePlane.h"
 #include "../grdb/RoutingComponent.h"
 #include "../grdb/RoutingRegion.h"
 #include "../misc/geometry.h"
@@ -39,107 +37,37 @@ void Construct_2d_tree::init_2pin_list() {
 }
 
 void Construct_2d_tree::init_flute() {
-    net_flutetree = (Tree *) malloc(rr_map.get_netNumber() * sizeof(Tree));
-}
-
-void Construct_2d_tree::free_memory_con2d() {
-
-    bbox_2pin_list.clear();
+    net_flutetree.resize(rr_map.get_netNumber());
 }
 
 void Construct_2d_tree::bbox_route(Two_pin_list_2d& list, const double value) {
-    int i, x1, y1, x2, y2;
-    double u_value;
 
-    if (value > 0)
+    double u_value = -1;
+    if (value > 0) {
         u_value = 1;
-    else
-        u_value = -1;
-
+    }
     for (Two_pin_element_2d& it : list) {
-        if (it.pin1.x > it.pin2.x) {
-            swap(it.pin1.x, it.pin2.x);
-        }
-        if (it.pin1.y > it.pin2.y) {
-            swap(it.pin1.y, it.pin2.y);
-        }
+        Rectangle rect { it.pin1.x, it.pin2 };
 
-        x1 = it.pin1.x;
-        y1 = it.pin1.y;
-        x2 = it.pin2.x;
-        y2 = it.pin2.y;
-#ifdef DEBUG_BBOX
-        printf("(%d %d) (%d %d)\n",x1,y1,x2,y2);
-#endif
-        if (x1 == x2)	    //vertical edge
-                {
-            for (i = y1; i < y2; ++i) {
-                bboxRouteStateMap.color(x1, i, DIR_NORTH) = 1;
-            }
-        } else if (y1 == y2)	//horizontal edge
-                {
-            for (i = x1; i < x2; ++i) {
-                bboxRouteStateMap.color(i, y1, DIR_EAST) = 1;
-            }
-        } else	            //box (L-shape routing need
-        {
-            for (i = y1; i < y2; ++i) {
-                bboxRouteStateMap.color(x1, i, DIR_NORTH) = 1;
-                bboxRouteStateMap.color(x2, i, DIR_NORTH) = 1;
-            }
-            for (i = x1; i < x2; ++i) {
-                bboxRouteStateMap.color(i, y1, DIR_EAST) = 1;
-                bboxRouteStateMap.color(i, y2, DIR_EAST) = 1;
-            }
-        }
+        rect.frame([&](const Coordinate_2d& c1,const Coordinate_2d& c2) {
+            bboxRouteStateMap.edge(c1, c2) = 1;
+        });
     }
 
 //check the flag of edges, if it is set to 1, then add demand on it.
     for (Two_pin_element_2d& it : list) {
-//x1, y1 is the smaller set
-//NOTE: they have been sorted in the last for loop
-        x1 = it.pin1.x;
-        y1 = it.pin1.y;
-        x2 = it.pin2.x;
-        y2 = it.pin2.y;
-        if (x1 == x2)	    //vertical edge
-                {
-            for (i = y1; i < y2; ++i)
-                if (bboxRouteStateMap.color(x1, i, DIR_NORTH) == 1) {
-                    congestionMap2d.edge(x1, i, DIR_NORTH).cur_cap += u_value;
-                    bboxRouteStateMap.color(x1, i, DIR_NORTH) = 0;
-                }
-        } else if (y1 == y2)	//horizontal edge
-                {
-            for (i = x1; i < x2; ++i)
-                if (bboxRouteStateMap.color(i, y1, DIR_EAST) == 1) {
-                    congestionMap2d.edge(i, y1, DIR_EAST).cur_cap += u_value;
-                    bboxRouteStateMap.color(i, y1, DIR_EAST) = 0;
-                }
-        } else	            //box
-        {
-            for (i = y1; i < y2; ++i) {
-                if (bboxRouteStateMap.color(x1, i, DIR_NORTH) == 1) {
-                    congestionMap2d.edge(x1, i, DIR_NORTH).cur_cap += value;
-                    bboxRouteStateMap.color(x1, i, DIR_NORTH) = 0;
-                }
-                if (bboxRouteStateMap.color(x2, i, DIR_NORTH) == 1) {
-                    congestionMap2d.edge(x2, i, DIR_NORTH).cur_cap += value;
-                    bboxRouteStateMap.color(x2, i, DIR_NORTH) = 0;
-                }
+
+        Rectangle rect { it.pin1.x, it.pin2 };
+
+        rect.frame([&](const Coordinate_2d& c1,const Coordinate_2d& c2) {
+            int& color=bboxRouteStateMap.edge(c1, c2);
+            if (color==1) {
+                congestion.congestionMap2d.edge(c1, c2).cur_cap += u_value;
+                color=0;
             }
-            for (i = x1; i < x2; ++i) {
-                if (bboxRouteStateMap.color(i, y1, DIR_EAST) == 1) {
-                    congestionMap2d.edge(i, y1, DIR_EAST).cur_cap += value;
-                    bboxRouteStateMap.color(i, y1, DIR_EAST) = 0;
-                }
-                if (bboxRouteStateMap.color(i, y2, DIR_EAST) == 1) {
-                    congestionMap2d.edge(i, y2, DIR_EAST).cur_cap += value;
-                    bboxRouteStateMap.color(i, y2, DIR_EAST) = 0;
-                }
-            }
-        }
+        });
     }
+
 #ifdef DEBUG_BBOX
     print_cap("cur");
 #endif
@@ -158,58 +86,52 @@ void Construct_2d_tree::insert_all_two_pin_list(Two_pin_element_2d& mn_path_2d) 
 
 }
 
+void Construct_2d_tree::walkL(const Coordinate_2d& a, const Coordinate_2d& b, std::function<void(const Coordinate_2d& e1, const Coordinate_2d& e2)> f) {
+    {
+        int inc = 1;
+        if (a.x > b.x) {
+            inc = -1;
+        }
+
+        for (int x = a.x; x * inc < b.x * inc; x = x + inc) {
+            f(Coordinate_2d { x, a.y }, Coordinate_2d { x + inc, a.y });
+        }
+    }
+    int inc = 1;
+    if (a.y > b.y) {
+        inc = -1;
+    }
+    for (int y = a.y; y * inc < b.y * inc; y = y + inc) {
+        f(Coordinate_2d { b.x, y }, Coordinate_2d { b.x, y + inc });
+    }
+
+}
+
 /*
  input: start coor and end coor, and directions of L
  output: record the best L pattern into two_pin_L_path_global, and return the min max congestion value
  */
-Monotonic_element Construct_2d_tree::L_pattern_max_cong(int x1, int y1, int x2, int y2, int dir1, int dir2, Two_pin_element_2d& two_pin_L_path, int net_id) {
-    int i, j;
-    double temp;
-    int dir[2], dir_index;
-    Monotonic_element max_path;
+Monotonic_element Construct_2d_tree::L_pattern_max_cong(const Coordinate_2d& c1, const Coordinate_2d& c2, Two_pin_element_2d& two_pin_L_path, int net_id) {
+
     int distance;
 
-    dir[0] = dir1;
-    dir[1] = dir2;
-    i = x1;
-    j = y1;
+    Monotonic_element max_path;
     max_path.max_cost = -1000000;
     max_path.total_cost = 0;
     max_path.net_cost = 0;
     max_path.distance = 0;
     max_path.via_num = 1;
-    for (dir_index = 0; dir_index < 2; dir_index++) {
-        if (dir[dir_index] == RIGHT)    // search in horizontal direction: RIGHT
-                {
-            //for loop from the left boundary to the right boundary
-            for (i = x1; i < x2; ++i) {
-                temp = get_cost_2d(i, j, dir[dir_index], net_id, &distance);
-                max_path.total_cost += max(static_cast<double>(0), temp);
-                max_path.distance += distance;
-                two_pin_L_path.path.push_back(Coordinate_2d(i, j));
-                if (temp > max_path.max_cost)
-                    max_path.max_cost = temp;
-            }
-            i = x2;
-        } else // search in vertical direction
-        {
-            for (j = y1; (j < y2 && dir[dir_index] == FRONT) || (j > y2 && dir[dir_index] == BACK);) {
-                temp = get_cost_2d(i, j, dir[dir_index], net_id, &distance);
-                max_path.total_cost += max(static_cast<double>(0), temp);
-                max_path.distance += distance;
-                two_pin_L_path.path.push_back(Coordinate_2d(i, j));
-                if (temp > max_path.max_cost)
-                    max_path.max_cost = temp;
-                if (dir[dir_index] == FRONT)
-                    ++j;
-                else if (dir[dir_index] == BACK)
-                    --j;
-            }
-            j = y2;
-        }
-    }
 
-    (*two_pin_L_path).path.push_back(Coordinate_2d(x2, y2));
+    walkL(c1, c2, [&](const Coordinate_2d& a,const Coordinate_2d& b) {
+        double temp = congestion.get_cost_2d(a,b, net_id, distance);
+        max_path.total_cost += max(static_cast<double>(0), temp);
+        max_path.distance += distance;
+        two_pin_L_path.path.push_back(a);
+        if (temp > max_path.max_cost)
+        max_path.max_cost = temp;
+    });
+
+    two_pin_L_path.path.push_back(c2);
     return max_path;
 }
 
@@ -217,50 +139,34 @@ Monotonic_element Construct_2d_tree::L_pattern_max_cong(int x1, int y1, int x2, 
  input: two coordinates
  output: record the L_pattern in the path, and the path is min max congestioned
  */
-void Construct_2d_tree::L_pattern_route(int x1, int y1, int x2, int y2, Two_pin_element_2d& two_pin_L_path, int net_id) {
-    Two_pin_element_2d path1, path2;
-    Monotonic_element max_cong_path1, max_cong_path2;
 
-    if (x1 > x2) {
-        swap(x1, x2);
-        swap(y1, y2);
-    }
+void Construct_2d_tree::L_pattern_route(const Coordinate_2d& c1, const Coordinate_2d& c2, Two_pin_element_2d& two_pin_L_path, int net_id) {
+    Two_pin_element_2d path1;
+    Monotonic_element max_cong_path1;
 
-    if (x1 < x2 && y1 < y2)					//two points are left_back and right_front
-            {
-//FRONT and RIGHT L pattern from (x1 y1)
-        max_cong_path1 = L_pattern_max_cong(x1, y1, x2, y2, FRONT, RIGHT, path1, net_id);
-//RIGTH and FRONT L pattern from (x1,y1)
-        max_cong_path2 = L_pattern_max_cong(x1, y1, x2, y2, RIGHT, FRONT, path2, net_id);
-        if ((&max_cong_path1) == (compare_cost(&max_cong_path1, &max_cong_path2)))
+    max_cong_path1 = L_pattern_max_cong(c1, c2, path1, net_id);
+
+    if (!c1.isAligned(c2)) {
+        Two_pin_element_2d path2;
+        Monotonic_element max_cong_path2;
+        max_cong_path2 = L_pattern_max_cong(c2, c1, path2, net_id);
+        if (max_cong_path1 < max_cong_path2) {
             two_pin_L_path = path1;
-        else
+        } else {
             two_pin_L_path = path2;
-    } else if (x1 < x2 && y1 > y2)  //two points are left_front and right_back
-            {
-//BACK and RIGHT L pattern from (x1,y1)
-        max_cong_path1 = L_pattern_max_cong(x1, y1, x2, y2, BACK, RIGHT, path1, net_id);
-//RIGHT and BACK L pattern from (x1,y1)
-        max_cong_path2 = L_pattern_max_cong(x1, y1, x2, y2, RIGHT, BACK, path2, net_id);
-        if ((&max_cong_path1) == (compare_cost(&max_cong_path1, &max_cong_path2)))
-            two_pin_L_path = path1;
-        else
-            two_pin_L_path = path2;
-    } else // vertical or horizontal line
-    {
-        if (y1 > y2) {
-            swap(y1, y2);
         }
-        max_cong_path1 = L_pattern_max_cong(x1, y1, x2, y2, FRONT, RIGHT, two_pin_L_path, net_id);
+    } else {
+        two_pin_L_path = path1;
     }
-    (*two_pin_L_path).pin1 = *((*two_pin_L_path).path[0]);
-    (*two_pin_L_path).pin2 = *((*two_pin_L_path).path.back());
-    (*two_pin_L_path).net_id = net_id;
+
+    two_pin_L_path.pin1 = two_pin_L_path.path[0];
+    two_pin_L_path.pin2 = two_pin_L_path.path.back();
+    two_pin_L_path.net_id = net_id;
 }
 
 void Construct_2d_tree::update_congestion_map_remove_multipin_net(Two_pin_list_2d& list) {
     for (Two_pin_element_2d& it : list) {
-        update_congestion_map_remove_two_pin_net(it);
+        congestion.update_congestion_map_remove_two_pin_net(it);
     }
 }
 
@@ -269,7 +175,10 @@ void Construct_2d_tree::gen_FR_congestion_map() {
     std::vector<Tree> flutetree;                        //a struct, defined by Flute library
     Two_pin_element_2d *L_path;
 
-    bboxRouteStateMap = EdgeColorMap<int>(rr_map.get_gridx(), rr_map.get_gridy(), -1);
+    bboxRouteStateMap(rr_map.get_gridx(), rr_map.get_gridy());
+    for (int& i : bboxRouteStateMap.all()) {
+        i = -1;
+    }
 
     Congestion congestion(rr_map.get_gridx(), rr_map.get_gridy());
     congestion.init_2d_map(rr_map);          //initial congestion map: calculating every edge's capacity
@@ -288,8 +197,8 @@ void Construct_2d_tree::gen_FR_congestion_map() {
 
 //Get every net's possible RSMT by flute, then use it to calculate the possible congestion
 //In this section, we won't get a real routing result, but a possible congestion information.
-    for (int i = 0; i < rr_map.get_netNumber(); ++i)	//i:net id
-            {
+    for (int i = 0; i < rr_map.get_netNumber(); ++i) {	//i:net id
+
 #ifdef DEBUG_BBOX
         printf("bbox route net %d start...pin_num=%d\n",i,rr_map.get_netPinNumber(i));
 #endif
@@ -302,8 +211,8 @@ void Construct_2d_tree::gen_FR_congestion_map() {
         flutetree[i].number = 2 * flutetree[i].deg - 2;	//add 0403
 
         /*2-pin bounding box assign demand 0.5, remember not to repeat the same net*/
-        for (int j = 0; j < flutetree[i].number; ++j)	//for all pins and steiner points
-                {
+        for (int j = 0; j < flutetree[i].number; ++j) {	//for all pins and steiner points
+
             int x1 = (int) flutetree[i].branch[j].x;
             int y1 = (int) flutetree[i].branch[j].y;
             int x2 = (int) flutetree[i].branch[flutetree[i].branch[j].n].x;
@@ -366,7 +275,7 @@ void Construct_2d_tree::gen_FR_congestion_map() {
             if (!(x1 == x2 && y1 == y2)) {
                 /*choose the L-shape with lower congestion to assign new demand 1*/
                 Two_pin_element_2d L_path;
-                L_pattern_route(x1, y1, x2, y2, L_path, netId);
+                L_pattern_route(Coordinate_2d { x1, y1 }, Coordinate_2d { x2, y2 }, L_path, netId);
 
                 /*insert 2pin_path into this net*/
                 net_2pin_list[netId].push_back(L_path);
@@ -377,9 +286,7 @@ void Construct_2d_tree::gen_FR_congestion_map() {
 #endif
             }
         }
-#ifdef FREE
-        free(flute_order);
-#endif
+
     }
 
 #ifdef MESSAGE
@@ -390,7 +297,7 @@ void Construct_2d_tree::gen_FR_congestion_map() {
     print_cap("cur");
 #endif
     cal_max_overflow();
-    delete bboxRouteStateMap;
+
 }
 
 //=====================edge shifting=============================
@@ -1075,7 +982,7 @@ Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterS
         //
         parameter_set { param }, //
         routing_parameter { routingparam }, //
-
+        bboxRouteStateMap { rr.get_gridx(), rr.get_gridy() }, //
         rr_map { rr }, //
         post_processing { *this } {
 
@@ -1175,9 +1082,6 @@ Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterS
 
     output_2_pin_list();    //order:bbox�p
 
-#ifdef FREE
-    free_memory_con2d();
-#endif
 #ifdef MESSAGE
     cout<<"================================================================"<<endl;
     cout<<"===                   Enter Post Processing                  ==="<<endl;
@@ -1188,7 +1092,7 @@ Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterS
 
 inline void Construct_2d_tree::printMemoryUsage(const char* msg) {
     std::cout << msg << std::endl;
-    //for print out memory usage
+//for print out memory usage
     std::ifstream mem("/proc/self/status");
     std::string memory;
     for (unsigned i = 0; i < 13; ++i) {
