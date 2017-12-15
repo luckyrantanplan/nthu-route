@@ -174,6 +174,8 @@ public:
 
     boost::iterator_range<T*> all();
 
+    boost::iterator_range<const T*> all() const;
+
     ///@brief Get the specified edge between 2 vertices
     T& edge(const Coordinate_2d& c1, const Coordinate_2d& c2);
 
@@ -235,6 +237,11 @@ inline Coordinate_2d EdgePlane<T>::getSize() const {
 template<class T>
 boost::iterator_range<T*> EdgePlane<T>::all() {
     return boost::iterator_range<T*>(edgePlane_.data(), &edgePlane_.data()[edgePlane_.num_elements()]);
+}
+
+template<class T>
+boost::iterator_range<const T*> EdgePlane<T>::all() const {
+    return boost::iterator_range<const T*>(edgePlane_.data(), &edgePlane_.data()[edgePlane_.num_elements()]);
 }
 
 template<class T>

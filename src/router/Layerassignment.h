@@ -129,22 +129,19 @@ struct Layer_assignment {
             return std::tie(cost, via_cost, interval) < std::tie(v.cost, v.via_cost, v.interval);
         }
     };
+    const Congestion& congestion;
+    const RoutingRegion& rr_map;
+    std::vector<AVERAGE_NODE> average_order;
+    Plane<LayerInfo, EdgeInfo> layerInfo_map; //edge are overflow
+    EdgePlane3d<Edge_3d> cur_map_3d;
 
     int max_xx;
     int max_yy;
     int overflow_max;
 
-    std::vector<AVERAGE_NODE> average_order;
-
-    Plane<LayerInfo, EdgeInfo> layerInfo_map; //edge are overflow
-    RoutingRegion& rr_map;
-    EdgePlane3d<Edge_3d> cur_map_3d;
-
     int global_net_id;
     int global_pin_num;
-
-    Congestion& congestion;
-
+    int global_via_cost;
     void print_max_overflow();
 
     void initial_overflow_map();
@@ -167,8 +164,8 @@ struct Layer_assignment {
     void calculate_cap();
     void sort_net_order();
     void generate_all_output();
-    Layer_assignment(const std::string& outputFileNamePtr, RoutingRegion& rr_map, Congestion& congestion);
-    void init_3d_map();
+    Layer_assignment(const Congestion& congestion, const RoutingRegion& rr_map, const std::string& outputFileNamePtr);
+
 private:
     bool test(const Coordinate_2d& c1, const Coordinate_2d& c2);
     void init_union(const Coordinate_2d& c1, const Coordinate_2d& c2, int& max_layer);

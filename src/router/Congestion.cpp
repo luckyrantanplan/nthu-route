@@ -25,7 +25,7 @@ Congestion::Congestion(int x, int y) :
     via_cost = 3;
     factor = 1.0;
     used_cost_flag = FASTROUTE_COST;    // cost function type, i.e., HISTORY_COST, HISTORY_MADEOF_COST, MADEOF_COST, FASTROUTE_COST
-    pre_evaluate_congestion_cost_fp = [&](Edge_2d& edge) {pre_evaluate_congestion_cost_all( edge);};
+    pre_evaluate_congestion_cost_fp = [&]( Edge_2d& edge) {pre_evaluate_congestion_cost_all( edge);};
 
 }
 
@@ -88,7 +88,7 @@ int Congestion::cal_max_overflow() {
  * just reassign function pointer pre_evaluate_congestion_cost_fp to your
  * function in *route/route.cpp* .                                        */
 
-void Congestion::pre_evaluate_congestion_cost_all(Edge_2d& edge) {
+void Congestion::pre_evaluate_congestion_cost_all(Edge_2d& edge) const {
     static const int inc = 1;
     if (used_cost_flag == HISTORY_COST) {
         double cong = (edge.cur_cap + inc) / (edge.max_cap * (1.0 - ((edge.history - 1) / (cur_iter * (1.5 + 3 * factor)))));
@@ -138,10 +138,9 @@ bool Congestion::check_path_no_overflow(std::vector<Coordinate_2d>& path, int ne
     return true;
 }
 
-int Congestion::find_overflow_max(int max_zz) {
+int Congestion::find_overflow_max(int max_zz) const {
     int overflow_max = 0;
-    for (Edge_2d& edge : congestionMap2d.all()) {
-        pre_evaluate_congestion_cost_fp(edge);
+    for (const Edge_2d& edge : congestionMap2d.all()) {
         if (edge.overUsage() > overflow_max) {
             overflow_max = edge.overUsage();
         }

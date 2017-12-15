@@ -61,7 +61,7 @@ void Net::add_pin(const Pin* pin) {
     this->pin_list.push_back(pin);
 }
 
-const PinptrList& Net::get_pinList() {
+const PinptrList& Net::get_pinList() const {
     return this->pin_list;
 }
 

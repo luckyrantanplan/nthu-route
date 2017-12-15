@@ -214,7 +214,7 @@ void Layer_assignment::VertexCost::addCost(const Coordinate_2d& o, const Element
     for (const Coordinate_3d& c : e.choice) {
         via_cost += l.layerInfo_map.vertex(c.xy()).klat[c.z].via_cost; // does not understand this
     }
-    via_cost += (interval.length() * l.congestion.via_cost);
+    via_cost += (interval.length() * l.global_via_cost);
 
 }
 
@@ -285,7 +285,7 @@ void Layer_assignment::DP(const Coordinate_3d& c, const Coordinate_3d& parent) {
             }
         }
         if (is_end) {
-            klatNode.via_cost = congestion.via_cost * c.z;
+            klatNode.via_cost = global_via_cost * c.z;
             klatNode.via_overflow = 0;
             for (Coordinate_3d c2 { c1, 0 }; c2.z < c.z; ++c2.z) {
                 if (cur_map_3d.edge(c2, Coordinate_3d { c1, c.z + 1 }).isOverflow()) {
@@ -368,7 +368,7 @@ bool Layer_assignment::comp_temp_net_order(int p, int q) {
 }
 
 void Layer_assignment::init_union(const Coordinate_2d& c1, const Coordinate_2d& c2, int& max_layer) {
-    Edge_2d& edgeWest = congestion.congestionMap2d.edge(c1, c2);
+    const Edge_2d& edgeWest = congestion.congestionMap2d.edge(c1, c2);
     int temp_cap = (edgeWest.used_net.size() * 2);
     for (int k = 0; k < cur_map_3d.getZSize() && temp_cap > 0; ++k) {
         Edge_3d& edge3d = cur_map_3d.edge(Coordinate_3d { c1, k }, Coordinate_3d { c2, k });
@@ -434,7 +434,7 @@ void Layer_assignment::calculate_wirelength() {
             }
         }
     }
-    z *= congestion.via_cost;
+    z *= global_via_cost;
     std::cout << "total wirelength = " << xy << " + " << z << " = " << (xy + z) << std::endl;
 
 }
@@ -471,7 +471,7 @@ void Layer_assignment::calculate_cap() {
 
     int overflow = 0;
     int max = 0;
-    for (Edge_2d& edge : congestion.congestionMap2d.all()) {
+    for (const Edge_2d& edge : congestion.congestionMap2d.all()) {
         if (edge.isOverflow()) {
             overflow += (edge.overUsage() * 2);
             if (max < edge.overUsage())
@@ -484,7 +484,7 @@ void Layer_assignment::calculate_cap() {
 
 void Layer_assignment::generate_all_output() {
 
-    std::vector<std::vector<Segment3d> > comb { rr_map.get_netNumber() };
+    std::vector<std::vector<Segment3d> > comb { static_cast<std::size_t>(rr_map.get_netNumber()) };
     Coordinate_3d c2;
     for (Coordinate_3d c { 0, 0, 0 }; c.x < cur_map_3d.getXSize(); ++c.x) {
         c2.x = c.x;
@@ -518,16 +518,23 @@ void Layer_assignment::generate_all_output() {
         generate_output(i, comb[i]);
     }
 }
+/*
+ *   Congestion& congestion;
+ RoutingRegion& rr_map;
+ std::vector<AVERAGE_NODE> average_order;
+ Plane<LayerInfo, EdgeInfo> layerInfo_map; //edge are overflow
+ EdgePlane3d<Edge_3d> cur_map_3d;
+ */
 
-Layer_assignment::Layer_assignment(const std::string& outputFileNamePtr, RoutingRegion& rr_map,	//
-        Congestion& congestion) :
-        rr_map { rr_map }, //
-        cur_map_3d { },	//
-        congestion { congestion } {
+Layer_assignment::Layer_assignment(const Congestion& congestion, const RoutingRegion& rr_map, const std::string& outputFileNamePtr) :
+        congestion { congestion }, rr_map { rr_map }, //
+        layerInfo_map { congestion.congestionMap2d.getSize() }, //
+        cur_map_3d { Coordinate_3d { congestion.congestionMap2d.getSize(), rr_map.get_layerNumber() } } 	//
+{
 
     string outputFileName { outputFileNamePtr };
 
-    congestion.via_cost = 1;
+    global_via_cost = 1;
 
     max_xx = rr_map.get_gridx();
     max_yy = rr_map.get_gridy();
@@ -535,7 +542,6 @@ Layer_assignment::Layer_assignment(const std::string& outputFileNamePtr, Routing
     malloc_space();
 
     calculate_cap();
-    initial_3D_coordinate_map();
     overflow_max = congestion.find_overflow_max(cur_map_3d.getZSize());
     puts("Layer assignment processing...");
 
@@ -554,16 +560,6 @@ Layer_assignment::Layer_assignment(const std::string& outputFileNamePtr, Routing
     fclose(outputFile);
 
     stdout = fdopen(stdout_fd, "w");
-
-}
-void Layer_assignment::init_3d_map() {
-
-    /*allocate space for cur_map_3d*/
-
-    int x = rr_map.get_gridx();
-    int y = rr_map.get_gridy();
-    int z = rr_map.get_layerNumber();
-    cur_map_3d.resize(x, y, z);
 
 }
 

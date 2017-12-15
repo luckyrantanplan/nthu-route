@@ -16,27 +16,27 @@ public:
 
     //Get Functions
     // Basic Information
-    int get_gridx();				//get x grids (tile)
-    int get_gridy();				//get y grids (tile)
-    int get_layerNumber();			//get layer number
-    int get_layerMinWidth(int layer_id);	//get minimum wire width of the specified layer
-    int get_layerMinSpacing(int layer_id);	//get minimum spacing of the specified layer
-    int get_layerViaSpacing(int layer_id);	//get via spacing of the specified layer
-    int get_llx();							//get x-coordinate of lower left corner
-    int get_lly();					//get y-coordinate of lower left corner
-    int get_tileWidth();			//get tile width
-    int get_tileHeight();			//get tile height
-    int get_netNumber();			//get net number
-    const std::string& get_netName(int netPos);	//get net name
+    int get_gridx() const;				//get x grids (tile)
+    int get_gridy() const;				//get y grids (tile)
+    int get_layerNumber() const;			//get layer number
+    int get_layerMinWidth(int layer_id) const;	//get minimum wire width of the specified layer
+    int get_layerMinSpacing(int layer_id) const;	//get minimum spacing of the specified layer
+    int get_layerViaSpacing(int layer_id) const;	//get via spacing of the specified layer
+    int get_llx() const;							//get x-coordinate of lower left corner
+    int get_lly() const;					//get y-coordinate of lower left corner
+    int get_tileWidth() const;			//get tile width
+    int get_tileHeight() const;			//get tile height
+    int get_netNumber() const;			//get net number
+    const std::string& get_netName(int netPos) const;	//get net name
     int get_netSerialNumber(int netId);
     int get_netId(int netSerial);
     //int get_netPos(int net_id);	//get net's list position by net id
-    int get_netPinNumber(int netPos);		//get pin number of the specified net
+    int get_netPinNumber(int netPos) const;		//get pin number of the specified net
     int get_netMinWidth(int netPos);		//get minimum wire width of the specified net
     NetList& get_netList();
 
     // Pin list
-    const PinptrList& get_nPin(int net_id);	//get Pins by net
+    const PinptrList& get_nPin(int net_id) const;	//get Pins by net
 
     Plane<Pin, int>& getLayer(int z);
 
@@ -70,61 +70,61 @@ private:
 
 //Inline Functions
 inline
-int RoutingRegion::get_gridx() {
+int RoutingRegion::get_gridx() const {
     return routingSpace_.getXSize();
 }
 
 inline
-int RoutingRegion::get_gridy() {
+int RoutingRegion::get_gridy() const {
     return routingSpace_.getYSize();
 }
 
 inline
-int RoutingRegion::get_layerNumber() {
+int RoutingRegion::get_layerNumber() const {
     return routingSpace_.getZSize();
 }
 
 inline
-int RoutingRegion::get_layerMinWidth(int layer_id) {
+int RoutingRegion::get_layerMinWidth(int layer_id) const {
     return routingSpace_.wireWidth[layer_id];
 }
 
 inline
-int RoutingRegion::get_layerMinSpacing(int layer_id) {
+int RoutingRegion::get_layerMinSpacing(int layer_id) const {
     return routingSpace_.wireSpacing[layer_id];
 }
 
 inline
-int RoutingRegion::get_layerViaSpacing(int layer_id) {
+int RoutingRegion::get_layerViaSpacing(int layer_id) const {
     return routingSpace_.viaSpacing[layer_id];
 }
 
 inline
-int RoutingRegion::get_llx() {
+int RoutingRegion::get_llx() const {
     return routingSpace_.originX;
 }
 
 inline
-int RoutingRegion::get_lly() {
+int RoutingRegion::get_lly() const {
     return routingSpace_.originY;
 }
 
 inline
-int RoutingRegion::get_tileWidth() {
+int RoutingRegion::get_tileWidth() const {
     return routingSpace_.tileWidth;
 }
 
 inline
-int RoutingRegion::get_tileHeight() {
+int RoutingRegion::get_tileHeight() const {
     return routingSpace_.tileHeight;
 }
 
 inline
-int RoutingRegion::get_netNumber() {
+int RoutingRegion::get_netNumber() const {
     return netList_.size();
 }
 
-inline const std::string& RoutingRegion::get_netName(int netId) {
+inline const std::string& RoutingRegion::get_netName(int netId) const {
     return netList_[netId].get_name();
 }
 
@@ -139,7 +139,7 @@ int RoutingRegion::get_netId(int net_id) {
 }
 
 inline
-int RoutingRegion::get_netPinNumber(int netId) {
+int RoutingRegion::get_netPinNumber(int netId) const {
     return netList_[netId].get_pinNumber();
 }
 
@@ -152,7 +152,7 @@ inline NetList& RoutingRegion::get_netList() {
     return netList_;
 }
 
-inline const PinptrList& RoutingRegion::get_nPin(int netId) {	//get Pins by net
+inline const PinptrList& RoutingRegion::get_nPin(int netId) const {	//get Pins by net
     return netList_[netId].get_pinList();
 }
 

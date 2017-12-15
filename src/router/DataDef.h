@@ -110,24 +110,22 @@ public:
     int history;
     RoutedNetTable used_net;
 
-    bool isOverflow() {
+    bool isOverflow() const {
         return (cur_cap > max_cap);
     }
-    bool isFull() {
+    bool isFull() const {
         return (cur_cap >= max_cap);
     }
-    int overUsage() {
+    int overUsage() const {
         return static_cast<int>(cur_cap - max_cap);
     }
-    bool lookupNet(int netId) {
+    bool lookupNet(int netId) const {
         return (used_net.find(netId) != used_net.end());
     }
-    double congestion() {
+    double congestion() const {
         return (cur_cap / max_cap);
     }
 };
-
-
 
 typedef std::vector<Two_pin_element_2d> Two_pin_list_2d;
 typedef Vertex_flute *Vertex_flute_ptr;
