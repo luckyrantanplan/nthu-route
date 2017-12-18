@@ -178,7 +178,6 @@ void Layer_assignment::preprocess(int net_id) {
                             pathV = 1;	// visited node
                         } else {	// path_map[x][y].val == 2
                             pathV = 2;	// visited pin
-
                         }
                         for (KLAT_NODE& k : layerInfo_map.vertex(handle.vertex()).klat) {
                             k.val = -1;

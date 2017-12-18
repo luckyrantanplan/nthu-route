@@ -56,7 +56,7 @@ struct Construct_2d_tree {
     vector<Two_pin_list_2d> net_2pin_list;      //store 2pin list of each net
     Tree global_flutetree;
     vector<Two_pin_list_2d> bbox_2pin_list;    //store bbox 2pin list of each net
-    vector<Vertex_flute_ptr> vertex_fl;
+
     EdgePlane<int> bboxRouteStateMap;
 
     double adjust_value;
@@ -76,17 +76,22 @@ struct Construct_2d_tree {
     void update_congestion_map_remove_multipin_net(Two_pin_list_2d& list);
 
     void gen_FR_congestion_map();
-    double compute_L_pattern_cost(int x1, int y1, int x2, int y2, int net_id);
-    void find_saferange(Vertex_flute_ptr a, Vertex_flute_ptr b, int *low, int *high, int dir);
-    void merge_vertex(Vertex_flute_ptr keep, Vertex_flute_ptr deleted);
-    bool move_edge(Vertex_flute_ptr a, Vertex_flute_ptr b, int best_pos, int dir);
-    void traverse_tree(double *ori_cost);
-    void dfs_output_tree(Vertex_flute_ptr node, Tree *t);
-    void edge_shifting(Tree *t);
+    double compute_L_pattern_cost(const Coordinate_2d& c1, const Coordinate_2d& c2, int net_id);
+    void find_saferange(Vertex_flute& a, Vertex_flute& b, int *low, int *high, int dir);
+    void merge_vertex(Vertex_flute& keep, Vertex_flute& deleted);
+    bool move_edge(Vertex_flute& a, Vertex_flute& b, int best_pos, int dir);
+    void traverse_tree(double& ori_cost, std::vector<Vertex_flute>& vertex_fl);
+    void dfs_output_tree(Vertex_flute& node, Tree& t);
+    void edge_shifting(Tree& t);
     void output_2_pin_list();
     Construct_2d_tree(RoutingParameters & routingparam, ParameterSet & param, RoutingRegion & rr);
     void walkL(const Coordinate_2d& a, const Coordinate_2d& b, std::function<void(const Coordinate_2d& e1, const Coordinate_2d& e2)> f);
 
+private:
+    Vertex_flute_ptr findY(Vertex_flute& a, std::function<bool(const int& i, const int& j)> test);
+    Vertex_flute_ptr findX(Vertex_flute& a, std::function<bool(const int& i, const int& j)> test);
+    void move_edge_hor(Vertex_flute& a, int best_pos, Vertex_flute& b, Vertex_flute_ptr& overlap_a, std::function<bool(const int& i, const int& j)> test);
+    void move_edge_ver(Vertex_flute& a, int best_pos, Vertex_flute& b, Vertex_flute_ptr& overlap_a, std::function<bool(const int& i, const int& j)> test);
 }
 ;
 

@@ -49,7 +49,7 @@ void MonotonicRouting::monotonic_routing_algorithm(int x1, int y1, int x2, int y
 //The source can in left-top corner or left-bottom corner
     for (int i = x1 + 1; i <= x2; ++i) {
         if (parent_monotonic[i - 1][y1] != -2) {
-            cost = congestion.get_cost_2d(Coordinate_2d(i, y1), Coordinate_2d(i - 1, y1), net_id, &distance);
+            cost = congestion.get_cost_2d(Coordinate_2d(i, y1), Coordinate_2d(i - 1, y1), net_id, distance);
             Monotonic_element& ele = cong_monotonic[i][y1];
             Monotonic_element& prev = cong_monotonic[i - 1][y1];
             ele.max_cost = std::max(cost, prev.max_cost);
@@ -69,7 +69,7 @@ void MonotonicRouting::monotonic_routing_algorithm(int x1, int y1, int x2, int y
     if (dir == BACK) {
         for (int j = y1 + 1; j <= y2; ++j) {
             if (parent_monotonic[x1][j - 1] != -2) {
-                cost = congestion.get_cost_2d(Coordinate_2d(x1, j), Coordinate_2d(x1, j - 1), net_id, &distance);
+                cost = congestion.get_cost_2d(Coordinate_2d(x1, j), Coordinate_2d(x1, j - 1), net_id, distance);
                 cong_monotonic[x1][j].max_cost = std::max(cost, cong_monotonic[x1][j - 1].max_cost);
                 cong_monotonic[x1][j].total_cost = cong_monotonic[x1][j - 1].total_cost + std::max(0., cost);
                 cong_monotonic[x1][j].distance = cong_monotonic[x1][j - 1].distance + distance;
@@ -86,7 +86,7 @@ void MonotonicRouting::monotonic_routing_algorithm(int x1, int y1, int x2, int y
     } else if (dir == FRONT) {
         for (int j = y1 - 1; j >= y2; --j) {
             if (parent_monotonic[x1][j + 1] != -2) {
-                cost = congestion.get_cost_2d(Coordinate_2d(x1, j), Coordinate_2d(x1, j + 1), net_id, &distance);
+                cost = congestion.get_cost_2d(Coordinate_2d(x1, j), Coordinate_2d(x1, j + 1), net_id, distance);
                 cong_monotonic[x1][j].max_cost = std::max(cost, cong_monotonic[x1][j + 1].max_cost);
                 cong_monotonic[x1][j].total_cost = cong_monotonic[x1][j + 1].total_cost + std::max(static_cast<double>(0), cost);
                 cong_monotonic[x1][j].distance = cong_monotonic[x1][j + 1].distance + distance;
@@ -192,7 +192,7 @@ const bool Monotonic_element::operator <(Monotonic_element& m2) const {
 bool MonotonicRouting::direction_congestion(Coordinate_2d pre, int net_id, int distance, Coordinate_2d c, Monotonic_element& vertical_element, Bound& bound) {
     bool right_flag = true;
     if (parent_monotonic[pre.x][pre.y] != -2) {
-        double cost = congestion.get_cost_2d(pre, c, net_id, &distance);
+        double cost = congestion.get_cost_2d(pre, c, net_id, distance);
         vertical_element.max_cost = std::max(cost, cong_monotonic[pre.x][pre.y].max_cost);
         vertical_element.total_cost = cong_monotonic[pre.x][pre.y].total_cost + std::max(static_cast<double>(0), cost);
         vertical_element.distance = cong_monotonic[pre.x][pre.y].distance + distance;
@@ -275,7 +275,7 @@ void MonotonicRouting::compute_path_total_cost_and_distance(Two_pin_element_2d& 
     for (int i = element.path.size() - 2; i >= 0; --i) {
         Coordinate_2d& c = element.path[i];
 
-        mn.total_cost += congestion.get_cost_2d(c, dir, element.net_id, &distance);
+        mn.total_cost += congestion.get_cost_2d(c, dir, element.net_id, distance);
         mn.distance += distance;
         if (!c.isAligned(pre_dir)) {
             //if the wire need to bend, then we need to add via cost to it

@@ -27,10 +27,7 @@
 #define error_bound 0.00000000001
 #define neg_error_bound -0.00000000001
 
-enum {
-    DIR_X, DIR_Y
-};
-enum {
+enum VertexFluteType {
     PIN, STEINER, DELETED
 };
 enum {
@@ -79,14 +76,14 @@ public:
 
 class Vertex_flute {
 public:
-    int x, y;
-    int type;   //PIN, STEINER, DELETED
+    Coordinate_2d c;
+    VertexFluteType type;   //PIN, STEINER, DELETED
     int index;
     int visit;
     std::vector<Vertex_flute *> neighbor;
 
-    Vertex_flute(int x = 0, int y = 0) :
-            x(x), y(y), index { }, visit(0)/*, copy_ind(-1)*/{
+    Vertex_flute(int x, int y, VertexFluteType type) :
+            c { x, y }, type { type }, index { }, visit(0)/*, copy_ind(-1)*/{
     }
 
     //sort by x,y,pin,steiner

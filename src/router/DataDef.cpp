@@ -15,16 +15,14 @@ Edge_2d::Edge_2d() :
 
 }
 
-
-
 bool Vertex_flute::comp_vertex_fl(const Vertex_flute& a, const Vertex_flute& b) {
-    if (a.x < b.x)
+    if (a.c.x < b.c.x)
         return true;
-    else if (a.x > b.x)
+    else if (a.c.x > b.c.x)
         return false;
-    else if (a.y < b.y)
+    else if (a.c.y < b.c.y)
         return true;
-    else if (a.y > b.y)
+    else if (a.c.y > b.c.y)
         return false;
     else if (a.type == PIN)
         return true;

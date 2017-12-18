@@ -1,6 +1,6 @@
 #include "Construct_2d_tree.h"
 
-#include <bits/move.h>
+#include <boost/range/iterator_range_core.hpp>
 #include <ext/type_traits.h>
 #include <algorithm>
 #include <climits>
@@ -8,6 +8,7 @@
 #include <complex>
 #include <cstdio>
 #include <cstdlib>
+#include <functional>
 #include <iostream>
 #include <iterator>
 #include <string>
@@ -17,8 +18,6 @@
 #include "../grdb/RoutingComponent.h"
 #include "../grdb/RoutingRegion.h"
 #include "../misc/geometry.h"
-#include "Congestion.h"
-#include "MonotonicRouting.h"
 #include "Range_router.h"
 #include "Route_2pinnets.h"
 
@@ -88,27 +87,27 @@ void Construct_2d_tree::insert_all_two_pin_list(Two_pin_element_2d& mn_path_2d) 
 
 void Construct_2d_tree::walkL(const Coordinate_2d& a, const Coordinate_2d& b, std::function<void(const Coordinate_2d& e1, const Coordinate_2d& e2)> f) {
     {
-        int inc = 1;
-        if (a.x > b.x) {
-            inc = -1;
+        int ax = a.x;
+        int bx = b.x;
+        if (ax > bx) {
+            std::swap(ax, bx);
         }
-
-        for (int x = a.x; x * inc < b.x * inc; x = x + inc) {
-            f(Coordinate_2d { x, a.y }, Coordinate_2d { x + inc, a.y });
+        for (int x = ax; x < bx; ++x) {
+            f(Coordinate_2d { x, a.y }, Coordinate_2d { x + 1, a.y });
         }
     }
-    int inc = 1;
-    if (a.y > b.y) {
-        inc = -1;
+    int ay = a.y;
+    int by = b.y;
+    if (ay > by) {
+        std::swap(ay, by);
     }
-    for (int y = a.y; y * inc < b.y * inc; y = y + inc) {
-        f(Coordinate_2d { b.x, y }, Coordinate_2d { b.x, y + inc });
+    for (int y = ay; y < by; ++y) {
+        f(Coordinate_2d { b.x, y }, Coordinate_2d { b.x, y + 1 });
     }
-
 }
 
 /*
- input: start coor and end coor, and directions of L
+ input: start coordinate and end coordinate, and directions of L
  output: record the best L pattern into two_pin_L_path_global, and return the min max congestion value
  */
 Monotonic_element Construct_2d_tree::L_pattern_max_cong(const Coordinate_2d& c1, const Coordinate_2d& c2, Two_pin_element_2d& two_pin_L_path, int net_id) {
@@ -172,15 +171,12 @@ void Construct_2d_tree::update_congestion_map_remove_multipin_net(Two_pin_list_2
 
 //generate the congestion map by Flute with wirelength driven mode
 void Construct_2d_tree::gen_FR_congestion_map() {
-    std::vector<Tree> flutetree;                        //a struct, defined by Flute library
-    Two_pin_element_2d *L_path;
+    //a struct, defined by Flute library
 
-    bboxRouteStateMap(rr_map.get_gridx(), rr_map.get_gridy());
     for (int& i : bboxRouteStateMap.all()) {
         i = -1;
     }
 
-    Congestion congestion(rr_map.get_gridx(), rr_map.get_gridy());
     congestion.init_2d_map(rr_map);          //initial congestion map: calculating every edge's capacity
     init_2pin_list();       //initial 2-pin net container
     init_flute();           //initial the information of pin's coordinate and group by net for flute
@@ -193,7 +189,7 @@ void Construct_2d_tree::gen_FR_congestion_map() {
 
 //for storing the RSMT which returned by flute
     Flute netRoutingTreeRouter;
-    flutetree.resize(rr_map.get_netNumber());
+    std::vector<Tree> flutetree(rr_map.get_netNumber());
 
 //Get every net's possible RSMT by flute, then use it to calculate the possible congestion
 //In this section, we won't get a real routing result, but a possible congestion information.
@@ -203,30 +199,29 @@ void Construct_2d_tree::gen_FR_congestion_map() {
         printf("bbox route net %d start...pin_num=%d\n",i,rr_map.get_netPinNumber(i));
 #endif
 
+        Tree& tree = flutetree[i];
 //call flute to gen steiner tree and put the result in flutetree[]
-        netRoutingTreeRouter.routeNet(rr_map.get_nPin(i), flutetree[i]);
+        netRoutingTreeRouter.routeNet(rr_map.get_nPin(i), tree);
 
 //The total node # in a tree, those nodes include pin and steiner point
 //And it is defined as ((2 * degree of a tree) - 2) by the authors of flute
-        flutetree[i].number = 2 * flutetree[i].deg - 2;	//add 0403
+        tree.number = 2 * tree.deg - 2;	//add 0403
 
         /*2-pin bounding box assign demand 0.5, remember not to repeat the same net*/
-        for (int j = 0; j < flutetree[i].number; ++j) {	//for all pins and steiner points
+        for (int j = 0; j < tree.number; ++j) {
+            Branch& branch = tree.branch[j];
+            //for all pins and steiner points
 
-            int x1 = (int) flutetree[i].branch[j].x;
-            int y1 = (int) flutetree[i].branch[j].y;
-            int x2 = (int) flutetree[i].branch[flutetree[i].branch[j].n].x;
-            int y2 = (int) flutetree[i].branch[flutetree[i].branch[j].n].y;
-            if (!(x1 == x2 && y1 == y2))	//start and end are not the same point
-            {
-                Two_pin_element_2d two_pin;
-                two_pin.pin1.x = x1;
-                two_pin.pin1.y = y1;
-                two_pin.pin2.x = x2;
-                two_pin.pin2.y = y2;
-                two_pin.net_id = i;
-                bbox_2pin_list[i].push_back(two_pin);
+            Two_pin_element_2d two_pin;
+            two_pin.pin1.x = (int) branch.x;
+            two_pin.pin1.y = (int) branch.y;
+            two_pin.pin2.x = (int) tree.branch[branch.n].x;
+            two_pin.pin2.y = (int) tree.branch[branch.n].y;
+            two_pin.net_id = i;
+            if (two_pin.pin1 != two_pin.pin2) {
+                bbox_2pin_list[i].push_back(std::move(two_pin));
             }
+
         }
 
         bbox_route(bbox_2pin_list[i], 0.5);
@@ -245,14 +240,14 @@ void Construct_2d_tree::gen_FR_congestion_map() {
     for (int i = 0; i < rr_map.get_netNumber(); ++i) {
         sort_net.push_back(&rr_map.get_netList()[i]);
     }
-    sort(sort_net.begin(), sort_net.end(), [&]( const Net* a, const Net* b ) {return comp_net(a,b);});
+    sort(sort_net.begin(), sort_net.end(), [&]( const Net* a, const Net* b ) {return Net::comp_net(*a,*b);});
 
 //Now begins the initial routing by pattern routing
 //Edge shifting will also be applied to the routing.
     for (const Net* it : sort_net) {
         int netId = it->id;
-        Tree& ftreeId = ftreeId;
-        edge_shifting(&ftreeId);
+        Tree& ftreeId = flutetree[netId];
+        edge_shifting(ftreeId);
         global_flutetree = ftreeId;
 
         std::vector<int> flute_order(2 * ftreeId.deg - 2);
@@ -296,579 +291,292 @@ void Construct_2d_tree::gen_FR_congestion_map() {
 #ifdef DEBUG1
     print_cap("cur");
 #endif
-    cal_max_overflow();
+    congestion.cal_max_overflow();
 
 }
 
 //=====================edge shifting=============================
 //Return the smaller cost of L-shape path or the only one cost of flap path
-double Construct_2d_tree::compute_L_pattern_cost(int x1, int y1, int x2, int y2, int net_id) {
-    Two_pin_element_2d path1, path2;
-    Monotonic_element max_cong_path1, max_cong_path2;
+double Construct_2d_tree::compute_L_pattern_cost(const Coordinate_2d& c1, const Coordinate_2d& c2, int net_id) {
+    Two_pin_element_2d path1;
+    Two_pin_element_2d path2;
 
-    if (x1 > x2) {
-        swap(x1, x2);
-        swap(y1, y2);
-    }
-
-    if (x1 < x2 && y1 < y2) {
-        max_cong_path1 = L_pattern_max_cong(x1, y1, x2, y2, FRONT, RIGHT, &path1, net_id);
-        max_cong_path2 = L_pattern_max_cong(x1, y1, x2, y2, RIGHT, FRONT, &path2, net_id);
-
-        if ((&max_cong_path1) == (compare_cost(&max_cong_path1, &max_cong_path2)))
-            return max_cong_path1.total_cost;
-        else
-            return max_cong_path2.total_cost;
-    } else if (x1 < x2 && y1 > y2) {
-        max_cong_path1 = L_pattern_max_cong(x1, y1, x2, y2, BACK, RIGHT, &path1, net_id);
-        max_cong_path2 = L_pattern_max_cong(x1, y1, x2, y2, RIGHT, BACK, &path2, net_id);
-
-        if ((&max_cong_path1) == (compare_cost(&max_cong_path1, &max_cong_path2)))
-            return max_cong_path1.total_cost;
-        else
-            return max_cong_path2.total_cost;
-    } else // vertical or horizontal line
-    {
-        if (y1 > y2) {
-            swap(y1, y2);
-        }
-        max_cong_path1 = L_pattern_max_cong(x1, y1, x2, y2, FRONT, RIGHT, &path1, net_id);
+    Monotonic_element max_cong_path1 = L_pattern_max_cong(c1, c2, path1, net_id);
+    if (c1 == c2) {
         return max_cong_path1.total_cost;
     }
+    Monotonic_element max_cong_path2 = L_pattern_max_cong(c2, c1, path2, net_id);
+
+    if (max_cong_path1 < max_cong_path2) {
+        return max_cong_path1.total_cost;
+    } else {
+        return max_cong_path2.total_cost;
+    }
+
 }
 
-void Construct_2d_tree::find_saferange(Vertex_flute_ptr a, Vertex_flute_ptr b, int *low, int *high, int dir) {
-    Vertex_flute_ptr cur, find;
+Vertex_flute_ptr Construct_2d_tree::findY(Vertex_flute& a, std::function<bool(const int& i, const int& j)> test) {
+    Vertex_flute_ptr cur = &a;
+    while (cur->type != PIN) {
+        Vertex_flute_ptr find = *(cur->neighbor.begin());
+        for (vector<Vertex_flute_ptr>::iterator nei = cur->neighbor.begin() + 1; nei != cur->neighbor.end(); ++nei) {
+            if (test((*nei)->c.y, find->c.y)) {
+                find = *nei;
+            }
+        }
+        cur = find;
+        if ((cur->c.y == a.c.y) || (cur->c.x != a.c.x)) {	//no neighboring vertex next to  a
+            break;
+        }
+    }
+    return cur;
+}
 
+Vertex_flute_ptr Construct_2d_tree::findX(Vertex_flute& a, std::function<bool(const int& i, const int& j)> test) {
+    Vertex_flute_ptr cur = &a;
+    while (cur->type != PIN) {
+        Vertex_flute_ptr find = *(cur->neighbor.begin());
+        for (vector<Vertex_flute_ptr>::iterator nei = cur->neighbor.begin() + 1; nei != cur->neighbor.end(); ++nei) {
+            if (test((*nei)->c.x, find->c.x)) {
+                find = *nei;
+            }
+        }
+        cur = find;
+        if (cur->c.x == a.c.x || cur->c.y != a.c.y) {	//no neighboring vertex in the right of a
+            break;
+        }
+    }
+    return cur;
+}
+
+void Construct_2d_tree::find_saferange(Vertex_flute& a, Vertex_flute& b, int *low, int *high, int dir) {
+    auto greater = [&](const int& i,const int& j) {
+        return i > j;
+    };
+    auto less = [&](const int& i,const int& j) {
+        return i < j;
+    };
 //Horizontal edge doing vertical shifting
     if (dir == HOR) {
-        cur = a;
-        while (cur->type != PIN) {
-            find = *(cur->neighbor.begin());
-            for (vector<Vertex_flute_ptr>::iterator nei = cur->neighbor.begin() + 1; nei != cur->neighbor.end(); ++nei) {
-                if ((*nei)->y > find->y) {
-                    find = *nei;
-                }
-            }
-            cur = find;
-            if ((cur->y == a->y) || (cur->x != a->x))
-                break;
-        }
-        *high = min(*high, cur->y);
-
-        cur = b;
-        while (cur->type != PIN) {
-            find = *(cur->neighbor.begin());
-            for (vector<Vertex_flute_ptr>::iterator nei = cur->neighbor.begin() + 1; nei != cur->neighbor.end(); ++nei)
-                if ((*nei)->y > find->y)
-                    find = *nei;
-            cur = find;
-            if ((cur->y == b->y) || (cur->x != b->x))
-                break;
-        }
-        *high = min(*high, cur->y);
-
-        cur = a;
-        while (cur->type != PIN) {
-            find = *(cur->neighbor.begin());
-            for (vector<Vertex_flute_ptr>::iterator nei = cur->neighbor.begin() + 1; nei != cur->neighbor.end(); ++nei)
-                if ((*nei)->y < find->y)
-                    find = *nei;
-            cur = find;
-            if (cur->y == a->y || cur->x != a->x)
-                break;
-        }
-        *low = max(*low, cur->y);
-
-        cur = b;
-        while (cur->type != PIN) {
-            find = *(cur->neighbor.begin());
-            for (vector<Vertex_flute_ptr>::iterator nei = cur->neighbor.begin() + 1; nei != cur->neighbor.end(); ++nei)
-                if ((*nei)->y < find->y)
-                    find = *nei;
-            cur = find;
-            if ((cur->y == b->y) || (cur->x != b->x))
-                break;
-        }
-        *low = max(*low, cur->y);
+        *high = std::min(*high, findY(a, greater)->c.y);
+        *high = std::min(*high, findY(b, greater)->c.y);
+        *low = std::max(*low, findY(a, less)->c.y);
+        *low = std::max(*low, findY(b, less)->c.y);
     } else {
-        cur = a;
-        while (cur->type != PIN) {
-            find = *(cur->neighbor.begin());
-            for (vector<Vertex_flute_ptr>::iterator nei = cur->neighbor.begin() + 1; nei != cur->neighbor.end(); ++nei)
-                if ((*nei)->x > find->x)
-                    find = *nei;
-            cur = find;
-            if (cur->x == a->x || cur->y != a->y)	//no neighboring vertex in the right of a
-                break;
-        }
-        *high = min(*high, cur->x);
-        cur = b;
-        while (cur->type != PIN) {
-            find = *(cur->neighbor.begin());
-            for (vector<Vertex_flute_ptr>::iterator nei = cur->neighbor.begin() + 1; nei != cur->neighbor.end(); ++nei)
-                if ((*nei)->x > find->x)
-                    find = *nei;
-            cur = find;
-            if (cur->x == b->x || cur->y != b->y)	//no neighboring vertex in the right of b
-                break;
-        }
-        *high = min(*high, cur->x);
-        cur = a;
-        while (cur->type != PIN) {
-            find = *(cur->neighbor.begin());
-            for (vector<Vertex_flute_ptr>::iterator nei = cur->neighbor.begin() + 1; nei != cur->neighbor.end(); ++nei)
-                if ((*nei)->x < find->x)
-                    find = *nei;
-            cur = find;
-            if (cur->x == a->x || cur->y != a->y)	//no neighboring vertex in the left of a
-                break;
-        }
-        *low = max(*low, cur->x);
-        cur = b;
-        while (cur->type != PIN) {
-            find = *(cur->neighbor.begin());
-            for (vector<Vertex_flute_ptr>::iterator nei = cur->neighbor.begin() + 1; nei != cur->neighbor.end(); ++nei)
-                if ((*nei)->x < find->x)
-                    find = *nei;
-            cur = find;
-            if (cur->x == b->x || cur->y != b->y)	//no neighboring vertex in the left of b
-                break;
-        }
-        *low = max(*low, cur->x);
+        *high = min(*high, findX(a, greater)->c.x);
+        *high = min(*high, findX(b, greater)->c.x);
+        *low = max(*low, findX(a, less)->c.x);
+        *low = max(*low, findX(b, less)->c.x);
     }
 }
 
-void Construct_2d_tree::merge_vertex(Vertex_flute_ptr keep, Vertex_flute_ptr deleted) {
+void Construct_2d_tree::merge_vertex(Vertex_flute& keep, Vertex_flute& deleted) {
 
-    for (vector<Vertex_flute_ptr>::iterator nei = deleted->neighbor.begin(); nei != deleted->neighbor.end(); ++nei) {
-        if ((*nei) != keep)	//nei is not keep itself
-                {
-            keep->neighbor.push_back(*nei);	//add deleted's neighbor to keep
-            for (int find = 0;; ++find) {
-//#ifdef DEBUG_EDGESHIFT
-                if (find == (int) (*nei)->neighbor.size()) {
-                    printf("wrong in merge_vertex\n");
-                    exit(0);
-                }
-//#endif
-                if ((*nei)->neighbor[find]->x == deleted->x && (*nei)->neighbor[find]->y == deleted->y)	//neighbor[find] equals to deleted
-                        {
-                    (*nei)->neighbor[find] = keep;	//replace its neighbor as keep
+    for (Vertex_flute_ptr nei : deleted.neighbor) {
+        if (nei != &keep) {	//nei is not keep itself
+            keep.neighbor.push_back(nei);	//add deleted's neighbor to keep
+            for (Vertex_flute_ptr& find : nei->neighbor) {
+                if (find->c == deleted.c) {	//neighbor[find] equals to deleted
+                    find = &keep;	//replace its neighbor as keep
                     break;
                 }
             }
         }
     }
-    deleted->type = DELETED;
+    deleted.type = DELETED;
 }
 
-bool Construct_2d_tree::move_edge(Vertex_flute_ptr a, Vertex_flute_ptr b, int best_pos, int dir) {
+void Construct_2d_tree::move_edge_hor(Vertex_flute& a, int best_pos, Vertex_flute& b, Vertex_flute_ptr& overlap_a, std::function<bool(const int& i, const int& j)> test) {
+
     vector<Vertex_flute_ptr> st_pt;
-    Vertex_flute_ptr cur, find;
+    //move up
+    //find all steiner points between a and best_pos
+    Vertex_flute_ptr cur = &a;
+    while (test(cur->c.y, best_pos)) {
+        Vertex_flute_ptr find = *(cur->neighbor.begin());
+        for (vector<Vertex_flute_ptr>::iterator nei = cur->neighbor.begin() + 1; nei != cur->neighbor.end(); ++nei)
+            if (test(find->c.y, (*nei)->c.y))
+                find = *nei;
+        cur = find;
+        st_pt.push_back(cur);
+    }
+    //exchange neighb
+    for (int i = 0; i < (int) (st_pt.size()); ++i) {
+        if (test(st_pt[i]->c.y, best_pos)) {
+            int ind1 = 0;
+            for (ind1 = 0;; ++ind1) {
+                if (!((a.neighbor[ind1]->c == b.c) || (a.neighbor[ind1]->c == st_pt[i]->c))) {
+                    break;
+                }
+            }
+            int ind2 = 0;
+            for (ind2 = 0;; ++ind2)
+                if (test(st_pt[i]->c.y, st_pt[i]->neighbor[ind2]->c.y))
+                    break;
+            for (int j = 0;; ++j)
+                if (a.neighbor[ind1]->neighbor[j] == &a) {
+                    a.neighbor[ind1]->neighbor[j] = st_pt[i];
+                    break;
+                }
+            for (int j = 0;; ++j)
+                if (st_pt[i]->neighbor[ind2]->neighbor[j] == st_pt[i]) {
+                    st_pt[i]->neighbor[ind2]->neighbor[j] = &a;
+                    break;
+                }
+            swap(a.neighbor[ind1], st_pt[i]->neighbor[ind2]);
+            a.c.y = st_pt[i]->c.y;
+        } else if (st_pt[i]->c.x == a.c.x && st_pt[i]->c.y == best_pos)
+            overlap_a = st_pt[i];
+        else
+            break;
+    }
+    return;
+}
+
+void Construct_2d_tree::move_edge_ver(Vertex_flute& a, int best_pos, Vertex_flute& b, Vertex_flute_ptr& overlap_a, std::function<bool(const int& i, const int& j)> test) {
+    //find all steiner points between a and best_pos
+    vector<Vertex_flute_ptr> st_pt;
+    Vertex_flute_ptr cur = &a;
+    while (test(cur->c.x, best_pos)) {
+        Vertex_flute_ptr find = *(cur->neighbor.begin());
+        for (vector<Vertex_flute_ptr>::iterator nei = cur->neighbor.begin() + 1; nei != cur->neighbor.end(); ++nei)
+            if (test(find->c.x, (*nei)->c.x))
+                find = *nei;
+        cur = find;
+        st_pt.push_back(cur);
+    }
+    //exchange neighbor
+    for (int i = 0; i < (int) (st_pt.size()); ++i) {
+        if (test(st_pt[i]->c.x, best_pos)) {
+            int ind1 = 0;
+            for (ind1 = 0;; ++ind1)
+                if (!((a.neighbor[ind1]->c == b.c) || (a.neighbor[ind1]->c == st_pt[i]->c)))
+                    break;
+            int ind2 = 0;
+            for (ind2 = 0;; ++ind2)
+                if (test(st_pt[i]->c.x, st_pt[i]->neighbor[ind2]->c.x))
+                    break;
+            for (int j = 0;; ++j)
+                if (a.neighbor[ind1]->neighbor[j] == &a) {
+                    a.neighbor[ind1]->neighbor[j] = st_pt[i];
+                    break;
+                }
+            for (int j = 0;; ++j)
+                if (st_pt[i]->neighbor[ind2]->neighbor[j] == st_pt[i]) {
+                    st_pt[i]->neighbor[ind2]->neighbor[j] = &a;
+                    break;
+                }
+            swap(a.neighbor[ind1], st_pt[i]->neighbor[ind2]);
+            a.c.x = st_pt[i]->c.x;
+        } else if (st_pt[i]->c.x == best_pos && st_pt[i]->c.y == a.c.y)
+            overlap_a = st_pt[i];
+        else
+            break;
+    }
+
+}
+
+bool Construct_2d_tree::move_edge(Vertex_flute& a, Vertex_flute& b, int best_pos, int dir) {
+    auto greater = [&](const int& i,const int& j) {
+        return i > j;
+    };
+    auto less = [&](const int& i,const int& j) {
+        return i < j;
+    };
     Vertex_flute_ptr overlap_a, overlap_b;
-    int ind1, ind2;
 
     overlap_a = overlap_b = NULL;
     if (dir == HOR) {
-        if (best_pos > a->y)	//move up
-                {
+        if (best_pos > a.c.y) {	//move up
             //find all steiner points between a and best_pos
-            cur = a;
-            while (cur->y < best_pos) {
-                find = *(cur->neighbor.begin());
-                for (vector<Vertex_flute_ptr>::iterator nei = cur->neighbor.begin() + 1; nei != cur->neighbor.end(); ++nei)
-                    if ((*nei)->y > find->y)
-                        find = *nei;
-                cur = find;
-                st_pt.push_back(cur);
-            }
-            //exchange neighb
-            for (int i = 0; i < (int) st_pt.size(); ++i) {
-                if (st_pt[i]->y < best_pos) {
-                    for (ind1 = 0;; ++ind1) {
-                        if (!(((a->neighbor[ind1]->x == b->x) && (a->neighbor[ind1]->y == b->y)) || ((a->neighbor[ind1]->x == st_pt[i]->x) && (a->neighbor[ind1]->y == st_pt[i]->y)))) {
-                            break;
-                        }
-                    }
-                    for (ind2 = 0;; ++ind2)
-                        if (st_pt[i]->neighbor[ind2]->y > st_pt[i]->y)
-                            break;
-                    for (int j = 0;; ++j)
-                        if (a->neighbor[ind1]->neighbor[j] == a) {
-                            a->neighbor[ind1]->neighbor[j] = st_pt[i];
-                            break;
-                        }
-                    for (int j = 0;; ++j)
-                        if (st_pt[i]->neighbor[ind2]->neighbor[j] == st_pt[i]) {
-                            st_pt[i]->neighbor[ind2]->neighbor[j] = a;
-                            break;
-                        }
-
-                    swap(a->neighbor[ind1], st_pt[i]->neighbor[ind2]);
-
-                    a->y = st_pt[i]->y;
-                } else if (st_pt[i]->x == a->x && st_pt[i]->y == best_pos)
-                    overlap_a = st_pt[i];
-                else
-                    break;
-            }
-            st_pt.clear();
-            cur = b;
-            while (cur->y < best_pos) {
-                find = *(cur->neighbor.begin());
-                for (vector<Vertex_flute_ptr>::iterator nei = cur->neighbor.begin() + 1; nei != cur->neighbor.end(); ++nei)
-                    if ((*nei)->y > find->y)
-                        find = *nei;
-                cur = find;
-                st_pt.push_back(cur);
-            }
-            for (int i = 0; i < (int) st_pt.size(); ++i) {
-                if (st_pt[i]->y < best_pos) {
-                    for (ind1 = 0;; ++ind1)
-                        if (!((b->neighbor[ind1]->x == a->x && b->neighbor[ind1]->y == a->y) || (b->neighbor[ind1]->x == st_pt[i]->x && b->neighbor[ind1]->y == st_pt[i]->y)))
-                            break;
-                    for (ind2 = 0;; ++ind2)
-                        if (st_pt[i]->neighbor[ind2]->y > st_pt[i]->y)
-                            break;
-
-                    for (int j = 0;; ++j)
-                        if (b->neighbor[ind1]->neighbor[j] == b) {
-                            b->neighbor[ind1]->neighbor[j] = st_pt[i];
-                            break;
-                        }
-                    for (int j = 0;; ++j)
-                        if (st_pt[i]->neighbor[ind2]->neighbor[j] == st_pt[i]) {
-                            st_pt[i]->neighbor[ind2]->neighbor[j] = b;
-                            break;
-                        }
-
-                    swap(b->neighbor[ind1], st_pt[i]->neighbor[ind2]);
-
-                    b->y = st_pt[i]->y;
-                } else if (st_pt[i]->x == b->x && st_pt[i]->y == best_pos)
-                    overlap_b = st_pt[i];
-                else
-                    break;
-            }
-            st_pt.clear();
-
-            a->y = best_pos;
-            b->y = best_pos;
-        } else	//move down
-        {
-            cur = a;
-            while (cur->y > best_pos) {
-                find = *(cur->neighbor.begin());
-                for (vector<Vertex_flute_ptr>::iterator nei = cur->neighbor.begin() + 1; nei != cur->neighbor.end(); ++nei)
-                    if ((*nei)->y < find->y)
-                        find = *nei;
-                cur = find;
-                st_pt.push_back(cur);
-            }
-            for (int i = 0; i < (int) st_pt.size(); ++i) {
-                if (st_pt[i]->y > best_pos) {
-                    for (ind1 = 0;; ++ind1)
-                        if (!((a->neighbor[ind1]->x == b->x && a->neighbor[ind1]->y == b->y) || (a->neighbor[ind1]->x == st_pt[i]->x && a->neighbor[ind1]->y == st_pt[i]->y)))
-                            break;
-                    for (ind2 = 0;; ++ind2)
-                        if (st_pt[i]->neighbor[ind2]->y < st_pt[i]->y)
-                            break;
-                    for (int j = 0;; ++j)
-                        if (a->neighbor[ind1]->neighbor[j] == a) {
-                            a->neighbor[ind1]->neighbor[j] = st_pt[i];
-                            break;
-                        }
-                    for (int j = 0;; ++j)
-                        if (st_pt[i]->neighbor[ind2]->neighbor[j] == st_pt[i]) {
-                            st_pt[i]->neighbor[ind2]->neighbor[j] = a;
-                            break;
-                        }
-
-                    swap(a->neighbor[ind1], st_pt[i]->neighbor[ind2]);
-
-                    a->y = st_pt[i]->y;
-                } else if (st_pt[i]->x == a->x && st_pt[i]->y == best_pos)
-                    overlap_a = st_pt[i];
-                else
-                    break;
-            }
-            st_pt.clear();
-            cur = b;
-            while (cur->y > best_pos) {
-                find = *(cur->neighbor.begin());
-                for (vector<Vertex_flute_ptr>::iterator nei = cur->neighbor.begin() + 1; nei != cur->neighbor.end(); ++nei)
-                    if ((*nei)->y < find->y)
-                        find = *nei;
-                cur = find;
-                st_pt.push_back(cur);
-            }
-            for (int i = 0; i < (int) st_pt.size(); ++i) {
-                if (st_pt[i]->y > best_pos) {
-                    for (ind1 = 0;; ++ind1)
-                        if (!((b->neighbor[ind1]->x == a->x && b->neighbor[ind1]->y == a->y) || (b->neighbor[ind1]->x == st_pt[i]->x && b->neighbor[ind1]->y == st_pt[i]->y)))
-                            break;
-                    for (ind2 = 0;; ++ind2)
-                        if (st_pt[i]->neighbor[ind2]->y < st_pt[i]->y)
-                            break;
-
-                    for (int j = 0;; ++j)
-                        if (b->neighbor[ind1]->neighbor[j] == b) {
-                            b->neighbor[ind1]->neighbor[j] = st_pt[i];
-                            break;
-                        }
-                    for (int j = 0;; ++j)
-                        if (st_pt[i]->neighbor[ind2]->neighbor[j] == st_pt[i]) {
-                            st_pt[i]->neighbor[ind2]->neighbor[j] = b;
-                            break;
-                        }
-
-                    swap(b->neighbor[ind1], st_pt[i]->neighbor[ind2]);
-
-                    b->y = st_pt[i]->y;
-                } else if (st_pt[i]->x == b->x && st_pt[i]->y == best_pos)
-                    overlap_b = st_pt[i];
-                else
-                    break;
-            }
-            st_pt.clear();
-
-            a->y = best_pos;
-            b->y = best_pos;
+            move_edge_hor(a, best_pos, b, overlap_a, less);
+            move_edge_hor(b, best_pos, a, overlap_b, less);
+            a.c.y = best_pos;
+            b.c.y = best_pos;
+        } else {	//move down
+            move_edge_hor(a, best_pos, b, overlap_a, greater);
+            move_edge_hor(b, best_pos, a, overlap_b, greater);
+            a.c.y = best_pos;
+            b.c.y = best_pos;
         }
-    } else	//VER
-    {
-        if (best_pos > a->x)	//move right
-                {
+    } else {	//VER
+        if (best_pos > a.c.x) {	//move right
             //find all steiner points between a and best_pos
-            cur = a;
-            while (cur->x < best_pos) {
-                find = *(cur->neighbor.begin());
-                for (vector<Vertex_flute_ptr>::iterator nei = cur->neighbor.begin() + 1; nei != cur->neighbor.end(); ++nei)
-                    if ((*nei)->x > find->x)
-                        find = *nei;
-                cur = find;
-                st_pt.push_back(cur);
-            }
-            //exchange neighbor
-            for (int i = 0; i < (int) st_pt.size(); ++i) {
-                if (st_pt[i]->x < best_pos) {
-                    for (ind1 = 0;; ++ind1)
-                        if (!((a->neighbor[ind1]->x == b->x && a->neighbor[ind1]->y == b->y) || (a->neighbor[ind1]->x == st_pt[i]->x && a->neighbor[ind1]->y == st_pt[i]->y)))
-                            break;
-                    for (ind2 = 0;; ++ind2)
-                        if (st_pt[i]->neighbor[ind2]->x > st_pt[i]->x)
-                            break;
-
-                    for (int j = 0;; ++j)
-                        if (a->neighbor[ind1]->neighbor[j] == a) {
-                            a->neighbor[ind1]->neighbor[j] = st_pt[i];
-                            break;
-                        }
-                    for (int j = 0;; ++j)
-                        if (st_pt[i]->neighbor[ind2]->neighbor[j] == st_pt[i]) {
-                            st_pt[i]->neighbor[ind2]->neighbor[j] = a;
-                            break;
-                        }
-
-                    swap(a->neighbor[ind1], st_pt[i]->neighbor[ind2]);
-
-                    a->x = st_pt[i]->x;
-                } else if (st_pt[i]->x == best_pos && st_pt[i]->y == a->y)
-                    overlap_a = st_pt[i];
-                else
-                    break;
-            }
-            st_pt.clear();
-            cur = b;
-            while (cur->x < best_pos) {
-                find = *(cur->neighbor.begin());
-                for (vector<Vertex_flute_ptr>::iterator nei = cur->neighbor.begin() + 1; nei != cur->neighbor.end(); ++nei)
-                    if ((*nei)->x > find->x)
-                        find = *nei;
-                cur = find;
-                st_pt.push_back(cur);
-            }
-            //exchange neighbor
-            for (int i = 0; i < (int) st_pt.size(); ++i) {
-                if (st_pt[i]->x < best_pos) {
-                    for (ind1 = 0;; ++ind1)
-                        if (!((b->neighbor[ind1]->x == a->x && b->neighbor[ind1]->y == a->y) || (b->neighbor[ind1]->x == st_pt[i]->x && b->neighbor[ind1]->y == st_pt[i]->y)))
-                            break;
-                    for (ind2 = 0;; ++ind2)
-                        if (st_pt[i]->neighbor[ind2]->x > st_pt[i]->x)
-                            break;
-
-                    for (int j = 0;; ++j)
-                        if (b->neighbor[ind1]->neighbor[j] == b) {
-                            b->neighbor[ind1]->neighbor[j] = st_pt[i];
-                            break;
-                        }
-                    for (int j = 0;; ++j)
-                        if (st_pt[i]->neighbor[ind2]->neighbor[j] == st_pt[i]) {
-                            st_pt[i]->neighbor[ind2]->neighbor[j] = b;
-                            break;
-                        }
-
-                    swap(b->neighbor[ind1], st_pt[i]->neighbor[ind2]);
-
-                    b->x = st_pt[i]->x;
-                } else if (st_pt[i]->x == best_pos && st_pt[i]->y == b->y)
-                    overlap_b = st_pt[i];
-                else
-                    break;
-            }
-            st_pt.clear();
-
-            a->x = best_pos;
-            b->x = best_pos;
-        } else	//move left
-        {
-            cur = a;
-            while (cur->x > best_pos) {
-                find = *(cur->neighbor.begin());
-                for (vector<Vertex_flute_ptr>::iterator nei = cur->neighbor.begin() + 1; nei != cur->neighbor.end(); ++nei)
-                    if ((*nei)->x < find->x)
-                        find = *nei;
-                cur = find;
-                st_pt.push_back(cur);
-            }
-            for (int i = 0; i < (int) st_pt.size(); ++i) {
-                if (st_pt[i]->x > best_pos) {
-                    for (ind1 = 0;; ++ind1)
-                        if (!((a->neighbor[ind1]->x == b->x && a->neighbor[ind1]->y == b->y) || (a->neighbor[ind1]->x == st_pt[i]->x && a->neighbor[ind1]->y == st_pt[i]->y)))
-                            break;
-                    for (ind2 = 0;; ++ind2)
-                        if (st_pt[i]->neighbor[ind2]->x < st_pt[i]->x)
-                            break;
-
-                    for (int j = 0;; ++j)
-                        if (a->neighbor[ind1]->neighbor[j] == a) {
-                            a->neighbor[ind1]->neighbor[j] = st_pt[i];
-                            break;
-                        }
-                    for (int j = 0;; ++j)
-                        if (st_pt[i]->neighbor[ind2]->neighbor[j] == st_pt[i]) {
-                            st_pt[i]->neighbor[ind2]->neighbor[j] = a;
-                            break;
-                        }
-
-                    swap(a->neighbor[ind1], st_pt[i]->neighbor[ind2]);
-
-                    a->x = st_pt[i]->x;
-                } else if (st_pt[i]->x == best_pos && st_pt[i]->y == a->y)
-                    overlap_a = st_pt[i];
-                else
-                    break;
-            }
-            st_pt.clear();
-            cur = b;
-            while (cur->x > best_pos) {
-                find = *(cur->neighbor.begin());
-                for (vector<Vertex_flute_ptr>::iterator nei = cur->neighbor.begin() + 1; nei != cur->neighbor.end(); ++nei)
-                    if ((*nei)->x < find->x)
-                        find = *nei;
-                cur = find;
-                st_pt.push_back(cur);
-            }
-            for (int i = 0; i < (int) st_pt.size(); ++i) {
-                if (st_pt[i]->x > best_pos) {
-                    for (ind1 = 0;; ++ind1)
-                        if (!((b->neighbor[ind1]->x == a->x && b->neighbor[ind1]->y == a->y) || (b->neighbor[ind1]->x == st_pt[i]->x && b->neighbor[ind1]->y == st_pt[i]->y)))
-                            break;
-                    for (ind2 = 0;; ++ind2)
-                        if (st_pt[i]->neighbor[ind2]->x < st_pt[i]->x)
-                            break;
-
-                    for (int j = 0;; ++j)
-                        if (b->neighbor[ind1]->neighbor[j] == b) {
-                            b->neighbor[ind1]->neighbor[j] = st_pt[i];
-                            break;
-                        }
-                    for (int j = 0;; ++j)
-                        if (st_pt[i]->neighbor[ind2]->neighbor[j] == st_pt[i]) {
-                            st_pt[i]->neighbor[ind2]->neighbor[j] = b;
-                            break;
-                        }
-
-                    swap(b->neighbor[ind1], st_pt[i]->neighbor[ind2]);
-
-                    b->x = st_pt[i]->x;
-                } else if (st_pt[i]->x == best_pos && st_pt[i]->y == b->y)
-                    overlap_b = st_pt[i];
-                else
-                    break;
-            }
-            st_pt.clear();
-
-            a->x = best_pos;
-            b->x = best_pos;
+            move_edge_ver(a, best_pos, b, overlap_a, less);
+            move_edge_ver(b, best_pos, a, overlap_b, less);
+            a.c.x = best_pos;
+            b.c.x = best_pos;
+        } else {	//move left
+            move_edge_ver(a, best_pos, b, overlap_a, greater);
+            move_edge_ver(b, best_pos, a, overlap_b, greater);
+            a.c.x = best_pos;
+            b.c.x = best_pos;
         }
     }
-
     bool ret = false;
     if (overlap_a != NULL) {
-        merge_vertex(overlap_a, a);
+        merge_vertex(*overlap_a, a);
         ret = true;
     }
     if (overlap_b != NULL)
-        merge_vertex(overlap_b, b);
+        merge_vertex(*overlap_b, b);
 
     return ret;
 }
 
-void Construct_2d_tree::traverse_tree(double *ori_cost) {
+void Construct_2d_tree::traverse_tree(double& ori_cost, std::vector<Vertex_flute>& vertex_fl) {
     double cur_cost, tmp_cost, best_cost;
     int best_pos = 0;
-    Vertex_flute_ptr node;
 
-    for (vector<Vertex_flute_ptr>::iterator it_v = vertex_fl.begin(); it_v != vertex_fl.end(); ++it_v) {
-        node = *it_v;
-        node->visit = 1;
+    for (Vertex_flute& node : vertex_fl) {
 
-        if (node->type == STEINER && node->neighbor.size() <= 3)	//remove3!!!
-                {
-            for (vector<Vertex_flute_ptr>::iterator it = node->neighbor.begin(); it != node->neighbor.end(); ++it)
-                if ((*it)->visit == 0 && ((*it)->type == STEINER && (*it)->neighbor.size() <= 3))	//!!!remove3!!
+        node.visit = 1;
+
+        if (node.type == STEINER && node.neighbor.size() <= 3) {	//remove3!!!
+
+            for (Vertex_flute_ptr it : node.neighbor)
+                if (it->visit == 0 && (it->type == STEINER && it->neighbor.size() <= 3))	//!!!remove3!!
                         {
-                    int low = 0, high = INT_MAX;
-                    Vertex_flute_ptr a = node, b = (*it);
+                    int low = 0;
+                    int high = INT_MAX;
+                    Vertex_flute& a = node;
+                    Vertex_flute& b = *it;
 
-                    if ((*it)->y == node->y)	//horizontal edge (vertical shifting)
-                            {
+                    if (it->c.y == node.c.y) {	//horizontal edge (vertical shifting)
+
                         find_saferange(a, b, &low, &high, HOR);		//compute safe range
-                        best_cost = *ori_cost;
-                        cur_cost = (*ori_cost) - compute_L_pattern_cost(a->x, a->y, b->x, b->y, -1);
+                        best_cost = ori_cost;
+                        cur_cost = (ori_cost) - compute_L_pattern_cost(a.c, b.c, -1);
                         for (int pos = low; pos <= high; ++pos) {
-                            tmp_cost = cur_cost + compute_L_pattern_cost(a->x, pos, b->x, pos, -1);
+                            tmp_cost = cur_cost + compute_L_pattern_cost(Coordinate_2d { a.c.x, pos }, Coordinate_2d { b.c.x, pos }, -1);
                             if (tmp_cost < best_cost) {
                                 best_cost = tmp_cost;
                                 best_pos = pos;
                             }
                         }
-                        if (best_cost < *ori_cost)	//edge need shifting
-                                {
+                        if (best_cost < ori_cost) {	//edge need shifting
+
                             move_edge(a, b, best_pos, HOR);
                             //move to best position,exchange steiner points if needed
-                            *ori_cost = best_cost;
+                            ori_cost = best_cost;
                         }
-                    } else if ((*it)->x == node->x)	//vertical edge (horizontal shifting)
+                    } else if (it->c.x == node.c.x)	//vertical edge (horizontal shifting)
                             {
                         find_saferange(a, b, &low, &high, VER);		//compute safe range
-                        best_cost = *ori_cost;
-                        cur_cost = (*ori_cost) - compute_L_pattern_cost(a->x, a->y, b->x, b->y, -1);
+                        best_cost = ori_cost;
+                        cur_cost = (ori_cost) - compute_L_pattern_cost(a.c, b.c, -1);
                         for (int pos = low; pos <= high; ++pos) {
-                            tmp_cost = cur_cost + compute_L_pattern_cost(pos, a->y, pos, b->y, -1);
+                            tmp_cost = cur_cost + compute_L_pattern_cost(Coordinate_2d { pos, a.c.y }, Coordinate_2d { pos, b.c.y }, -1);
                             if (tmp_cost < best_cost) {
                                 best_cost = tmp_cost;
                                 best_pos = pos;
                             }
                         }
-                        if (best_cost < *ori_cost)	//edge need shifting
+                        if (best_cost < ori_cost)	//edge need shifting
                                 {
                             move_edge(a, b, best_pos, VER);
                             //move to best position,exchange steiner points if needed
-                            *ori_cost = best_cost;
+                            ori_cost = best_cost;
                         }
                     } else
                         continue;
@@ -877,60 +585,64 @@ void Construct_2d_tree::traverse_tree(double *ori_cost) {
     }
 }
 
-void Construct_2d_tree::dfs_output_tree(Vertex_flute_ptr node, Tree *t) {
-    node->visit = 1;
-    t->branch[t->number].x = node->x;
-    t->branch[t->number].y = node->y;
-    node->index = t->number;
-    (t->number) += 1;
-    for (vector<Vertex_flute_ptr>::iterator it = node->neighbor.begin(); it != node->neighbor.end(); ++it) {
-        if (((*it)->visit == 0) && ((*it)->type != DELETED)) {
-            dfs_output_tree((*it), t);                  //keep tracing deeper vertice
-            t->branch[(*it)->index].n = node->index;    //make parsent of target vertex point to current vertex
+void Construct_2d_tree::dfs_output_tree(Vertex_flute& node, Tree &t) {
+    node.visit = 1;
+    t.branch[t.number].x = node.c.x;
+    t.branch[t.number].y = node.c.y;
+    node.index = t.number;
+    (t.number) += 1;
+    for (Vertex_flute_ptr it : node.neighbor) {
+        if ((it->visit == 0) && (it->type != DELETED)) {
+            dfs_output_tree(*it, t);                  //keep tracing deeper vertices
+            t.branch[it->index].n = node.index;    //make parent of target vertex point to current vertex
         }
     }
 }
 
-void Construct_2d_tree::edge_shifting(Tree *t) {
-    Vertex_flute_ptr new_v;
-    double ori_cost;            // the original cost without edge shifting
+void Construct_2d_tree::edge_shifting(Tree& t) {
 
-    ori_cost = 0;
-//creat vertex
-    for (int i = 0; i < t->deg; ++i) {
-        new_v = new Vertex_flute((int) t->branch[i].x, (int) t->branch[i].y);
-        new_v->type = PIN;
-        vertex_fl.push_back(new_v);
+    double ori_cost = 0;            // the original cost without edge shifting
+    std::vector<Vertex_flute> vertex_fl;
+//Create vertex
+    int degSize = 2 * t.deg - 2;
+    vertex_fl.reserve(degSize);
+    for (int i = 0; i < t.deg; ++i) {
+        vertex_fl.emplace_back((int) t.branch[i].x, (int) t.branch[i].y, PIN);
+
     }
-    for (int i = t->deg; i < 2 * t->deg - 2; ++i) {
-        new_v = new Vertex_flute((int) t->branch[i].x, (int) t->branch[i].y);
-        new_v->type = STEINER;
-        vertex_fl.push_back(new_v);
+    for (int i = t.deg; i < degSize; ++i) {
+        vertex_fl.emplace_back((int) t.branch[i].x, (int) t.branch[i].y, STEINER);
+
     }
 
-//creat edge
-    for (int i = 0; i < 2 * (t->deg) - 2; ++i) {
+//Create edge
+    for (int i = 0; i < degSize; ++i) {
+
+        Vertex_flute_ptr vi = &vertex_fl[i];
+        Vertex_flute_ptr vn = &vertex_fl[t.branch[i].n];
 //skip the vertex if it is the same vertex with its neighbor
-        if ((vertex_fl[i]->x == vertex_fl[t->branch[i].n]->x) && (vertex_fl[i]->y == vertex_fl[t->branch[i].n]->y))
+        if ((vi->c == vn->c))
             continue;
-        vertex_fl[i]->neighbor.push_back(vertex_fl[t->branch[i].n]);
-        vertex_fl[t->branch[i].n]->neighbor.push_back(vertex_fl[i]);
+        vi->neighbor.push_back(vn);
+        vn->neighbor.push_back(vi);
 //compute original tree cost
-        ori_cost += compute_L_pattern_cost(vertex_fl[i]->x, vertex_fl[i]->y, vertex_fl[t->branch[i].n]->x, vertex_fl[t->branch[i].n]->y, -1);
+        ori_cost += compute_L_pattern_cost(vi->c, vn->c, -1);
     }
-    std::sort(vertex_fl.begin(), vertex_fl.end(), [&](Vertex_flute_ptr a, Vertex_flute_ptr b) {return comp_vertex_fl(a,b);});
+    std::sort(vertex_fl.begin(), vertex_fl.end(), [&](const Vertex_flute& a, const Vertex_flute& b) {return Vertex_flute::comp_vertex_fl( a, b);});
 
-    for (int i = 0, j = 1; j < 2 * (t->deg) - 2; ++j) {
-        if ((vertex_fl[i]->x == vertex_fl[j]->x) && (vertex_fl[i]->y == vertex_fl[j]->y))	//j is redundant
+    for (int i = 0, j = 1; j < degSize; ++j) {
+        Vertex_flute& vi = vertex_fl[i];
+        Vertex_flute& vj = vertex_fl[j];
+        if ((vi.c == vj.c))	//j is redundant
+        {
+            vj.type = DELETED;
+            for (Vertex_flute_ptr it : vj.neighbor) {
+                if ((it->c != vi.c))	//not i,add 0430
                 {
-            vertex_fl[j]->type = DELETED;
-            for (vector<Vertex_flute_ptr>::iterator it = vertex_fl[j]->neighbor.begin(); it != vertex_fl[j]->neighbor.end(); ++it) {
-                if (((*it)->x != vertex_fl[i]->x) || ((*it)->y != vertex_fl[i]->y))	//not i,add 0430
-                        {
-                    vertex_fl[i]->neighbor.push_back(*it);
-                    for (int k = 0; k < (int) (*it)->neighbor.size(); k++) {
-                        if ((*it)->neighbor[k]->x == vertex_fl[i]->x && (*it)->neighbor[k]->y == vertex_fl[i]->y) {
-                            (*it)->neighbor[k] = vertex_fl[i];	//modify (*it)'s neighbor to i
+                    vi.neighbor.push_back(it);
+                    for (int k = 0; k < (int) it->neighbor.size(); ++k) {
+                        if (it->neighbor[k]->c == vi.c) {
+                            it->neighbor[k] = &vi;	//modify it's neighbor to i
                             break;
                         }
                     }
@@ -940,25 +652,22 @@ void Construct_2d_tree::edge_shifting(Tree *t) {
             i = j;
     }
 
-    for (int i = 0; i < 2 * t->deg - 2; ++i)
-        vertex_fl[i]->visit = 0;
-    traverse_tree(&ori_cost);	// dfs to find 2 adjacent steiner points(h or v edge) and do edge_shifhting
+    for (Vertex_flute& fl : vertex_fl) {
+        fl.visit = 0;
+    }
+    traverse_tree(ori_cost, vertex_fl);	// dfs to find 2 adjacent steiner points(h or v edge) and do edge_shifhting
 
 //Output the result (2-pin lists) to a Tree structure in DFS order
 //1. make sure every 2-pin list have not been visited
-    for (int i = 0; i < 2 * t->deg - 2; ++i) {
-        vertex_fl[i]->visit = 0;
+    for (Vertex_flute& fl : vertex_fl) {
+        fl.visit = 0;
     }
-    t->number = 0;
+    t.number = 0;
 
 //2. begin to out put the 2-pin lists to a Tree strucuture
     dfs_output_tree(vertex_fl[0], t);
-    t->branch[0].n = 0;	//because neighbor of root is not assign in dfs_output_tree()
+    t.branch[0].n = 0;	//because neighbor of root is not assign in dfs_output_tree()
 
-//3. free memory resources
-    for (int i = 0; i < (int) vertex_fl.size(); ++i)
-        delete (vertex_fl[i]);
-    vertex_fl.clear();
 }
 //=====================end edge shifting=============================
 
@@ -984,7 +693,8 @@ Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterS
         routing_parameter { routingparam }, //
         bboxRouteStateMap { rr.get_gridx(), rr.get_gridy() }, //
         rr_map { rr }, //
-        post_processing { *this } {
+        post_processing { *this }, //
+        congestion { rr.get_gridx(), rr.get_gridy() } {
 
     par_ind = 0;
 
