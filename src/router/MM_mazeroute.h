@@ -107,8 +107,6 @@ private:
     int visit_counter;
     int dst_counter;
 
-    int gridxMinusOne;
-    int gridyMinusOne;
 };
 
 #endif //INC_MM_MAZEROUTE_H

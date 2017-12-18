@@ -24,23 +24,15 @@ using std::map;
 
 struct Construct_2d_tree {
 
-    int par_ind;
     ParameterSet& parameter_set;
     RoutingParameters& routing_parameter;
 
     vector<Two_pin_element_2d> two_pin_list;
 
-    int flute_mode;
-
-    int fail_find_path_count;
-
-    std::vector<Two_pin_element> all_two_pin_list;
-
+    EdgePlane<int> bboxRouteStateMap;
     RoutingRegion& rr_map;
 
     int done_iter;
-    double alpha;
-    int total_overflow;
 
     int BOXSIZE_INC;
     std::vector<Tree> net_flutetree;
@@ -57,23 +49,17 @@ struct Construct_2d_tree {
     Tree global_flutetree;
     vector<Two_pin_list_2d> bbox_2pin_list;    //store bbox 2pin list of each net
 
-    EdgePlane<int> bboxRouteStateMap;
-
-    double adjust_value;
     Congestion congestion;
-    void insert_all_two_pin_list(Two_pin_element_2d& mn_path_2d);
 
     void printMemoryUsage(const char* msg);
 
     void init_2pin_list();
     void init_flute();
-    void free_memory_con2d();
     void bbox_route(Two_pin_list_2d& list, const double value);
+
     Monotonic_element L_pattern_max_cong(const Coordinate_2d& c1, const Coordinate_2d& c2, Two_pin_element_2d& two_pin_L_path, int net_id);
 
     void L_pattern_route(const Coordinate_2d& c1, const Coordinate_2d& c2, Two_pin_element_2d& two_pin_L_path, int net_id);
-
-    void update_congestion_map_remove_multipin_net(Two_pin_list_2d& list);
 
     void gen_FR_congestion_map();
     double compute_L_pattern_cost(const Coordinate_2d& c1, const Coordinate_2d& c2, int net_id);

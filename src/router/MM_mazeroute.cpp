@@ -23,9 +23,7 @@ Multisource_multisink_mazeroute::Multisource_multisink_mazeroute(Construct_2d_tr
         mmm_map { boost::extents[congestion.congestionMap2d.getXSize()][congestion.congestionMap2d.getYSize()] }, //
         element { }, //
         pin1_v { }, //
-        pin2_v { }, //
-        gridxMinusOne(construct_2d_tree.rr_map.get_gridx() - 1), //
-        gridyMinusOne(construct_2d_tree.rr_map.get_gridy() - 1) {
+        pin2_v { } {
     /*allocate space for mmm_map*/
 
     net_tree.resize(construct_2d_tree.rr_map.get_netNumber());

@@ -54,9 +54,9 @@ using namespace std;
 #define paraPrefix "par="
 
 void ParameterSet::setSet() {
-    push_parameter(MIN_TOTAL_COST, FASTROUTE_COST, WEIGHTED, 200, MAZE_ROUTING_MADEOF_COST, WINDOW_MODE6, T_OVERFLOW, DEC); //2	//n3
+    push_parameter(MIN_TOTAL_COST, FASTROUTE_COST, 200, MAZE_ROUTING_MADEOF_COST, WINDOW_MODE6, T_OVERFLOW, DEC); //2	//n3
 
-    printf("parameter setting:%d %d %d %d %d %d %d %d\n", pattern_route_obj, pattern_route_cost, flute_mode, iter_2d, maze_route_cost, maze_size_mode, maze_route_list_cost, maze_route_list_order);
+    printf("parameter setting:%d %d   %d %d %d %d %d\n", pattern_route_obj, pattern_route_cost, iter_2d, maze_route_cost, maze_size_mode, maze_route_list_cost, maze_route_list_order);
 }
 
 void ParameterSet::setInputfile(std::string input) {
@@ -66,10 +66,10 @@ void ParameterSet::setOutputfile(std::string output) {
     outputFileName = output;
 }
 
-void ParameterSet::push_parameter(int a, int b, int c, int d, int e, int f, int g, int h, int _overflow_threshold, int _iter_p3) {
+void ParameterSet::push_parameter(int a, int b, int d, int e, int f, int g, int h, int _overflow_threshold, int _iter_p3) {
     pattern_route_obj = a;
     pattern_route_cost = b;
-    flute_mode = c;
+
     iter_2d = d;
     maze_route_cost = e;
     maze_size_mode = f;

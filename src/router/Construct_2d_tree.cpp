@@ -12,6 +12,7 @@
 #include <iostream>
 #include <iterator>
 #include <string>
+#include <fstream>
 
 #include "../flute/flute-function.h"
 #include "../flute/flute4nthuroute.h"
@@ -70,19 +71,6 @@ void Construct_2d_tree::bbox_route(Two_pin_list_2d& list, const double value) {
 #ifdef DEBUG_BBOX
     print_cap("cur");
 #endif
-}
-
-void Construct_2d_tree::insert_all_two_pin_list(Two_pin_element_2d& mn_path_2d) {
-    all_two_pin_list.push_back(Two_pin_element());
-    Two_pin_element& mn_path = all_two_pin_list.back();
-
-    mn_path.pin1.x = mn_path_2d.pin1.x;
-    mn_path.pin1.y = mn_path_2d.pin1.y;
-    mn_path.pin2.x = mn_path_2d.pin2.x;
-    mn_path.pin2.y = mn_path_2d.pin2.y;
-    mn_path.pin1.z = mn_path.pin2.z = 0;
-    mn_path.net_id = mn_path_2d.net_id;
-
 }
 
 void Construct_2d_tree::walkL(const Coordinate_2d& a, const Coordinate_2d& b, std::function<void(const Coordinate_2d& e1, const Coordinate_2d& e2)> f) {
@@ -163,12 +151,6 @@ void Construct_2d_tree::L_pattern_route(const Coordinate_2d& c1, const Coordinat
     two_pin_L_path.net_id = net_id;
 }
 
-void Construct_2d_tree::update_congestion_map_remove_multipin_net(Two_pin_list_2d& list) {
-    for (Two_pin_element_2d& it : list) {
-        congestion.update_congestion_map_remove_two_pin_net(it);
-    }
-}
-
 //generate the congestion map by Flute with wirelength driven mode
 void Construct_2d_tree::gen_FR_congestion_map() {
     //a struct, defined by Flute library
@@ -180,7 +162,6 @@ void Construct_2d_tree::gen_FR_congestion_map() {
     congestion.init_2d_map(rr_map);          //initial congestion map: calculating every edge's capacity
     init_2pin_list();       //initial 2-pin net container
     init_flute();           //initial the information of pin's coordinate and group by net for flute
-    flute_mode = NORMAL;	//wirelength driven	mode
 
     /*assign 0.5 demand to each net*/
 #ifdef MESSAGE
@@ -673,15 +654,13 @@ void Construct_2d_tree::edge_shifting(Tree& t) {
 
 /* sort by bounding box size */
 void Construct_2d_tree::output_2_pin_list() {
-    std::sort(all_two_pin_list.begin(), all_two_pin_list.end(), [&](Two_pin_element *a, Two_pin_element *b) {
-        return comp_2pin_net(a,b);
-    });
-    std::sort(two_pin_list.begin(), two_pin_list.end(), [&](Two_pin_element_2d *a, Two_pin_element_2d *b) {
-        return comp_2pin_net_from_path(a,b);
+
+    std::sort(two_pin_list.begin(), two_pin_list.end(), [&](Two_pin_element_2d &a, Two_pin_element_2d &b) {
+        return Two_pin_element_2d::comp_2pin_net_from_path(a,b);
     });
 }
 
-/*stage 1: contruct 2d steiner tree
+/*stage 1: construct 2d steiner tree
  output 2-pin list to stage2
  return max_overflow;
  */
@@ -696,22 +675,14 @@ Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterS
         post_processing { *this }, //
         congestion { rr.get_gridx(), rr.get_gridy() } {
 
-    par_ind = 0;
-
     mazeroute_in_range = NULL;
-
-    max_congestion_factor = 1.0;
 
     /***********************
      * Global Variable End
      * ********************/
 
-    adjust_value = 0;
-
     cur_iter = -1;                  // current iteration ID.
 //edgeIterCounter = new EdgeColorMap<int>(rr_map.get_gridx(), rr_map.get_gridy(), -1);
-
-    total_overflow = 0;             // used by post-processing
 
     readLUT();                      // Function in flute, function: unknown
 
@@ -759,7 +730,6 @@ Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterS
 
         WL_Cost = factor;
         via_cost = static_cast<int>(4 * factor);
-        adjust_value = cur_iter * (1.25 + 3 * factor); //tuned for experimant
 
 #ifdef MESSAGE
         cout << "Parameters - Factor: " << factor

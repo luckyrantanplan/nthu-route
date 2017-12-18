@@ -16,21 +16,20 @@ void dataPreparation(ParameterAnalyzer& ap, RoutingRegion& builder);
 int main(int argc, char* argv[]) {
     std::cout << "=======================================================" << std::endl //
             << "= NTHU-Route                                          =" << std::endl //
-            << "= Version 2.0 is deveploped by                        =" << std::endl //
+            << "= Version 3.0 is developed by                         =" << std::endl //
             << "= Yen-Jung Chang, Yu-ting Lee, Tsung-Hsien Lee        =" << std::endl //
-            << "= Jhih-Rong Gao, Pei-Ci Wu                            =" << std::endl //
+            << "= Jhih-Rong Gao, Pei-Ci Wu, Florian Prud'homme        =" << std::endl //
             << "= Adviser: Ting-Chi Wang (tcwang@cs.nthu.edu.tw)      =" << std::endl //
             << "= http://www.cs.nthu.edu.tw/~tcwang/nthuroute/        =" << std::endl //
             << "=======================================================" << std::endl << std::endl //
             << "=======================================================" << std::endl //
-            << "= Running FLUTE for initial steiner tree              =" << std::endl //
+            << "= Running FLUTE for initial Steiner tree              =" << std::endl //
             << "= FLUTE is developed by Dr. Chris C. N. Chu           =" << std::endl //
             << "=                       Iowa State University         =" << std::endl //
             << "= http://home.eng.iastate.edu/~cnchu/                 =" << std::endl //
             << "=======================================================" << std::endl //
-            << "= Using Google Sparse Hash Map                        =" << std::endl //
+            << "= Using Boost Library                                 =" << std::endl //
             << "= For internal data structure                         =" << std::endl //
-            << "= http://code.google.com/p/google-sparsehash/         =" << std::endl //
             << "=======================================================" << std::endl;
 
     clock_t t0 = clock();

@@ -8,6 +8,9 @@ struct COUNTER {
     int id;
     double total_overflow;
     int bsize;
+
+    bool operator <(const COUNTER& o) const;
+
 };
 
 class Construct_2d_tree;
@@ -24,7 +27,6 @@ struct Post_processing {
 
     Construct_2d_tree& construct_2d_tree;
     RangeRouter& rangeRouter;
-    int comp(const COUNTER& a, const COUNTER& b);
 
     void initial_for_post_processing();
     Post_processing(Congestion& congestion, Construct_2d_tree& construct_2d_tree, RangeRouter& rangeRouter);

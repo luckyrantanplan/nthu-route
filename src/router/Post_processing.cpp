@@ -13,15 +13,9 @@
 #include "Range_router.h"
 #include "Route_2pinnets.h"
 
-int Post_processing::comp(const COUNTER& a, const COUNTER& b) {
-    if (a.total_overflow > b.total_overflow)
-        return true;
-    else if (a.total_overflow < b.total_overflow)
-        return false;
-    else if (a.bsize > b.bsize)
-        return true;
-    else
-        return false;
+bool COUNTER::operator <(const COUNTER& o) const {
+    return std::tie(total_overflow, bsize) < std::tie(o.total_overflow, o.bsize);
+
 }
 
 void Post_processing::initial_for_post_processing() {
@@ -51,7 +45,7 @@ void Post_processing::initial_for_post_processing() {
         return;
     }
 
-    std::sort(counter.begin(), counter.end(), [&](COUNTER& a,COUNTER& b ) {return comp(a,b);});	// sort by flag
+    std::sort(counter.begin(), counter.end(), [&](COUNTER& a,COUNTER& b ) {return b< a;});	// sort by flag
 
     // According other attribute to do maze routing
     for (int i = 0; i < (int) construct_2d_tree.two_pin_list.size(); ++i) {
@@ -111,10 +105,6 @@ void Post_processing::process(Route_2pinnets& route_2pinnets) {
             construct_2d_tree.BOXSIZE_INC += inc_num;
             route_2pinnets.reallocate_two_pin_list();
         }
-    }
-
-    for (int i = 0; i < (int) construct_2d_tree.two_pin_list.size(); ++i) {
-        construct_2d_tree.insert_all_two_pin_list(construct_2d_tree.two_pin_list[i]);
     }
 
 #ifdef MESSAGE
