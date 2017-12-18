@@ -1,25 +1,18 @@
 #include "Construct_2d_tree.h"
 
 #include <boost/range/iterator_range_core.hpp>
-#include <ext/type_traits.h>
 #include <algorithm>
 #include <climits>
 #include <cmath>
-#include <complex>
-#include <cstdio>
-#include <cstdlib>
-#include <functional>
 #include <iostream>
+#include <fstream>
 #include <iterator>
 #include <string>
-#include <fstream>
 
 #include "../flute/flute-function.h"
 #include "../flute/flute4nthuroute.h"
 #include "../grdb/RoutingComponent.h"
 #include "../grdb/RoutingRegion.h"
-#include "../misc/geometry.h"
-#include "Range_router.h"
 #include "Route_2pinnets.h"
 
 using namespace std;
@@ -665,26 +658,27 @@ void Construct_2d_tree::output_2_pin_list() {
  return max_overflow;
  */
 
-Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterSet& param, RoutingRegion& rr) :
+Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterSet& param, RoutingRegion& rr, Congestion& congestion) :
 //
-        //
+//
         parameter_set { param }, //
         routing_parameter { routingparam }, //
         bboxRouteStateMap { rr.get_gridx(), rr.get_gridy() }, //
         rr_map { rr }, //
-        post_processing { *this }, //
-        congestion { rr.get_gridx(), rr.get_gridy() } {
-
-    mazeroute_in_range = NULL;
+        congestion { congestion }, //
+        mazeroute_in_range { *this, congestion }, //
+        rangeRouter { *this, congestion, true }, //
+        post_processing { congestion, *this, rangeRouter }  //
+{
 
     /***********************
      * Global Variable End
      * ********************/
 
-    cur_iter = -1;                  // current iteration ID.
+    congestion.cur_iter = -1;                  // current iteration ID.
 //edgeIterCounter = new EdgeColorMap<int>(rr_map.get_gridx(), rr_map.get_gridy(), -1);
 
-    readLUT();                      // Function in flute, function: unknown
+    readLUT();                  // Function in flute, function: unknown
 
     /* TroyLee: NetDirtyBit Counter */
     NetDirtyBit = vector<bool>(rr_map.get_netNumber(), true);
@@ -700,36 +694,32 @@ Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterS
 // congestion information from this map. After that, apply edge shifting to the result
 // to get the initial solution.
 
-    cal_total_wirelength();         // The report value is the sum of demand on every edge
+    congestion.cal_total_wirelength();        // The report value is the sum of demand on every edge
 
-    RangeRouter rangeRouter(*this);
+    Route_2pinnets route_2pinnets(*this, rangeRouter, congestion);
 
-    Route_2pinnets route_2pinnets(*this, rangeRouter);
-
-    route_2pinnets.allocate_gridcell();            //question: I don't know what this for. (jalamorm, 07/10/31)
+    route_2pinnets.allocate_gridcell();        //question: I don't know what this for. (jalamorm, 07/10/31)
 
 //Make a 2-pin net list without group by net
-    for (int i = 0; i < rr_map.get_netNumber(); ++i) {
-        for (int j = 0; j < (int) net_2pin_list[i].size(); ++j) {
-            two_pin_list.push_back((*net_2pin_list[i])[j]);
+    for (Two_pin_list_2d& netList : net_2pin_list) {
+        for (Two_pin_element_2d& ele : netList) {
+            two_pin_list.push_back(ele);
         }
     }
 
     route_2pinnets.reallocate_two_pin_list();
-    mazeroute_in_range = new Multisource_multisink_mazeroute(*this);
 
-    int cur_overflow = -1;
-    used_cost_flag = HISTORY_COST;
+    congestion.used_cost_flag = HISTORY_COST;
     BOXSIZE_INC = routing_parameter.get_init_box_size_p2();
 
-    for (cur_iter = 1, done_iter = cur_iter; cur_iter <= routing_parameter.get_iteration_p2(); ++cur_iter, done_iter = cur_iter)   //do n-1 times
+    for (congestion.cur_iter = 1, done_iter = congestion.cur_iter; congestion.cur_iter <= routing_parameter.get_iteration_p2(); ++congestion.cur_iter, done_iter = congestion.cur_iter)   //do n-1 times
             {
-        std::cout << "\033[31mIteration:\033[m " << cur_iter << std::endl;
+        std::cout << "\033[31mIteration:\033[m " << congestion.cur_iter << std::endl;
 
-        factor = (1.0 - exp(-5 * exp(-(0.1 * cur_iter))));
+        congestion.factor = (1.0 - std::exp(-5 * std::exp(-(0.1 * congestion.cur_iter))));
 
-        WL_Cost = factor;
-        via_cost = static_cast<int>(4 * factor);
+        congestion.WL_Cost = congestion.factor;
+        congestion.via_cost = static_cast<int>(4 * congestion.factor);
 
 #ifdef MESSAGE
         cout << "Parameters - Factor: " << factor
@@ -737,13 +727,13 @@ Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterS
         << ", Box Size: " << BOXSIZE_INC + cur_iter - 1 << endl;
 #endif
 
-        pre_evaluate_congestion_cost();
+        congestion.pre_evaluate_congestion_cost();
 
 //route_all_2pin_net(false);
         route_2pinnets.route_all_2pin_net();
 
-        cur_overflow = cal_max_overflow();
-        cal_total_wirelength();
+        int cur_overflow = congestion.cal_max_overflow();
+        congestion.cal_total_wirelength();
 
         if (cur_overflow == 0)
             break;

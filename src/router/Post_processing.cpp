@@ -67,20 +67,19 @@ Post_processing::Post_processing(Congestion& congestion, Construct_2d_tree& cons
 }
 
 void Post_processing::process(Route_2pinnets& route_2pinnets) {
-    cur_overflow = -1;
 
     //Fetch from routing_parameter 
     RoutingParameters& routing_parameter = construct_2d_tree.routing_parameter;
 
     routing_parameter.BOXSIZE_INC = routing_parameter.get_init_box_size_p3();
-    inc_num = routing_parameter.get_box_size_inc_p3();
+    int inc_num = routing_parameter.get_box_size_inc_p3();
     Post_processing_iteration = routing_parameter.get_iteration_p3();
 #ifdef MESSAGE
     printf("size: (%d %d)\n",BOXSIZE_INC,inc_num);
 #endif
     construct_2d_tree.done_iter++;
     congestion.used_cost_flag = MADEOF_COST;
-    cur_overflow = congestion.cal_max_overflow();
+    int cur_overflow = congestion.cal_max_overflow();
     if (cur_overflow > 0) {
         //In post processing, we only need to pre-evaluate all cost once.
         //The other update will be done by update_add(remove)_edge

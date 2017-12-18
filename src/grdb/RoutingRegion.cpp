@@ -15,7 +15,6 @@ RoutingRegion::~RoutingRegion() {
 
 }
 
-inline
 void RoutingRegion::setGrid(unsigned int x, unsigned int y, unsigned int layerNumber) {
     routingSpace_.resize(x, y, layerNumber);
 }

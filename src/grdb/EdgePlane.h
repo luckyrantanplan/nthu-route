@@ -153,12 +153,6 @@ public:
 
     EdgePlane(const Coordinate_2d& size);
 
-    EdgePlane(const EdgePlane&);
-
-    ~EdgePlane();
-
-    void operator=(const EdgePlane&);
-
     ///@brief Get the map size in x-axis and y-axis
     Coordinate_2d getSize() const;
 
@@ -195,29 +189,6 @@ private:
 };
 
 template<class T>
-EdgePlane<T>::EdgePlane(int xSize, int ySize) :
-        edgePlane_(boost::extents[xSize][ySize][2]) {
-
-}
-
-template<class T>
-EdgePlane<T>::EdgePlane(const Coordinate_2d& size) :
-        edgePlane_(boost::extents[size.x][size.y][2]) {
-
-}
-
-template<class T>
-EdgePlane<T>::EdgePlane(const EdgePlane& original) :
-        edgePlane_(original.edgePlane_) {
-
-}
-
-template<class T>
-EdgePlane<T>::~EdgePlane() {
-
-}
-
-template<class T>
 inline
 int EdgePlane<T>::getXSize() const {
     return edgePlane_.size();
@@ -227,6 +198,22 @@ template<class T>
 inline
 int EdgePlane<T>::getYSize() const {
     return edgePlane_[0].size();
+}
+
+///@brief The data structure for presenting the routing edges in global routing area.
+///@details User can specify the data structure of routing edges by their own, and
+///         the default data structure of routing edges is a integer.
+template<class T>
+inline EdgePlane<T>::EdgePlane(const Coordinate_2d& size) :
+        edgePlane_ { boost::extents[size.x][size.y][2] } {
+}
+
+///@brief The data structure for presenting the routing edges in global routing area.
+///@details User can specify the data structure of routing edges by their own, and
+///         the default data structure of routing edges is a integer.
+template<class T>
+inline EdgePlane<T>::EdgePlane(const int xSize, const int ySize) :
+        edgePlane_ { boost::extents[xSize][ySize][2] } {
 }
 
 template<class T>

@@ -77,6 +77,7 @@ struct Route_2pinnets {
         oneDegreeTerminal, severalDegreeTerminal, oneDegreeNonterminal, steinerPoint, twoDegree
     };
 
+    RoutingRegion& rr_map;
     boost::multi_array<Point_fc, 2> gridcell; //This is some kind of color map, for recording
     //which 2-pin net passed which gCell
 
@@ -86,7 +87,6 @@ struct Route_2pinnets {
     //Used by determine_is_terminal_or_steiner_point()
 
     Construct_2d_tree& construct_2d_tree;
-    RoutingRegion& rr_map;
     RangeRouter& rangerouter;
     Congestion& congestion;
     Route_2pinnets(Construct_2d_tree& construct_2d_tree, RangeRouter& rangerouter, Congestion& congestion);

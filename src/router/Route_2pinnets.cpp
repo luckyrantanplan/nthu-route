@@ -21,11 +21,11 @@
 using namespace std;
 
 Route_2pinnets::Route_2pinnets(Construct_2d_tree& construct_2d_tree, RangeRouter& rangerouter, Congestion& congestion) :
+        rr_map { construct_2d_tree.rr_map }, //
         gridcell { boost::extents[rr_map.get_gridx()][rr_map.get_gridy()] }, //
         colorMap { boost::extents[rr_map.get_gridx()][rr_map.get_gridy()] }, //
         dirTransferTable { 1, 0, 3, 2 }, //
         construct_2d_tree { construct_2d_tree }, //
-        rr_map { construct_2d_tree.rr_map }, //
         rangerouter { rangerouter }, //
         congestion { congestion } {
     ;

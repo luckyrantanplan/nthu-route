@@ -10,8 +10,8 @@
 #include <string>
 
 #include "../misc/filehandler.h"
+#include "../grdb/RoutingRegion.h"
 
-class RoutingRegion;
 
 using Jm::FileHandler;
 

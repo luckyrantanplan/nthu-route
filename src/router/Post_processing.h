@@ -15,14 +15,12 @@ struct COUNTER {
 
 class Construct_2d_tree;
 class Two_pin_element_2d;
-class Monotonic_element;
 
 struct Post_processing {
     Congestion& congestion;
-    int cur_overflow;
 
     int Post_processing_iteration;
-    int inc_num;
+
     bool total_no_overflow;
 
     Construct_2d_tree& construct_2d_tree;

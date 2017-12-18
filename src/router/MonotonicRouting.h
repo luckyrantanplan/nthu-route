@@ -36,8 +36,6 @@ public:
 class MonotonicRouting {
 public:
 
-    Monotonic_element* compare_cost(Monotonic_element* m1, Monotonic_element* m2);
-
     MonotonicRouting(Congestion& congestion, bool enable);
     virtual ~MonotonicRouting();
     bool monotonic_pattern_route(int x1, int y1, int x2, int y2, Two_pin_element_2d& two_pin_monotonic_path, int net_id, Bound& bound);

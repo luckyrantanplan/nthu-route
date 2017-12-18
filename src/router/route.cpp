@@ -42,7 +42,7 @@ int main(int argc, char* argv[]) {
     Congestion congestion(routingData.get_gridx(), routingData.get_gridy());
 
     clock_t t1 = clock();
-    Construct_2d_tree tree(ap.routing_param(), ap.parameter(), routingData);
+    Construct_2d_tree tree(ap.routing_param(), ap.parameter(), routingData,congestion);
     clock_t t2 = clock();
     // now the post processing is handle by Construct_2d_tree
     clock_t t3 = clock();

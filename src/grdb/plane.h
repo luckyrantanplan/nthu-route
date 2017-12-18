@@ -24,7 +24,7 @@ public:
 
     ~Plane();
 
-    void operator=(const Plane&);
+  //  void operator=(const Plane&);
 
     ///@brief Get the map size in x-axis
     int getXSize() const;
@@ -74,11 +74,11 @@ template<class VertexT, class EdgeT>
 Plane<VertexT, EdgeT>::~Plane() {
 }
 
-template<class VertexT, class EdgeT>
-void Plane<VertexT, EdgeT>::operator=(const Plane& original) {
-    edgeplane_ = original.edgeplane_;
-    plane_ = original.plane_;
-}
+//template<class VertexT, class EdgeT>
+//void Plane<VertexT, EdgeT>::operator=(const Plane& original) {
+//    edgeplane_ = original.edgeplane_;
+//    plane_ = original.plane_;
+//}
 
 template<class VertexT, class EdgeT>
 inline

@@ -19,8 +19,8 @@ int mainVerifier(const int argc, const char* argv[]) {
         break;
     }
 
-    Verifier verifier(inputFileName.c_str(), outputFileName.c_str());
-    verifier.verify();
+    //TODO activate it Verifier verifier(inputFileName.c_str(), outputFileName.c_str());
+    //verifier.verify();
 
     return 0;
 }

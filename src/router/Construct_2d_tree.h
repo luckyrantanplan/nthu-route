@@ -1,17 +1,22 @@
 #ifndef _CONSTRUCT_2D_TREE_H_
 #define _CONSTRUCT_2D_TREE_H_
 
+#include <functional>
 #include <map>
 #include <set>
 #include <vector>
 
 #include "../flute/flute-ds.h"
 #include "../grdb/EdgePlane.h"
+#include "../misc/geometry.h"
 #include "Congestion.h"
 #include "DataDef.h"
 #include "MM_mazeroute.h"
 #include "parameter.h"
 #include "Post_processing.h"
+#include "Range_router.h"
+
+class Monotonic_element;
 
 class Net;
 class ParameterSet;
@@ -38,8 +43,9 @@ struct Construct_2d_tree {
     std::vector<Tree> net_flutetree;
 
     vector<bool> NetDirtyBit;
-
+    Congestion& congestion;
     Multisource_multisink_mazeroute mazeroute_in_range;
+    RangeRouter rangeRouter;
     Post_processing post_processing;
     /***********************
      * Global Variable End
@@ -48,8 +54,6 @@ struct Construct_2d_tree {
     vector<Two_pin_list_2d> net_2pin_list;      //store 2pin list of each net
     Tree global_flutetree;
     vector<Two_pin_list_2d> bbox_2pin_list;    //store bbox 2pin list of each net
-
-    Congestion congestion;
 
     void printMemoryUsage(const char* msg);
 
@@ -70,7 +74,7 @@ struct Construct_2d_tree {
     void dfs_output_tree(Vertex_flute& node, Tree& t);
     void edge_shifting(Tree& t);
     void output_2_pin_list();
-    Construct_2d_tree(RoutingParameters & routingparam, ParameterSet & param, RoutingRegion & rr);
+    Construct_2d_tree(RoutingParameters & routingparam, ParameterSet & param, RoutingRegion & rr, Congestion& congestion);
     void walkL(const Coordinate_2d& a, const Coordinate_2d& b, std::function<void(const Coordinate_2d& e1, const Coordinate_2d& e2)> f);
 
 private:

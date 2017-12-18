@@ -230,9 +230,13 @@ void MonotonicRouting::compare_two_direction_congestion(int i, int j, Orientatio
     if ((!left_flag) && (!right_flag)) {
         parent_monotonic[i][j] = -2;
         return;
-    } else if (left_flag && right_flag)
-        choose_element = compare_cost(&left_element, &vertical_element);
-    else if (left_flag)
+    } else if (left_flag && right_flag) {
+        if (left_element < vertical_element) {
+            choose_element = &left_element;
+        } else {
+            choose_element = &vertical_element;
+        }
+    } else if (left_flag)
         choose_element = &left_element;
     else
         choose_element = &vertical_element;
