@@ -265,7 +265,19 @@ T& EdgePlane<T>::edge(const Coordinate_2d& c1, const Coordinate_2d& c2) {
 
 template<class T>
 const T& EdgePlane<T>::edge(const Coordinate_2d& c1, const Coordinate_2d& c2) const {
-    return edge(c1, c2);
+    if (c1.x < c2.x) {
+        return edgePlane_[c1.x][c1.y][EAST];
+    }
+    if (c1.x > c2.x) {
+        return edgePlane_[c2.x][c2.y][EAST];
+    }
+    if (c1.y < c2.y) {
+        return edgePlane_[c1.x][c1.y][SOUTH];
+    }
+    if (c1.y > c2.y) {
+        return edgePlane_[c2.x][c2.y][SOUTH];
+    }
+    throw std::exception();
 }
 template<class T>
 const std::size_t EdgePlane<T>::num_elements() const {
