@@ -10,21 +10,21 @@ using namespace std;
  Pin
  ******/
 Pin::Pin(int x, int y, int z) :
-        Coordinate(x, y, z) {
+        x_ { x }, y_ { y }, z_ { z } {
 }
 //Pin::Pin() :
 //        Coordinate { 0, 0, 0 } {
 //}
 int Pin::get_tileX() const {
-    return x();
+    return x_;
 }
 
 int Pin::get_tileY() const {
-    return y();
+    return y_;
 }
 
 int Pin::get_layerId() const {
-    return z();
+    return z_;
 }
 
 Coordinate_2d Pin::get_tileXY() const {
@@ -33,44 +33,44 @@ Coordinate_2d Pin::get_tileXY() const {
 /******
  Net
  *****/
-Net::Net(const char* name, int serialNumber, int id, int minWireWidth) :
+Net::Net(const std::string& name, int serialNumber, int id, int minWireWidth) :
         serialNumber(serialNumber), id(id), minWireWidth(minWireWidth), name(name), minPinX(INT_MAX), maxPinX(0), minPinY(INT_MAX), maxPinY(0) {
 }
 
-void Net::set_name(const char* name) {
-    this->name = name;
+void Net::set_name(const std::string& iname) {
+    name = iname;
 }
 
-void Net::add_pin(const Pin* pin) {
+void Net::add_pin(const Pin& pin) {
     //Update boundy box information
-    if (pin->x() < minPinX) {
-        minPinX = pin->x();
+    if (pin.x() < minPinX) {
+        minPinX = pin.x();
     }
-    if (pin->x() > maxPinX) {
-        maxPinX = pin->x();
+    if (pin.x() > maxPinX) {
+        maxPinX = pin.x();
     }
 
-    if (pin->y() < minPinY) {
-        minPinY = pin->y();
+    if (pin.y() < minPinY) {
+        minPinY = pin.y();
     }
-    if (pin->y() > maxPinY) {
-        maxPinY = pin->y();
+    if (pin.y() > maxPinY) {
+        maxPinY = pin.y();
     }
 
     //push the new pin to pin list
-    this->pin_list.push_back(pin);
+    pin_list.push_back(pin);
 }
 
 const PinptrList& Net::get_pinList() const {
-    return this->pin_list;
+    return pin_list;
 }
 
 const std::string& Net::get_name() const {
-    return this->name ;
+    return name;
 }
 
 int Net::get_pinNumber() const {
-    return this->pin_list.size();
+    return pin_list.size();
 }
 
 int Net::get_bboxSize() const {
@@ -79,22 +79,6 @@ int Net::get_bboxSize() const {
     }
 
     return 0;
-}
-
-int Net::get_boundaryN() const {
-    return maxPinY;
-}
-
-int Net::get_boundaryE() const {
-    return maxPinX;
-}
-
-int Net::get_boundaryW() const {
-    return minPinX;
-}
-
-int Net::get_boundaryS() const {
-    return minPinY;
 }
 
 /*sort bbox in ascending order, then pin_num in descending order*/
@@ -119,10 +103,6 @@ RoutingSpace::RoutingSpace(int x, int y, int z) :
 {
 
     assignTileCoordinate();
-}
-
-RoutingSpace::~RoutingSpace() {
-
 }
 
 void RoutingSpace::assignTileCoordinate() {

@@ -14,8 +14,8 @@
 #include "../grdb/RoutingComponent.h"
 #include "../grdb/RoutingRegion.h"
 #include "Route_2pinnets.h"
-
-using namespace std;
+#define SPDLOG_TRACE_ON
+#include "../spdlog/spdlog.h"
 
 void Construct_2d_tree::init_2pin_list() {
     int i, netnum;
@@ -61,9 +61,6 @@ void Construct_2d_tree::bbox_route(Two_pin_list_2d& list, const double value) {
         });
     }
 
-#ifdef DEBUG_BBOX
-    print_cap("cur");
-#endif
 }
 
 void Construct_2d_tree::walkL(const Coordinate_2d& a, const Coordinate_2d& b, std::function<void(const Coordinate_2d& e1, const Coordinate_2d& e2)> f) {
@@ -151,15 +148,16 @@ void Construct_2d_tree::gen_FR_congestion_map() {
     for (int& i : bboxRouteStateMap.all()) {
         i = -1;
     }
-
-    congestion.init_2d_map(rr_map);          //initial congestion map: calculating every edge's capacity
-    init_2pin_list();       //initial 2-pin net container
-    init_flute();           //initial the information of pin's coordinate and group by net for flute
+    SPDLOG_TRACE(log_sp, "initial congestion map: calculating every edge's capacity");
+    congestion.init_2d_map(rr_map);
+    SPDLOG_TRACE(log_sp, "initial 2-pin net container");
+    init_2pin_list();
+    SPDLOG_TRACE(log_sp, "initial the information of pin's coordinate and group by net for flute");
+    init_flute();
 
     /*assign 0.5 demand to each net*/
-#ifdef MESSAGE
-    printf("bbox routing start...\n");
-#endif	
+
+    SPDLOG_TRACE(log_sp, "bbox routing start... ");
 
 //for storing the RSMT which returned by flute
     Flute netRoutingTreeRouter;
@@ -168,10 +166,7 @@ void Construct_2d_tree::gen_FR_congestion_map() {
 //Get every net's possible RSMT by flute, then use it to calculate the possible congestion
 //In this section, we won't get a real routing result, but a possible congestion information.
     for (int i = 0; i < rr_map.get_netNumber(); ++i) {	//i:net id
-
-#ifdef DEBUG_BBOX
-        printf("bbox route net %d start...pin_num=%d\n",i,rr_map.get_netPinNumber(i));
-#endif
+        SPDLOG_TRACE(log_sp, "bbox route net {} start...pin_num={}", i, rr_map.get_netPinNumber(i));
 
         Tree& tree = flutetree[i];
 //call flute to gen steiner tree and put the result in flutetree[]
@@ -200,14 +195,8 @@ void Construct_2d_tree::gen_FR_congestion_map() {
 
         bbox_route(bbox_2pin_list[i], 0.5);
     }
-#ifdef DEBUG1
-    printf("bbox routing complete\n");
-    print_cap("max");
-    print_cap("cur");
-#endif	
-#ifdef MESSAGE
-    printf("L-shaped pattern routing start...\n");
-#endif		
+    SPDLOG_TRACE(log_sp, "bbox routing complete");
+    SPDLOG_TRACE(log_sp, "L-shaped pattern routing start...");
 
 //sort net by their bounding box size, then by their pin number
     vector<const Net*> sort_net;
@@ -250,21 +239,15 @@ void Construct_2d_tree::gen_FR_congestion_map() {
                 net_2pin_list[netId].push_back(L_path);
                 NetDirtyBit[L_path.net_id] = true;
                 congestion.update_congestion_map_insert_two_pin_net(L_path);
-#ifdef DEBUG_LROUTE
-                print_path(*L_path);
-#endif
+                SPDLOG_TRACE(log_sp, "L_path {}", L_path.toString());
+
             }
         }
 
     }
 
-#ifdef MESSAGE
-    printf("generate L-shape congestion map in stage1 successfully\n");
-#endif	
+    SPDLOG_TRACE(log_sp, "generate L-shape congestion map in stage1 successfully ");
 
-#ifdef DEBUG1
-    print_cap("cur");
-#endif
     congestion.cal_max_overflow();
 
 }
@@ -670,13 +653,12 @@ Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterS
         rangeRouter { *this, congestion, true }, //
         post_processing { congestion, *this, rangeRouter }  //
 {
-
+    log_sp = spdlog::get("NTHUR");
     /***********************
      * Global Variable End
      * ********************/
 
     congestion.cur_iter = -1;                  // current iteration ID.
-//edgeIterCounter = new EdgeColorMap<int>(rr_map.get_gridx(), rr_map.get_gridy(), -1);
 
     readLUT();                  // Function in flute, function: unknown
 
@@ -721,15 +703,11 @@ Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterS
         congestion.WL_Cost = congestion.factor;
         congestion.via_cost = static_cast<int>(4 * congestion.factor);
 
-#ifdef MESSAGE
-        cout << "Parameters - Factor: " << factor
-        << ", Via_Cost: " << via_cost
-        << ", Box Size: " << BOXSIZE_INC + cur_iter - 1 << endl;
-#endif
+        SPDLOG_TRACE(log_sp, "Parameters - Factor: {}, Via_Cost: {}, Box Size: {}",   //
+                congestion.factor, congestion.via_cost, BOXSIZE_INC + congestion.cur_iter - 1);
 
         congestion.pre_evaluate_congestion_cost();
 
-//route_all_2pin_net(false);
         route_2pinnets.route_all_2pin_net();
 
         int cur_overflow = congestion.cal_max_overflow();
@@ -739,10 +717,7 @@ Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterS
             break;
 
         route_2pinnets.reallocate_two_pin_list();
-
-#ifdef MESSAGE
-        printMemoryUsage("Memory Usage:");
-#endif
+        SPDLOG_TRACE(log_sp, "Memory Usage:{}", printMemoryUsage());
 
         if (cur_overflow <= routing_parameter.get_overflow_threshold()) {
             break;
@@ -752,23 +727,23 @@ Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterS
 
     output_2_pin_list();    //order:bbox�p
 
-#ifdef MESSAGE
-    cout<<"================================================================"<<endl;
-    cout<<"===                   Enter Post Processing                  ==="<<endl;
-    cout<<"================================================================"<<endl;
-#endif
+    SPDLOG_TRACE(log_sp, "================================================================");
+    SPDLOG_TRACE(log_sp, "===                   Enter Post Processing                  ===");
+    SPDLOG_TRACE(log_sp, "================================================================");
+
     post_processing.process(route_2pinnets);
 }
 
-inline void Construct_2d_tree::printMemoryUsage(const char* msg) {
-    std::cout << msg << std::endl;
+std::string Construct_2d_tree::printMemoryUsage() {
+
 //for print out memory usage
     std::ifstream mem("/proc/self/status");
     std::string memory;
     for (unsigned i = 0; i < 13; ++i) {
         getline(mem, memory);
         if (i > 10) {
-            std::cout << memory << std::endl;
+            return memory;
         }
     }
+    return memory;
 }

@@ -84,8 +84,8 @@ void Route_2pinnets::reset_c_map_used_net_to_one() {
 //set terminal type to c_map_2d
 //void set_c_map_terminal_type(int net_id)
 void Route_2pinnets::put_terminal_color_on_colormap(int net_id) {
-    for (const Pin* pin : rr_map.get_nPin(net_id)) {
-        colorMap[pin->get_tileX()][pin->get_tileY()].terminal = net_id;
+    for (const Pin& pin : rr_map.get_nPin(net_id)) {
+        colorMap[pin.get_tileX()][pin.get_tileY()].terminal = net_id;
     }
 }
 
@@ -246,7 +246,7 @@ void Route_2pinnets::reallocate_two_pin_list() {
         if (construct_2d_tree.NetDirtyBit[netId]) {
             put_terminal_color_on_colormap(netId);
 
-            bfs_for_find_two_pin_list(rr_map.get_nPin(netId)[0]->get_tileXY(), netId);
+            bfs_for_find_two_pin_list(rr_map.get_nPin(netId)[0].get_tileXY(), netId);
 
             construct_2d_tree.NetDirtyBit[netId] = false;
 

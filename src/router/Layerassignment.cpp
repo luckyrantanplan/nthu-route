@@ -153,11 +153,11 @@ void Layer_assignment::preprocess(int net_id) {
 
     const PinptrList& pin_list = rr_map.get_nPin(net_id);
 
-    for (const Pin* pin : pin_list) {
-        layerInfo_map.vertex(pin->get_tileXY()).path = -2;	// pin
+    for (const Pin& pin : pin_list) {
+        layerInfo_map.vertex(pin.get_tileXY()).path = -2;	// pin
     }
 // BFS speed up
-    Coordinate_2d c = pin_list[0]->get_tileXY();
+    Coordinate_2d c = pin_list[0].get_tileXY();
     layerInfo_map.vertex(c).path = 2;	// visited
 
     for (KLAT_NODE& k : layerInfo_map.vertex(c).klat) {
@@ -348,7 +348,7 @@ void Layer_assignment::generate_output(int net_id, const std::vector<Segment3d>&
 int Layer_assignment::klat(int net_id) { //SOLAC + APEC
     const PinptrList& pin_list = rr_map.get_nPin(net_id);
 
-    Coordinate_2d start = pin_list[0]->get_tileXY();
+    Coordinate_2d start = pin_list[0].get_tileXY();
     global_net_id = net_id; // LAZY global variable
     global_pin_num = rr_map.get_netPinNumber(net_id);
     preprocess(net_id);

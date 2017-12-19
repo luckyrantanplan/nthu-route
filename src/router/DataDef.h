@@ -61,6 +61,19 @@ public:
         return (a.boxSize() > b.boxSize());
     }
 
+    std::string toString() const {
+        std::string s = "pin1: " + pin1.toString();
+        s += " pin2: " + pin2.toString();
+        s += " path: [";
+        for (const Coordinate_2d& c : path) {
+            s += c.toString() + " ";
+        }
+        s += "] net_id: " + std::to_string(net_id);
+        s += " done: " + std::to_string(done);
+        return s;
+
+    }
+
 };
 
 class Two_pin_element {
@@ -121,6 +134,13 @@ public:
     }
     double congestion() const {
         return (cur_cap / max_cap);
+    }
+
+    std::string toString() const {
+        std::string s = "cur" + std::to_string(static_cast<int>(cur_cap));
+        s += " max " + std::to_string(static_cast<int>(max_cap));
+        s += " use " + std::to_string(used_net.size());
+        return s;
     }
 };
 

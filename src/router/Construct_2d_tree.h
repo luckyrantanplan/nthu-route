@@ -23,16 +23,16 @@ class ParameterSet;
 class RoutingParameters;
 class RoutingRegion;
 
-using std::vector;
-using std::set;
-using std::map;
+namespace spdlog {
+class logger;
+} /* namespace spdlog */
 
 struct Construct_2d_tree {
 
     ParameterSet& parameter_set;
     RoutingParameters& routing_parameter;
 
-    vector<Two_pin_element_2d> two_pin_list;
+    std::vector<Two_pin_element_2d> two_pin_list;
 
     EdgePlane<int> bboxRouteStateMap;
     RoutingRegion& rr_map;
@@ -42,7 +42,7 @@ struct Construct_2d_tree {
     int BOXSIZE_INC;
     std::vector<Tree> net_flutetree;
 
-    vector<bool> NetDirtyBit;
+    std::vector<bool> NetDirtyBit;
     Congestion& congestion;
     Multisource_multisink_mazeroute mazeroute_in_range;
     RangeRouter rangeRouter;
@@ -51,11 +51,13 @@ struct Construct_2d_tree {
      * Global Variable End
      * ********************/
 
-    vector<Two_pin_list_2d> net_2pin_list;      //store 2pin list of each net
+    std::vector<Two_pin_list_2d> net_2pin_list;      //store 2pin list of each net
     Tree global_flutetree;
-    vector<Two_pin_list_2d> bbox_2pin_list;    //store bbox 2pin list of each net
+    std::vector<Two_pin_list_2d> bbox_2pin_list;    //store bbox 2pin list of each net
 
-    void printMemoryUsage(const char* msg);
+    std::shared_ptr<spdlog::logger> log_sp;
+
+    std::string printMemoryUsage();
 
     void init_2pin_list();
     void init_flute();

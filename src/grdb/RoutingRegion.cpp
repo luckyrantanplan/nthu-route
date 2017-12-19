@@ -66,7 +66,7 @@ void RoutingRegion::addPin(unsigned int x, unsigned int y, unsigned int layer) {
 
     if (pinTable_.find(pair<int, int>(tileX, tileY)) == pinTable_.end()) {
         pinTable_.insert(pair<int, int>(tileX, tileY));
-        netList_.back().add_pin(&(routingSpace_.tile(tileX, tileY, layer)));
+        netList_.back().add_pin( routingSpace_.tile(tileX, tileY, layer) );
     }
 }
 

@@ -9,11 +9,16 @@
 #define SRC_ROUTER_CONGESTION_H_
 
 #include <functional>
+#include <memory>
 #include <vector>
 
 #include "../grdb/EdgePlane.h"
 #include "../misc/geometry.h"
 #include "DataDef.h"
+
+namespace spdlog {
+class logger;
+} /* namespace spdlog */
 
 class RoutingRegion;
 
@@ -36,7 +41,7 @@ public:
     double factor;
     int cur_iter;
     EdgePlane<Edge_2d> congestionMap2d;
-
+    std::shared_ptr<spdlog::logger> log_sp;
     Congestion(int x, int y);
     ~Congestion();
     double get_cost_2d(const Coordinate_2d& c1, const Coordinate_2d& c2, int net_id, int& distance);

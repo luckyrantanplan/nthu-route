@@ -7,14 +7,20 @@
 
 #include "Congestion.h"
 
-#include <boost/multi_array/multi_array_ref.hpp>
 #include <boost/range/combine.hpp>
+#include <boost/range/detail/combine_cxx11.hpp>
+#include <boost/range/iterator_range_core.hpp>
+#define SPDLOG_TRACE_ON
+#include "../spdlog/spdlog.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
-#include <functional>
-#include <vector>
+#include <limits>
+#include <memory>
+#include <unordered_map>
+#include <utility>
 
+#include "../grdb/plane.h"
 #include "../grdb/RoutingRegion.h"
 
 Congestion::Congestion(int x, int y) :
@@ -26,7 +32,7 @@ Congestion::Congestion(int x, int y) :
     factor = 1.0;
     used_cost_flag = FASTROUTE_COST;    // cost function type, i.e., HISTORY_COST, HISTORY_MADEOF_COST, MADEOF_COST, FASTROUTE_COST
     pre_evaluate_congestion_cost_fp = [&]( Edge_2d& edge) {pre_evaluate_congestion_cost_all( edge);};
-
+    log_sp = spdlog::get("NTHUR");
 }
 
 Congestion::~Congestion() {
@@ -80,7 +86,10 @@ int Congestion::cal_max_overflow() {
 
     //obtain the max. overflow and total overflowed value of RIGHT edge of every gCell
 
-    printf("\033[32mcal max overflow=%d   cur_cap-max_cap=%d\033[m\n", max_2d_of, dif_curmax);
+    SPDLOG_TRACE(log_sp, "cal max overflow= {} cur_cap-max_cap= {}", max_2d_of, dif_curmax);
+
+    SPDLOG_TRACE(log_sp, "gridEdge \n{}",congestionMap2d.toString());
+
     return dif_curmax;
 }
 /* *NOTICE*

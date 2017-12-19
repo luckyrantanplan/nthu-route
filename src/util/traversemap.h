@@ -12,7 +12,7 @@ typedef std::pair<int, int> IntPair;
 class BSearchQueNode {
 private:
     //cell information, such as x, y, z coordinate
-    Coordinate cell;
+    Coordinate_3d cell;
     //position of current wire segment in wire segments list
     int wirePos;
 public:
@@ -85,17 +85,17 @@ int BSearchQue::get_wirePos() {
  ****************/
 inline
 int BSearchQueNode::get_x() {
-    return this->cell.x();
+    return this->cell.x;
 }
 
 inline
 int BSearchQueNode::get_y() {
-    return this->cell.y();
+    return this->cell.y;
 }
 
 inline
 int BSearchQueNode::get_z() {
-    return this->cell.z();
+    return this->cell.z;
 }
 
 inline

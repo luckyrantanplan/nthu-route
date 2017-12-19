@@ -12,7 +12,7 @@
 #include "parameter.h"
 
 #define SPDLOG_TRACE_ON
-#include <spdlog/spdlog.h>
+#include "../spdlog/spdlog.h"
 
 void dataPreparation(ParameterAnalyzer& ap, RoutingRegion& builder);
 

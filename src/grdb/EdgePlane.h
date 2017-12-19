@@ -12,11 +12,12 @@
 #include <boost/multi_array.hpp>
 #include <boost/range/adaptor/argument_fwd.hpp>
 #include <boost/range/adaptor/strided.hpp>
-#include <boost/range/adaptor/sliced.hpp>
 #include <boost/range/iterator_range_core.hpp>
 #include <array>
 #include <cstddef>
 #include <exception>
+#include <string>
+#include <boost/range/adaptor/sliced.hpp>
 
 #include "../misc/geometry.h"
 
@@ -181,6 +182,33 @@ public:
     auto allVertical();
 
     auto allHorizontal();
+
+    std::string toString() {
+        size_t maxSize = 0;
+        for (const T& t : all()) {
+            maxSize = std::max(t.toString().size(), maxSize);
+        }
+        maxSize *= 2;
+        std::string gridString;
+        for (std::size_t y = 0; y < edgePlane_[0].size(); ++y) {
+            std::string l1(maxSize / 2 + maxSize * edgePlane_.size(), ' ');
+            std::string l2((maxSize + 1) * edgePlane_.size(), ' ');
+            for (std::size_t x = 0; x < edgePlane_.size(); ++x) {
+                {
+                    std::string s = edgePlane_[x][y][EAST].toString();
+                    l1.replace((x + 1) * maxSize - s.size(), s.size(), s);
+                }
+                {
+                    std::string s = edgePlane_[x][y][SOUTH].toString();
+                    l2.replace(maxSize / 2 + x * maxSize - s.size(), s.size(), s);
+                }
+            }
+            gridString += l1 + "\n";
+            gridString += l2 + "\n";
+
+        }
+        return gridString;
+    }
 
 private:
 ///The real data structure of plane

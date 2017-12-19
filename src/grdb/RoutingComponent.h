@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-class Pin: public Coordinate {
+class Pin {
 public:
     //Constructor
     Pin(int x = 0, int y = 0, int z = 0);
@@ -17,9 +17,50 @@ public:
     int get_tileY() const;
     int get_layerId() const;		//get the layer id that contain this pin
     Coordinate_2d get_tileXY() const;
+    void x(int i);
+    void y(int i);
+    void z(int i);
+    int x() const;
+    int y() const;
+    int z() const;
+
+protected:
+    int x_;
+    int y_;
+    int z_;
 };
 
-typedef std::vector<const Pin*> PinptrList;
+inline
+void Pin::x(int i) {
+    x_ = i;
+}
+
+inline
+void Pin::y(int i) {
+    y_ = i;
+}
+
+inline
+void Pin::z(int i) {
+    z_ = i;
+}
+
+inline
+int Pin::x() const {
+    return x_;
+}
+
+inline
+int Pin::y() const {
+    return y_;
+}
+
+inline
+int Pin::z() const {
+    return z_;
+}
+
+typedef std::vector<Pin> PinptrList;
 
 class Net {
 public:
@@ -29,18 +70,15 @@ public:
 
 public:
     //Constructor
-    Net(const char* name = "", int id = 0, int pos = 0, int minWidth = 0);
+    Net(const std::string& name, int id = 0, int pos = 0, int minWidth = 0);
 
-    void set_name(const char*);	//set net name
-    void add_pin(const Pin* pin_ptr); //add pin pointer that point to pin
+    void set_name(const std::string&);	//set net name
+    void add_pin(const Pin& pin_ptr); //add pin pointer that point to pin
     const PinptrList& get_pinList() const; //get the pin pointer list of this net
     const std::string& get_name() const;	//get net name
     int get_pinNumber() const;		//get pin number in this net
     int get_bboxSize() const;      //get the bounding box size
-    int get_boundaryN() const;
-    int get_boundaryE() const;
-    int get_boundaryW() const;
-    int get_boundaryS() const;
+
     static bool comp_net(const Net& a, const Net& b);
 private:
     std::string name;
@@ -64,7 +102,6 @@ public:
 
 public:
     RoutingSpace(int x = 0, int y = 0, int z = 0);
-    ~RoutingSpace();
 
     void resize(int x, int y, int z);
 
@@ -90,11 +127,7 @@ public:
     const Plane<Pin, int>& layer(int z) const;
 
 private:
-
-private:
     std::vector<Plane<Pin, int> > routingSpace_;
-
-private:
     void assignTileCoordinate();
 };
 
@@ -132,19 +165,16 @@ inline const Plane<Pin, int> & RoutingSpace::layer(int z) const {
 
 inline
 int RoutingSpace::getXSize() const {
-    assert(routingSpace_.size() > 0);
     return routingSpace_[0].getXSize();
 }
 
 inline
 int RoutingSpace::getYSize() const {
-    assert(routingSpace_.size() > 0);
     return routingSpace_[0].getYSize();
 }
 
 inline
 int RoutingSpace::getZSize() const {
-    //return routingSpace_.getZSize();
     return routingSpace_.size();
 }
 
