@@ -5,12 +5,19 @@
 
 #include <boost/multi_array.hpp>
 #include <array>
+#include <functional>
+#include <memory>
+#include <string>
 #include <vector>
 
 #include "../misc/geometry.h"
 #include "DataDef.h"
 #include "MonotonicRouting.h"
 #include "Route_2pinnets.h"
+
+namespace spdlog {
+class logger;
+} /* namespace spdlog */
 
 class Congestion;
 
@@ -21,7 +28,6 @@ class Congestion;
 class Point_fc;
 struct Construct_2d_tree;
 struct Two_pin_element_2d;
-
 
 class Grid_edge_element {
 public:
@@ -71,10 +77,12 @@ public:
     int total_twopin = 0;
 
     Construct_2d_tree& construct_2d_tree;
-    boost::multi_array<ColorMap, 2> colorMap;
-    boost::multi_array<int, 2> routeStateMap;
     Congestion& congestion;
+    boost::multi_array<ColorMap, 2> colorMap;
     MonotonicRouting monotonicRouter;
+
+    std::shared_ptr<spdlog::logger> log_sp;
+
     RangeRouter(Construct_2d_tree& construct_2d_tree, Congestion& congestion, bool monotonic_enable);
     void define_interval();
     void divide_grid_edge_into_interval();
@@ -93,6 +101,7 @@ public:
     void query_range_2pin(const Rectangle& r, std::vector<Two_pin_element_2d*>& twopin_list, boost::multi_array<Point_fc, 2>& gridCell);
 
 private:
+    std::string printIfBound(const Rectangle& r, const Rectangle& bound, const int interval_index, const Coordinate_2d& c1, const Coordinate_2d& c2) const;
 
 }
 ;

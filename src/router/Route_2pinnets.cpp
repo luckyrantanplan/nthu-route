@@ -18,6 +18,9 @@
 #include "Congestion.h"
 #include "Construct_2d_tree.h"
 
+#define SPDLOG_TRACE_ON
+#include "../spdlog/spdlog.h"
+
 using namespace std;
 
 Route_2pinnets::Route_2pinnets(Construct_2d_tree& construct_2d_tree, RangeRouter& rangerouter, Congestion& congestion) :
@@ -28,7 +31,7 @@ Route_2pinnets::Route_2pinnets(Construct_2d_tree& construct_2d_tree, RangeRouter
         construct_2d_tree { construct_2d_tree }, //
         rangerouter { rangerouter }, //
         congestion { congestion } {
-    ;
+    log_sp = spdlog::get("NTHUR");
 }
 
 void Route_2pinnets::allocate_gridcell() {
@@ -39,9 +42,8 @@ void Route_2pinnets::allocate_gridcell() {
         }
     }
 
-#ifdef MESSAGE
-    printf("initialize gridcell successfully\n");
-#endif
+    SPDLOG_TRACE(log_sp, "initialize gridcell successfully");
+
 }
 
 void Route_2pinnets::init_gridcell() {

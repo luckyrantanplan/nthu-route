@@ -26,8 +26,6 @@ enum OrientationType {
     FRONT, BACK, LEFT, RIGHT, UP, DOWN
 };
 
-
-
 class Coordinate_2d {
 public:
     int x;
@@ -101,52 +99,15 @@ public:
         return Coordinate_2d { x, y };
     }
 
-    bool operator!=(const Coordinate_3d& other) const {
-        return (x != other.x || y != other.y || z != other.z);
-    }
-
-    static const std::array<Coordinate_3d, 6> dir_array() {
-        static std::array<Coordinate_3d, 6> arr { { { 0, 1, 0 }, { 0, -1, 0 }, { -1, 0, 0 }, { 1, 0, 0 }, { 0, 0, 1 }, { 0, 0, -1 } } }; // F B L R U D
-        return arr;
-    }
-
-    Coordinate_3d operator +(const Coordinate_3d& a) const {
-        return Coordinate_3d(x + a.x, y + a.y, z + a.z);
-    }
-
-    Coordinate_3d& operator +=(const Coordinate_3d& a) {
-        x += a.x;
-        y += a.y;
-        z += a.z;
-        return *this;
-    }
-
-    Coordinate_3d& operator -=(const Coordinate_3d& a) {
-        x -= a.x;
-        y -= a.y;
-        z -= a.z;
-        return *this;
-    }
-
-    Coordinate_3d operator -(const Coordinate_3d& a) const {
-        return Coordinate_3d(x - a.x, y - a.y, z - a.z);
-    }
-
-    bool isInCube(const Coordinate_3d& min, const Coordinate_3d& max) const {
-        return x >= min.x && //
-                y >= min.y && //
-                z >= min.z && //
-                x < max.x && //
-                y < max.y && //
-                z < max.z;
-
-    }
     bool isAligned(const Coordinate_3d& c) const {
         return x == c.x || y == c.y || z == c.z;
     }
 
     bool operator==(const Coordinate_3d& other) const {
         return (x == other.x && y == other.y && z == other.z);
+    }
+    std::string toString() const {
+        return "(" + std::to_string(x) + "," + std::to_string(y) + "," + std::to_string(z) + ")";
     }
 };
 class Rectangle {
@@ -155,49 +116,66 @@ public:
     Coordinate_2d downRight;
 
 public:
-    Rectangle(const Coordinate_2d c1, const Coordinate_2d c2) :
-            upLeft { std::min(c1.x, c2.x), std::min(c1.y, c2.y) }, //
-            downRight { std::max(c1.x, c2.x), std::max(c1.y, c2.y) } {
-    }
-    bool contains(const Coordinate_2d& c) const {
-        return (upLeft.x <= c.x && c.x <= downRight.x && upLeft.y <= c.y && c.y <= downRight.y);
+    Rectangle(const Coordinate_2d c1, const Coordinate_2d c2);
+    bool contains(const Coordinate_2d& c) const;
+    bool contains(const Rectangle& r) const;
+    void expand(int i);
 
-    }
-    bool contains(const Rectangle& r) const {
-        return (upLeft.x <= r.upLeft.x && r.downRight.x <= downRight.x && //
-                upLeft.y <= r.upLeft.y && r.downRight.y <= downRight.y);
+    void clip(Rectangle& r) const;
 
-    }
-    void expand(int i) {
-        upLeft.x -= i;
-        upLeft.y -= i;
-        downRight.x += i;
-        downRight.y += i;
-    }
+    void frame(std::function<void(const Coordinate_2d& e1, const Coordinate_2d& e2)> f);
 
-    void clip(Rectangle r) const {
-        r.upLeft.x = std::max(upLeft.x, r.upLeft.x);
-        r.upLeft.y = std::max(upLeft.y, r.upLeft.y);
-        r.downRight.x = std::min(downRight.x, r.downRight.x);
-        r.downRight.y = std::min(downRight.y, r.downRight.y);
-    }
+    std::string toString() const;
+};
 
-    void frame(std::function<void(const Coordinate_2d& e1, const Coordinate_2d& e2)> f) {
+inline Rectangle::Rectangle(const Coordinate_2d c1, const Coordinate_2d c2) :
+        upLeft { std::min(c1.x, c2.x), std::min(c1.y, c2.y) }, //
+        downRight { std::max(c1.x, c2.x), std::max(c1.y, c2.y) } {
+}
+inline
+bool Rectangle::contains(const Coordinate_2d& c) const {
+    return (upLeft.x <= c.x && c.x <= downRight.x && upLeft.y <= c.y && c.y <= downRight.y);
+}
+inline
+bool Rectangle::contains(const Rectangle& r) const {
+    return (upLeft.x <= r.upLeft.x && r.downRight.x <= downRight.x && //
+            upLeft.y <= r.upLeft.y && r.downRight.y <= downRight.y);
+}
+inline
+void Rectangle::expand(int i) {
+    upLeft.x -= i;
+    upLeft.y -= i;
+    downRight.x += i;
+    downRight.y += i;
+}
+inline
+void Rectangle::clip(Rectangle& r) const {
+    r.upLeft.x = std::max(upLeft.x, r.upLeft.x);
+    r.upLeft.y = std::max(upLeft.y, r.upLeft.y);
+    r.downRight.x = std::min(downRight.x, r.downRight.x);
+    r.downRight.y = std::min(downRight.y, r.downRight.y);
+}
+inline
+void Rectangle::frame(std::function<void(const Coordinate_2d& e1, const Coordinate_2d& e2)> f) {
+    for (int i = upLeft.x; i < downRight.x; ++i) {
+        f(Coordinate_2d { i, upLeft.y }, Coordinate_2d { i + 1, upLeft.y });
+    }
+    for (int i = upLeft.y; i < downRight.y; ++i) {
+        f(Coordinate_2d { downRight.x, i }, Coordinate_2d { downRight.x, i + 1 });
+    }
+    if (!downRight.isAligned(upLeft)) {
         for (int i = upLeft.x; i < downRight.x; ++i) {
-            f(Coordinate_2d { i, upLeft.y }, Coordinate_2d { i + 1, upLeft.y });
+            f(Coordinate_2d { i, downRight.y }, Coordinate_2d { i + 1, downRight.y });
         }
         for (int i = upLeft.y; i < downRight.y; ++i) {
-            f(Coordinate_2d { downRight.x, i }, Coordinate_2d { downRight.x, i + 1 });
-        }
-        if (!downRight.isAligned(upLeft)) {
-            for (int i = upLeft.x; i < downRight.x; ++i) {
-                f(Coordinate_2d { i, downRight.y }, Coordinate_2d { i + 1, downRight.y });
-            }
-            for (int i = upLeft.y; i < downRight.y; ++i) {
-                f(Coordinate_2d { upLeft.x, i }, Coordinate_2d { upLeft.x, i + 1 });
-            }
+            f(Coordinate_2d { upLeft.x, i }, Coordinate_2d { upLeft.x, i + 1 });
         }
     }
+}
+inline std::string Rectangle::toString() const {
+    std::string s = "upLeft: " + upLeft.toString();
+    s += " downRight: " + downRight.toString();
+    return s;
+}
 
-};
 #endif //INC_GEOMETRY_H

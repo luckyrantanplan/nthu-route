@@ -2,11 +2,18 @@
 #define INC_REOUTE_2PINNETS_H
 
 #include <boost/multi_array.hpp>
-#include <functional>
+#include <sys/types.h>
+#include <cstdint>
+#include <memory>
 #include <vector>
 
+#include "../misc/geometry.h"
 #include "DataDef.h"
-#include "Range_router.h"
+
+class Congestion;
+namespace spdlog {
+class logger;
+} /* namespace spdlog */
 
 class Two_pin_element_2d;
 struct Construct_2d_tree;
@@ -89,6 +96,8 @@ struct Route_2pinnets {
     Construct_2d_tree& construct_2d_tree;
     RangeRouter& rangerouter;
     Congestion& congestion;
+
+    std::shared_ptr<spdlog::logger> log_sp;
     Route_2pinnets(Construct_2d_tree& construct_2d_tree, RangeRouter& rangerouter, Congestion& congestion);
     void route_all_2pin_net();
     void allocate_gridcell();

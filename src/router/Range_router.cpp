@@ -13,6 +13,8 @@
 #include "MonotonicRouting.h"
 #include "parameter.h"
 #include "Post_processing.h"
+#define SPDLOG_TRACE_ON
+#include "../spdlog/spdlog.h"
 
 using namespace std;
 
@@ -180,20 +182,28 @@ void RangeRouter::expand_range(Coordinate_2d c1, Coordinate_2d c2, int interval_
             }
         });
         r.expand(1);
+        SPDLOG_TRACE(log_sp, "r after  r.expand(1): {}", r.toString());
     }                                // end of while loop
-
-#ifdef DEBUG_INTERVAL_LIST
-    if (r.contains(bound)) {
-        printf("for interval %d, its range is equal to the grid size, %d %d , %d %d \n",interval_index,cur_start.x,cur_start.y,cur_end.x,cur_end.y);
-        printf("from edge %d %d -> %d %d \n",x1,y1,x2,y2);
-#endif
+    SPDLOG_TRACE(log_sp, "r: {} bound: {}", r.toString(), bound.toString());
+    SPDLOG_TRACE(log_sp, "printIfBound:{}", printIfBound(r, bound, interval_index, c1, c2));
 
     r.expand(congestion.cur_iter / 10); // extraExpandRange
     bound.clip(r);
-
+    SPDLOG_TRACE(log_sp, "r after clip: {}  bound: {}", r.toString(), bound.toString());
     range_vector.push_back(r);
 }
 
+std::string RangeRouter::printIfBound(const Rectangle& r, const Rectangle& bound, const int interval_index, const Coordinate_2d& c1, const Coordinate_2d& c2) const {
+    std::string s;
+    if (r.contains(bound)) {
+        s += "for interval " + std::to_string(interval_index);
+        s += ", its range is equal to the grid size, ";
+        s += r.toString();
+        s += " from edge (" + c1.toString() + ") (" + c2.toString() + ")";
+
+    }
+    return s;
+}
 //Rip-up the path that pass any overflowed edges, then route with monotonic 
 //routing or multi-source multi-sink routing.
 //If there is no overflowed path by using the two methods above, then remain 
@@ -253,17 +263,16 @@ void RangeRouter::query_range_2pin(const Rectangle& r, //
                 if (twopin->done != construct_2d_tree.done_iter) {
                     Coordinate_2d& p1 = twopin->pin1;
                     Coordinate_2d& p2 = twopin->pin2;
-                    if (routeStateMap[p1.x][p1.y] != done_counter && //
-                            routeStateMap[p2.x][p2.y] != done_counter) {
+                    if (colorMap[p1.x][p1.y].routeState != done_counter && //
+                            colorMap[p2.x][p2.y].routeState != done_counter) {
                         if (r.contains(p1) || r.contains(p2)) {
                             twopin->done = construct_2d_tree.done_iter;
                             twopin_list.push_back(twopin);
-
                         }
                     }
                 }
             }
-            routeStateMap[cell.x][cell.y] = done_counter;
+            colorMap[cell.x][cell.y].routeState = done_counter;
         }
     }
 
@@ -334,5 +343,8 @@ RangeRouter::RangeRouter(Construct_2d_tree& construct2dTree, Congestion& congest
         total_twopin(0),	//
 
         construct_2d_tree { construct2dTree }, //
-        congestion { congestion }, monotonicRouter { congestion, monotonic_enable } {
+        congestion { congestion }, //
+        colorMap { boost::extents[congestion.congestionMap2d.getXSize()][congestion.congestionMap2d.getYSize()] }, monotonicRouter { congestion, monotonic_enable } {
+    log_sp = spdlog::get("NTHUR");
+
 }

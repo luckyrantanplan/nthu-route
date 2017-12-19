@@ -10,8 +10,6 @@
 #include <boost/range/combine.hpp>
 #include <boost/range/detail/combine_cxx11.hpp>
 #include <boost/range/iterator_range_core.hpp>
-#define SPDLOG_TRACE_ON
-#include "../spdlog/spdlog.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
@@ -19,9 +17,11 @@
 #include <memory>
 #include <unordered_map>
 #include <utility>
-
 #include "../grdb/plane.h"
 #include "../grdb/RoutingRegion.h"
+#define SPDLOG_TRACE_ON
+#include "../spdlog/spdlog.h"
+
 
 #define parameter_h 0.8         // used in the edge cost function 1/0.5 0.8/2
 #define parameter_k 2           // used in the edge cost function
