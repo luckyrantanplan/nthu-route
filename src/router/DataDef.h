@@ -95,6 +95,18 @@ public:
     //sort by x,y,pin,steiner
     static bool comp_vertex_fl(const Vertex_flute& a, const Vertex_flute& b);
 
+    std::string toString() const {
+        std::string s = "c: " + c.toString();
+        s += " index: " + std::to_string(index);
+        s += " visit: " + std::to_string(visit);
+        s += " neighbor: [";
+        for (Vertex_flute * n : neighbor) {
+            s += n->c.toString() + " ";
+        }
+        s += "]";
+        return s;
+    }
+
 };
 
 typedef std::unordered_map<int, int> RoutedNetTable;

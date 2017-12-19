@@ -44,6 +44,8 @@ void Construct_2d_tree::bbox_route(Two_pin_list_2d& list, const double value) {
 
         rect.frame([&](const Coordinate_2d& c1,const Coordinate_2d& c2) {
             bboxRouteStateMap.edge(c1, c2) = 1;
+
+            SPDLOG_TRACE(log_sp, " bboxRouteStateMap.edge(({}), ({})) =1 ",c1.toString(),c2.toString());
         });
     }
 
@@ -56,6 +58,8 @@ void Construct_2d_tree::bbox_route(Two_pin_list_2d& list, const double value) {
             int& color=bboxRouteStateMap.edge(c1, c2);
             if (color==1) {
                 congestion.congestionMap2d.edge(c1, c2).cur_cap += u_value;
+
+                SPDLOG_TRACE(log_sp, " bboxRouteStateMap.edge(({}), ({})).cur_cap += {}",c1.toString(),c2.toString(),u_value);
                 color=0;
             }
         });
@@ -65,22 +69,21 @@ void Construct_2d_tree::bbox_route(Two_pin_list_2d& list, const double value) {
 
 void Construct_2d_tree::walkL(const Coordinate_2d& a, const Coordinate_2d& b, std::function<void(const Coordinate_2d& e1, const Coordinate_2d& e2)> f) {
     {
-        int ax = a.x;
-        int bx = b.x;
-        if (ax > bx) {
-            std::swap(ax, bx);
+        int inc = 1;
+        if (a.x > b.x) {
+            inc = -1;
         }
-        for (int x = ax; x < bx; ++x) {
-            f(Coordinate_2d { x, a.y }, Coordinate_2d { x + 1, a.y });
+
+        for (int x = a.x; x * inc < b.x * inc; x = x + inc) {
+            f(Coordinate_2d { x, a.y }, Coordinate_2d { x + inc, a.y });
         }
     }
-    int ay = a.y;
-    int by = b.y;
-    if (ay > by) {
-        std::swap(ay, by);
+    int inc = 1;
+    if (a.y > b.y) {
+        inc = -1;
     }
-    for (int y = ay; y < by; ++y) {
-        f(Coordinate_2d { b.x, y }, Coordinate_2d { b.x, y + 1 });
+    for (int y = a.y; y * inc < b.y * inc; y = y + inc) {
+        f(Coordinate_2d { b.x, y }, Coordinate_2d { b.x, y + inc });
     }
 }
 
@@ -188,8 +191,12 @@ void Construct_2d_tree::gen_FR_congestion_map() {
             two_pin.pin2.x = (int) tree.branch[branch.n].x;
             two_pin.pin2.y = (int) tree.branch[branch.n].y;
             two_pin.net_id = i;
+
+            SPDLOG_TRACE(log_sp, "two_pin {}", two_pin.toString());
+
             if (two_pin.pin1 != two_pin.pin2) {
                 bbox_2pin_list[i].push_back(std::move(two_pin));
+                SPDLOG_TRACE(log_sp, "bbox_2pin_list[i].push_back {}", j);
             }
 
         }
@@ -214,11 +221,6 @@ void Construct_2d_tree::gen_FR_congestion_map() {
         edge_shifting(ftreeId);
         global_flutetree = ftreeId;
 
-        std::vector<int> flute_order(2 * ftreeId.deg - 2);
-        for (int i = global_flutetree.number - 1; i >= 0; --i) {
-            flute_order[i] = i;
-        }
-
         net_flutetree[netId] = ftreeId;
 
         /*remove demand*/
@@ -226,15 +228,14 @@ void Construct_2d_tree::gen_FR_congestion_map() {
 
         for (int k = 0; k < ftreeId.number; ++k) {
 
-            Branch& branch = ftreeId.branch[flute_order[k]];
-            int x1 = (int) branch.x;
-            int y1 = (int) branch.y;
-            int x2 = (int) ftreeId.branch[branch.n].x;
-            int y2 = (int) ftreeId.branch[branch.n].y;
-            if (!(x1 == x2 && y1 == y2)) {
+            Branch& branch = ftreeId.branch[k];
+            Coordinate_2d c1 { (int) branch.x, (int) branch.y };
+            Coordinate_2d c2 { (int) ftreeId.branch[branch.n].x, (int) ftreeId.branch[branch.n].y };
+            SPDLOG_TRACE(log_sp, "branch k:{} c1:{} c2:{}", k, c1.toString(), c2.toString());
+            if (c1 != c2) {
                 /*choose the L-shape with lower congestion to assign new demand 1*/
                 Two_pin_element_2d L_path;
-                L_pattern_route(Coordinate_2d { x1, y1 }, Coordinate_2d { x2, y2 }, L_path, netId);
+                L_pattern_route(c1, c2, L_path, netId);
 
                 /*insert 2pin_path into this net*/
                 net_2pin_list[netId].push_back(L_path);
@@ -575,28 +576,31 @@ void Construct_2d_tree::edge_shifting(Tree& t) {
 
 //Create edge
     for (int i = 0; i < degSize; ++i) {
-
-        Vertex_flute_ptr vi = &vertex_fl[i];
-        Vertex_flute_ptr vn = &vertex_fl[t.branch[i].n];
+        SPDLOG_TRACE(log_sp, "vertex_fl[i] {} ", vertex_fl[i].toString());
+        Vertex_flute& vi = vertex_fl[i];
+        Vertex_flute& vn = vertex_fl[t.branch[i].n];
 //skip the vertex if it is the same vertex with its neighbor
-        if ((vi->c == vn->c))
+        if ((vi.c == vn.c))
             continue;
-        vi->neighbor.push_back(vn);
-        vn->neighbor.push_back(vi);
+        vi.neighbor.push_back(&vn);
+        vn.neighbor.push_back(&vi);
 //compute original tree cost
-        ori_cost += compute_L_pattern_cost(vi->c, vn->c, -1);
+        ori_cost += compute_L_pattern_cost(vi.c, vn.c, -1);
+    }
+
+    for (int i = 0; i < degSize; ++i) {
+        SPDLOG_TRACE(log_sp, "vertex_fl[i] {} ", vertex_fl[i].toString());
     }
     std::sort(vertex_fl.begin(), vertex_fl.end(), [&](const Vertex_flute& a, const Vertex_flute& b) {return Vertex_flute::comp_vertex_fl( a, b);});
 
-    for (int i = 0, j = 1; j < degSize; ++j) {
-        Vertex_flute& vi = vertex_fl[i];
+    for (int previous = 0, j = 1; j < degSize; ++j) {
+        Vertex_flute& vi = vertex_fl[previous];
         Vertex_flute& vj = vertex_fl[j];
         if ((vi.c == vj.c))	//j is redundant
         {
             vj.type = DELETED;
             for (Vertex_flute_ptr it : vj.neighbor) {
-                if ((it->c != vi.c))	//not i,add 0430
-                {
+                if ((it->c != vi.c)) {	//not i,add 0430
                     vi.neighbor.push_back(it);
                     for (int k = 0; k < (int) it->neighbor.size(); ++k) {
                         if (it->neighbor[k]->c == vi.c) {
@@ -607,13 +611,19 @@ void Construct_2d_tree::edge_shifting(Tree& t) {
                 }
             }
         } else
-            i = j;
+            previous = j;
     }
-
+    for (int i = 0; i < degSize; ++i) {
+        SPDLOG_TRACE(log_sp, "after remove redundant {} ", vertex_fl[i].toString());
+    }
     for (Vertex_flute& fl : vertex_fl) {
         fl.visit = 0;
     }
-    traverse_tree(ori_cost, vertex_fl);	// dfs to find 2 adjacent steiner points(h or v edge) and do edge_shifhting
+    traverse_tree(ori_cost, vertex_fl);	// dfs to find 2 adjacent Steiner points(h or v edge) and do edge_shifting
+
+    for (int i = 0; i < degSize; ++i) {
+        SPDLOG_TRACE(log_sp, "after traverse_tree {} ", vertex_fl[i].toString());
+    }
 
 //Output the result (2-pin lists) to a Tree structure in DFS order
 //1. make sure every 2-pin list have not been visited
@@ -622,7 +632,7 @@ void Construct_2d_tree::edge_shifting(Tree& t) {
     }
     t.number = 0;
 
-//2. begin to out put the 2-pin lists to a Tree strucuture
+//2. begin to out put the 2-pin lists to a Tree structure
     dfs_output_tree(vertex_fl[0], t);
     t.branch[0].n = 0;	//because neighbor of root is not assign in dfs_output_tree()
 
