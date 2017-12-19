@@ -29,6 +29,10 @@ class logger;
 
 struct Construct_2d_tree {
 
+    enum {
+        HOR, VER
+    };
+
     ParameterSet& parameter_set;
     RoutingParameters& routing_parameter;
 

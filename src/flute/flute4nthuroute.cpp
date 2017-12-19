@@ -18,7 +18,7 @@ Flute::~Flute() {
     }
 }
 
-void Flute::routeNet(const PinptrList& pinList, Tree& routingTree) {
+void Flute::routeNet(const std::vector<Pin>& pinList, Tree& routingTree) {
     int pinNumber = pinList.size();
 
     //The pin number must <= MAXD, or the flute will crash

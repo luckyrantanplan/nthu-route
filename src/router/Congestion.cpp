@@ -23,6 +23,9 @@
 #include "../grdb/plane.h"
 #include "../grdb/RoutingRegion.h"
 
+#define parameter_h 0.8         // used in the edge cost function 1/0.5 0.8/2
+#define parameter_k 2           // used in the edge cost function
+
 Congestion::Congestion(int x, int y) :
         congestionMap2d { x, y }  //
 {
@@ -88,7 +91,7 @@ int Congestion::cal_max_overflow() {
 
     SPDLOG_TRACE(log_sp, "cal max overflow= {} cur_cap-max_cap= {}", max_2d_of, dif_curmax);
 
-    SPDLOG_TRACE(log_sp, "gridEdge \n{}",congestionMap2d.toString());
+    SPDLOG_TRACE(log_sp, "gridEdge \n{}", congestionMap2d.toString());
 
     return dif_curmax;
 }

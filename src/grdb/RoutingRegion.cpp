@@ -7,13 +7,6 @@ using namespace std;
 /***************
  RoutingRegion
  **************/
-RoutingRegion::RoutingRegion() :
-        netList_(), routingSpace_(), netSerial2NetId_(), pinTable_() {
-}
-
-RoutingRegion::~RoutingRegion() {
-
-}
 
 void RoutingRegion::setGrid(unsigned int x, unsigned int y, unsigned int layerNumber) {
     routingSpace_.resize(x, y, layerNumber);
@@ -66,7 +59,7 @@ void RoutingRegion::addPin(unsigned int x, unsigned int y, unsigned int layer) {
 
     if (pinTable_.find(pair<int, int>(tileX, tileY)) == pinTable_.end()) {
         pinTable_.insert(pair<int, int>(tileX, tileY));
-        netList_.back().add_pin( routingSpace_.tile(tileX, tileY, layer) );
+        netList_.back().add_pin(routingSpace_.tile(tileX, tileY, layer));
     }
 }
 

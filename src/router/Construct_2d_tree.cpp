@@ -172,6 +172,7 @@ void Construct_2d_tree::gen_FR_congestion_map() {
 //call flute to gen steiner tree and put the result in flutetree[]
         netRoutingTreeRouter.routeNet(rr_map.get_nPin(i), tree);
 
+        SPDLOG_TRACE(log_sp, "rr_map.nPinList(i): {}", rr_map.nPinToString(i));
 //The total node # in a tree, those nodes include pin and steiner point
 //And it is defined as ((2 * degree of a tree) - 2) by the authors of flute
         tree.number = 2 * tree.deg - 2;	//add 0403

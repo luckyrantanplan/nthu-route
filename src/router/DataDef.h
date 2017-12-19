@@ -18,11 +18,6 @@
 
 //If wanna run IBM testcase, please enable this define
 //#define IBM_CASE
-#define FREE
-//#define MESSAGE
-
-#define parameter_h 0.8         // used in the edge cost function 1/0.5 0.8/2
-#define parameter_k 2           // used in the edge cost function
 
 #define error_bound 0.00000000001
 #define neg_error_bound -0.00000000001
@@ -30,9 +25,7 @@
 enum VertexFluteType {
     PIN, STEINER, DELETED
 };
-enum {
-    HOR, VER
-};
+
 enum {
     FASTROUTE_COST, OVERFLOW_COST, CONGESTION_COST, MADEOF_COST, HISTORY_COST, HISTORY_MADEOF_COST
 };

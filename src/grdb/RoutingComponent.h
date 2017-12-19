@@ -1,12 +1,10 @@
 #ifndef INC_ROUTINGCOMPONENT_H
 #define INC_ROUTINGCOMPONENT_H
 
-#include "plane.h"
-#include "../misc/geometry.h"
-
-#include <utility>
 #include <string>
 #include <vector>
+
+#include "plane.h"
 
 class Pin {
 public:
@@ -23,6 +21,8 @@ public:
     int x() const;
     int y() const;
     int z() const;
+
+    std::string toString() const;
 
 protected:
     int x_;
@@ -60,13 +60,11 @@ int Pin::z() const {
     return z_;
 }
 
-typedef std::vector<Pin> PinptrList;
+inline std::string Pin::toString() const {
+    return std::to_string(x_) + "," + std::to_string(y_) + "," + std::to_string(z_);
+}
 
 class Net {
-public:
-    int serialNumber;   //net id_# in test case
-    int id;             //the net ordered in test case
-    int minWireWidth;	//minimum wire width of this net
 
 public:
     //Constructor
@@ -74,19 +72,27 @@ public:
 
     void set_name(const std::string&);	//set net name
     void add_pin(const Pin& pin_ptr); //add pin pointer that point to pin
-    const PinptrList& get_pinList() const; //get the pin pointer list of this net
+    const std::vector<Pin>& get_pinList() const; //get the pin pointer list of this net
     const std::string& get_name() const;	//get net name
     int get_pinNumber() const;		//get pin number in this net
     int get_bboxSize() const;      //get the bounding box size
 
     static bool comp_net(const Net& a, const Net& b);
+
+    std::string toString() const;
+
+public:
+    int serialNumber;   //net id_# in test case
+    int id;             //the net ordered in test case
+    int minWireWidth;	//minimum wire width of this net
+
 private:
     std::string name;
     int minPinX;
     int maxPinX;
     int minPinY;
     int maxPinY;
-    PinptrList pin_list;
+    std::vector<Pin> pin_list;
 };
 
 class RoutingSpace {
@@ -177,5 +183,7 @@ inline
 int RoutingSpace::getZSize() const {
     return routingSpace_.size();
 }
+
+
 
 #endif /*INC_ROUTINGCOMPONENT_H*/

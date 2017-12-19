@@ -151,7 +151,7 @@ void Layer_assignment::cycle_reduction(const Coordinate_2d& c, const Coordinate_
 
 void Layer_assignment::preprocess(int net_id) {
 
-    const PinptrList& pin_list = rr_map.get_nPin(net_id);
+    const std::vector<Pin>& pin_list = rr_map.get_nPin(net_id);
 
     for (const Pin& pin : pin_list) {
         layerInfo_map.vertex(pin.get_tileXY()).path = -2;	// pin
@@ -346,7 +346,7 @@ void Layer_assignment::generate_output(int net_id, const std::vector<Segment3d>&
 }
 
 int Layer_assignment::klat(int net_id) { //SOLAC + APEC
-    const PinptrList& pin_list = rr_map.get_nPin(net_id);
+    const std::vector<Pin>& pin_list = rr_map.get_nPin(net_id);
 
     Coordinate_2d start = pin_list[0].get_tileXY();
     global_net_id = net_id; // LAZY global variable

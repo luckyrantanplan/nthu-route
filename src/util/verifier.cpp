@@ -492,7 +492,7 @@ bool Verifier::routeWireOnMaps(int netPos, int x, int y, int z, int length, int 
 }
 
 void Verifier::checkPinConnectivity(int netPos) {
-    const PinptrList& netPin = this->rr->get_nPin(netPos);
+    const std::vector<Pin>& netPin = this->rr->get_nPin(netPos);
     int tileX, tileY, tileZ;
     for (int pinPos = 0; pinPos < (int) netPin.size(); ++pinPos) {
         tileX = netPin[pinPos]->get_tileX();

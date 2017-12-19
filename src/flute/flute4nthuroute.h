@@ -11,7 +11,7 @@ class Flute {
                 Flute ();
                 ~Flute ();
 
-    void        routeNet (const PinptrList& pinList, Tree& routingTree);
+    void        routeNet (const std::vector<Pin>& pinList, Tree& routingTree);
 
     void        printTree (Tree& routingTree);
 

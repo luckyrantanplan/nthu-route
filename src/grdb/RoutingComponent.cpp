@@ -41,6 +41,23 @@ void Net::set_name(const std::string& iname) {
     name = iname;
 }
 
+std::string Net::toString() const {
+    std::string s = "serialNumber: " + std::to_string(serialNumber);
+    s += " id: " + std::to_string(id);
+    s += " minWireWidth: " + std::to_string(minWireWidth);
+    s += " name: " + name;
+    s += " minPinX: " + std::to_string(minPinX);
+    s += " maxPinX: " + std::to_string(maxPinX);
+    s += " minPinY: " + std::to_string(minPinY);
+    s += " maxPinY: " + std::to_string(maxPinY);
+    s += " pin_list: [";
+    for (const Pin& p : pin_list) {
+        s +="("+ p.toString() + ") ";
+    }
+    s += "]";
+    return s;
+}
+
 void Net::add_pin(const Pin& pin) {
     //Update boundy box information
     if (pin.x() < minPinX) {
@@ -61,7 +78,7 @@ void Net::add_pin(const Pin& pin) {
     pin_list.push_back(pin);
 }
 
-const PinptrList& Net::get_pinList() const {
+const std::vector<Pin>& Net::get_pinList() const {
     return pin_list;
 }
 
