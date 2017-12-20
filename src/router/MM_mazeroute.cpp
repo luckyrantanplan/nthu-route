@@ -202,10 +202,9 @@ bool Multisource_multisink_mazeroute::mm_maze_route_p(Two_pin_element_2d &ieleme
 
     bool find_path_flag = false;
 
-    MMM_element* next_pos = nullptr;
     MMM_element* sink_pos = nullptr;
-    element->path.clear();
     element = &ielement;
+    element->path.clear();
     int boundary_l = start.x;
     int boundary_b = start.y;
     int boundary_r = end.x;
@@ -229,9 +228,9 @@ bool Multisource_multisink_mazeroute::mm_maze_route_p(Two_pin_element_2d &ieleme
 
         for (EdgePlane<Edge_2d>::Handle& h : congestion.congestionMap2d.neighbors(cur_pos.coor)) {
 
-            next_pos = &mmm_map[h.vertex().x][h.vertex().y];
+            MMM_element& next_pos = mmm_map[h.vertex().x][h.vertex().y];
 
-            if (next_pos != cur_pos.parent && next_pos->walkableID == visit_counter) {
+            if (&next_pos != cur_pos.parent && next_pos.walkableID == visit_counter) {
 
                 double reachCost = cur_pos.reachCost;
                 int total_distance = cur_pos.distance;
@@ -255,7 +254,7 @@ bool Multisource_multisink_mazeroute::mm_maze_route_p(Two_pin_element_2d &ieleme
                             }
                         }
                     }
-                } else {
+                } else { // version==3
                     if ((h.edge().MMVisitFlag != visit_counter) && (h.edge().cost != 0.0)) {
                         reachCost += h.edge().cost;
                         ++total_distance;
@@ -269,31 +268,31 @@ bool Multisource_multisink_mazeroute::mm_maze_route_p(Two_pin_element_2d &ieleme
                 }
 
                 bool needUpdate = false;
-                if (next_pos->visit != visit_counter) {
+                if (next_pos.visit != visit_counter) {
                     if (smaller_than_lower_bound(reachCost, total_distance, via_num, bound_cost, bound_distance, bound_via_num)) {
                         needUpdate = true;
                     }
                 } else {
-                    if (smaller_than_lower_bound(reachCost, total_distance, via_num, next_pos->reachCost, next_pos->distance, next_pos->via_num)) {
+                    if (smaller_than_lower_bound(reachCost, total_distance, via_num, next_pos.reachCost, next_pos.distance, next_pos.via_num)) {
                         needUpdate = true;
                     }
                 }
 
                 if (needUpdate == true) {
-                    next_pos->parent = &cur_pos;
-                    next_pos->reachCost = reachCost;
-                    next_pos->distance = total_distance;
-                    next_pos->via_num = via_num;
-                    next_pos->visit = visit_counter;
+                    next_pos.parent = &cur_pos;
+                    next_pos.reachCost = reachCost;
+                    next_pos.distance = total_distance;
+                    next_pos.via_num = via_num;
+                    next_pos.visit = visit_counter;
 
-                    if (next_pos->dst == dst_counter) {
+                    if (next_pos.dst == dst_counter) {
                         bound_cost = reachCost;
                         bound_distance = total_distance;
                         bound_via_num = via_num;
-                        sink_pos = next_pos;
+                        sink_pos = &next_pos;
                     } else {
 
-                        pqueue.update(next_pos->handle);
+                        pqueue.update(next_pos.handle);
                     }
 
                 }
