@@ -18,6 +18,8 @@
 #include "../grdb/RoutingComponent.h"
 #include "../grdb/RoutingRegion.h"
 #include "Congestion.h"
+#define SPDLOG_TRACE_ON
+#include "../spdlog/spdlog.h"
 
 using namespace std;
 
@@ -94,31 +96,35 @@ void Layer_assignment::update_cur_map_for_klat_z(int min, int max, const Coordin
 
 void Layer_assignment::update_path_for_klat(const Coordinate_2d& start) {
     int pin_num = 0;
-    std::queue<Coordinate_3d> q;
+    std::queue<ElementQueue<Coordinate_3d>> q;
 
 // BFS
-    q.push(Coordinate_3d { start, 0 });	// enqueue
+    q.emplace(Coordinate_3d { start, 0 }, Coordinate_3d { start, 0 });	// enqueue
     while (!q.empty()) {
-        Coordinate_3d& head3d = q.front();
-        Coordinate_2d h = head3d.xy();
+        ElementQueue<Coordinate_3d>& head3d = q.front();
+        SPDLOG_TRACE(log_sp, "Coordinate_3d& head3d  {} ", head3d.toString());
+
+        Coordinate_2d h = head3d.coor.xy();
         int z_min = 0;
         if (layerInfo_map.vertex(h).path == 2) {	// a pin
             ++pin_num;
         } else {
-            z_min = head3d.z;
+            z_min = head3d.coor.z;
         }
-        int z_max = head3d.z;
+        int z_max = head3d.coor.z;
         for (EdgePlane<EdgeInfo>::Handle& handle : layerInfo_map.edges().neighbors(h)) {
-            if (handle.edge().path == 1) {	// check legal
+            if (handle.vertex() != head3d.parent.xy() && handle.edge().path == 1) {	// check legal
                 Coordinate_2d& c = handle.vertex();
                 if (layerInfo_map.vertex(c).path == 0) {
-                    puts("ERROR");
+                    log_sp->error("inconsistency between traverse node and edge check parent ???");
+                    SPDLOG_TRACE(log_sp, "layerInfo_map.vertex(c).path == 0 and handle.edge().path == 1 c {} ", c.toString());
+                    exit(-1);
                 }
-                int pi_z = layerInfo_map.vertex(c).klat[head3d.z].pi_z;
+                int pi_z = layerInfo_map.vertex(c).klat[head3d.coor.z].pi_z;
                 z_max = std::max(z_max, pi_z);
                 z_min = std::min(z_min, pi_z);
                 update_cur_map_for_klat_xy(pi_z, h, c, global_net_id);
-                q.push(Coordinate_3d { c, pi_z });	// enqueue
+                q.emplace(Coordinate_3d { c, pi_z }, Coordinate_3d { h, pi_z });	// enqueue
             }
         }
         update_cur_map_for_klat_z(z_min, z_max, h, global_net_id);
@@ -164,10 +170,10 @@ void Layer_assignment::preprocess(int net_id) {
         k.val = -1;
     }
 
-    std::queue<ElementQueue> q;
+    std::queue<ElementQueue<Coordinate_2d>> q;
     q.emplace(c, c);	// enqueue
     while (!q.empty()) {
-        ElementQueue& front = q.front();
+        ElementQueue<Coordinate_2d>& front = q.front();
         for (EdgePlane<EdgeInfo>::Handle& handle : layerInfo_map.edges().neighbors(front.coor)) {
             if (handle.vertex() != front.parent) {
                 if (congestion.congestionMap2d.edge(front.coor, handle.vertex()).lookupNet(net_id)) {	//
@@ -200,15 +206,20 @@ void Layer_assignment::preprocess(int net_id) {
 }
 
 void Layer_assignment::VertexCost::addCost(const Coordinate_2d& o, const ElementStack& e, const Layer_assignment& l) {
+    auto log_sp = spdlog::get("NTHUR");
+
     for (const Coordinate_3d& c : e.choice) {
         interval.add(c.z);
     }
 
     cost = e.cost;
+    SPDLOG_TRACE(log_sp, " VertexCost::addCost");
     for (Coordinate_3d c2 { o, interval.min }; c2.z < interval.max; ++c2.z) {
+        SPDLOG_TRACE(log_sp, "l.cur_map_3d.edge(c2, Coordinate_3d  o, c2.z + 1 ) {}", Coordinate_3d { o, c2.z + 1 }.toString());
         if (l.cur_map_3d.edge(c2, Coordinate_3d { o, c2.z + 1 }).isOverflow()) {
             ++cost;
         }
+        SPDLOG_TRACE(log_sp, "l.cur_map_3d.edge(c2, Coordinate_3d o, c2.z + 1 ) success");
     }
     via_cost = 0;
     for (const Coordinate_3d& c : e.choice) {
@@ -219,6 +230,7 @@ void Layer_assignment::VertexCost::addCost(const Coordinate_2d& o, const Element
 }
 
 std::vector<Coordinate_3d> Layer_assignment::rec_count(const Coordinate_3d& o, KLAT_NODE& klatNode) {
+    SPDLOG_TRACE(log_sp, " rec_count");
     Interval int_DP_k { 0, o.z };
     if (layerInfo_map.vertex(o.xy()).path == 1) { // not a pin
         int_DP_k.min = o.z;
@@ -269,6 +281,7 @@ std::vector<Coordinate_3d> Layer_assignment::rec_count(const Coordinate_3d& o, K
 void Layer_assignment::DP(const Coordinate_3d& c, const Coordinate_3d& parent) {
 
     Coordinate_2d c1(c.xy());
+    SPDLOG_TRACE(log_sp, "  DP c: {} parent: {}", c.toString(), parent.toString());
     KLAT_NODE& klatNode = layerInfo_map.vertex(c1).klat[c.z];
     if (klatNode.val == -1) {	// non-traversed
         bool is_end = true;
@@ -276,7 +289,11 @@ void Layer_assignment::DP(const Coordinate_3d& c, const Coordinate_3d& parent) {
             if (handle.edge().path == 1 && handle.vertex() != parent.xy()) {	// check legal
                 is_end = false;
                 for (Coordinate_3d c2 { handle.vertex(), 0 }; c2.z < cur_map_3d.getZSize(); ++c2.z) {	// use global_max_layer to substitute max_zz
+
+                    SPDLOG_TRACE(log_sp, "  (c1, c2.z)  : {}", Coordinate_3d { c1, c2.z }.toString());
+
                     Edge_3d& edge = cur_map_3d.edge(Coordinate_3d { c1, c2.z }, c2);
+                    SPDLOG_TRACE(log_sp, "  (c1, c2.z)  : {} Success", Coordinate_3d { c1, c2.z }.toString());
                     if (((handle.edge().overflow <= 0) && !edge.isOverflow()) ||	//
                             ((edge.overUsage()) < overflow_max)) {	// pass without overflow
                         DP(c2, c);
@@ -288,9 +305,13 @@ void Layer_assignment::DP(const Coordinate_3d& c, const Coordinate_3d& parent) {
             klatNode.via_cost = global_via_cost * c.z;
             klatNode.via_overflow = 0;
             for (Coordinate_3d c2 { c1, 0 }; c2.z < c.z; ++c2.z) {
+                SPDLOG_TRACE(log_sp, "cur_map_3d.edge(c2, Coordinate_3d( c1, c.z + 1 )).isOverflow() {}", Coordinate_3d { c1, c.z + 1 }.toString());
+
                 if (cur_map_3d.edge(c2, Coordinate_3d { c1, c.z + 1 }).isOverflow()) {
                     ++klatNode.via_overflow;
                 }
+                SPDLOG_TRACE(log_sp, "cur_map_3d.edge(c2, Coordinate_3d( c1, c.z + 1 )).isOverflow() {} Success", Coordinate_3d { c1, c.z + 1 }.toString());
+
             }
             klatNode.val = klatNode.via_overflow;
 
@@ -300,6 +321,7 @@ void Layer_assignment::DP(const Coordinate_3d& c, const Coordinate_3d& parent) {
             }
         }
     }
+    SPDLOG_TRACE(log_sp, "  END DP c: {} parent: {}", c.toString(), parent.toString());
 }
 
 void Layer_assignment::collectComb(Coordinate_3d c2, Coordinate_3d& c, std::vector<std::vector<Segment3d> >& comb) {
@@ -354,8 +376,9 @@ int Layer_assignment::klat(int net_id) { //SOLAC + APEC
     preprocess(net_id);
 // Find a pin as starting point
 // klat start with a pin
+    SPDLOG_TRACE(log_sp, "   DP(start, start); ");
     DP(start, start);
-
+    SPDLOG_TRACE(log_sp, "  update_path_for_klat(start); ");
     update_path_for_klat(start);
 
     return layerInfo_map.vertex(start).klat[0].val;
@@ -508,7 +531,7 @@ Layer_assignment::Layer_assignment(const Congestion& congestion, const RoutingRe
         layerInfo_map { congestion.congestionMap2d.getSize() }, //
         cur_map_3d { Coordinate_3d { congestion.congestionMap2d.getSize(), rr_map.get_layerNumber() } } 	//
 {
-
+    log_sp = spdlog::get("NTHUR");
     string outputFileName { outputFileNamePtr };
 
     global_via_cost = 1;

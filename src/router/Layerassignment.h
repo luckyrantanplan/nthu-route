@@ -1,9 +1,10 @@
 #ifndef INC_LAYER_ASSIGNMENT_H
 #define INC_LAYER_ASSIGNMENT_H
 
-#include <boost/multi_array.hpp>
 #include <algorithm>
+#include <iostream>
 #include <limits>
+#include <memory>
 #include <string>
 #include <tuple>
 #include <unordered_map>
@@ -12,6 +13,10 @@
 #include "../grdb/EdgePlane3d.h"
 #include "../grdb/plane.h"
 #include "../misc/geometry.h"
+
+namespace spdlog {
+class logger;
+} /* namespace spdlog */
 
 class RoutingRegion;
 
@@ -61,12 +66,17 @@ struct EdgeInfo {
 
 struct Layer_assignment {
 
+    template<class C>
     struct ElementQueue {
-        Coordinate_2d coor;
-        Coordinate_2d parent;
+        C coor;
+        C parent;
 
-        ElementQueue(Coordinate_2d coor, Coordinate_2d parent) :
+        ElementQueue(const C& coor, const C& parent) :
                 coor { coor }, parent { parent } {
+        }
+
+        std::string toString() const {
+            return "coor:" + coor.toString() + " parent:" + parent.toString();
         }
     };
 
@@ -138,6 +148,9 @@ struct Layer_assignment {
     int global_net_id;
     int global_pin_num;
     int global_via_cost;
+
+    std::shared_ptr<spdlog::logger> log_sp;
+
     void print_max_overflow();
 
     void initial_overflow_map();

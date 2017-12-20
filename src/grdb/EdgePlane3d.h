@@ -274,7 +274,25 @@ T& EdgePlane3d<T>::edge(const Coordinate_3d& c1, const Coordinate_3d& c2) {
 
 template<class T>
 const T& EdgePlane3d<T>::edge(const Coordinate_3d& c1, const Coordinate_3d& c2) const {
-    return edge(c1, c2);
+    if (c1.x < c2.x) {
+        return get(c1, EAST);
+    }
+    if (c1.x > c2.x) {
+        return get(c2, EAST);
+    }
+    if (c1.y < c2.y) {
+        return get(c1, SOUTH);
+    }
+    if (c1.y > c2.y) {
+        return get(c2, SOUTH);
+    }
+    if (c1.z < c2.z) {
+        return get(c1, FRONT);
+    }
+    if (c1.z > c2.z) {
+        return get(c2, FRONT);
+    }
+    throw std::exception();
 }
 template<class T>
 const std::size_t EdgePlane3d<T>::num_elements() const {
