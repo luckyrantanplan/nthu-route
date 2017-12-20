@@ -52,10 +52,8 @@ void Route_2pinnets::init_gridcell() {
             gridcell[x][y].points.clear();
         }
     }
-    int length = construct_2d_tree.two_pin_list.size();
-    for (int i = 0; i < length; ++i) {
+    for (Two_pin_element_2d& two_pin : construct_2d_tree.two_pin_list) {
         //add pin1
-        Two_pin_element_2d& two_pin = construct_2d_tree.two_pin_list[i];
         int cur_x = two_pin.pin1.x;
         int cur_y = two_pin.pin1.y;
         gridcell[cur_x][cur_y].points.push_back(&two_pin);
@@ -152,7 +150,7 @@ void Route_2pinnets::bfs_for_find_two_pin_list(Coordinate_2d start_coor, int net
                 two_pin.pin1 = head;
                 two_pin.net_id = net_id;
                 two_pin.path.push_back(head);
-                bool exit_loop = true;
+                bool exit_loop = false;
                 Coordinate_2d c = h.vertex();
                 while (!exit_loop) {
                     exit_loop = true;

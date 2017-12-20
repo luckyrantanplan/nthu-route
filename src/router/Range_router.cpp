@@ -259,6 +259,8 @@ void RangeRouter::query_range_2pin(const Rectangle& r, //
     for (int x = r.upLeft.x; x <= r.downRight.x; ++x) {
         for (int y = r.upLeft.y; y <= r.downRight.y; ++y) {
             Point_fc& cell = (gridCell[x][y]);
+            SPDLOG_TRACE(log_sp, "query_range_2pin cell:{}", cell.toString());
+
             for (Two_pin_element_2d* twopin : cell.points) {   //for each pin or steiner point
                 if (twopin->done != construct_2d_tree.done_iter) {
                     Coordinate_2d& p1 = twopin->pin1;
@@ -316,8 +318,9 @@ void RangeRouter::specify_all_range(boost::multi_array<Point_fc, 2>& gridCell) {
         sort(twopin_list.begin(), twopin_list.end(), [&](const Two_pin_element_2d *a, const Two_pin_element_2d *b) {
             return Two_pin_element_2d::comp_stn_2pin(*a,*b);});
 
-        for (int j = 0; j < (int) twopin_list.size(); ++j) {
-            range_router(*twopin_list[j], 2);
+        for (Two_pin_element_2d * two_pin : twopin_list) {
+            SPDLOG_TRACE(log_sp, "range_router(twopin, 2);", two_pin->toString());
+            range_router(*two_pin, 2);
         }
     }
 

@@ -31,6 +31,17 @@ public:
         y = iy;
     }
 
+    std::string toString() const{
+        std::string s="x:"+std::to_string(x);
+        s+=" y:"+std::to_string(y);
+        s+=" points:[";
+        for (Two_pin_element_2d* twoPin: points){
+            s+="("+twoPin->toString()+") ";
+        }
+        s+="]";
+        return s;
+    }
+
 public:
     int x;
     int y;
