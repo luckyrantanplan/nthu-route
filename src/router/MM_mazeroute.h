@@ -2,11 +2,18 @@
 #define INC_MM_MAZEROUTE_H
 
 #include <boost/heap/pairing_heap.hpp>
+#include <boost/heap/policies.hpp>
 #include <boost/multi_array.hpp>
+#include <memory>
+#include <string>
 #include <vector>
 
 #include "../misc/geometry.h"
 #include "DataDef.h"
+
+namespace spdlog {
+class logger;
+} /* namespace spdlog */
 
 class Congestion;
 
@@ -22,11 +29,20 @@ private:
     public:
         Coordinate_2d coor;
 
-        vector<Vertex_mmm*> neighbor;
+        std::vector<Vertex_mmm*> neighbor;
         int visit;
 
         Vertex_mmm(const Coordinate_2d& xy);
 
+        std::string toString() const {
+            std::string s = "coor:" + coor.toString();
+            s += " neighbor:[";
+            for (Vertex_mmm* v : neighbor) {
+                s += v->coor.toString() + " ";
+            }
+            s += "] visit:" + std::to_string(visit);
+            return s;
+        }
     };
 
     class MMM_element {
@@ -71,26 +87,49 @@ private:
 
     public:
         MMM_element() :
-                coor { }, parent(nullptr), reachCost(0.), distance(0), via_num(0), visit(-1), dst(-1), walkableID(-1), handle { } {
+                coor { }, parent(this), reachCost(0.), distance(0), via_num(0), visit(-1), dst(-1), walkableID(-1), handle { } {
+
+        }
+
+        std::string toString() const {
+            std::string s = "coor:" + coor.toString();
+            s += " parent:" + parent->coor.toString();
+            s += " reachCost:" + std::to_string(reachCost);
+            s += " distance:" + std::to_string(distance);
+
+            s += " via_num:" + std::to_string(via_num);
+            s += " visit:" + std::to_string(visit);
+            s += " dst:" + std::to_string(dst);
+            s += " walkableID:" + std::to_string(walkableID);
+            s += " handle:" + std::to_string(handle.node_ == nullptr);
+
+            return s;
+        }
+
+        void resetHandle() {
+            handle = HandleType { };
         }
 
     };
 
 public:
     Multisource_multisink_mazeroute(Construct_2d_tree& construct_2d_tree, Congestion& congestion);
-    ~Multisource_multisink_mazeroute();
+
+    Multisource_multisink_mazeroute(const Multisource_multisink_mazeroute&) = delete;
+    void operator=(const Multisource_multisink_mazeroute&) = delete;
+
     bool mm_maze_route_p(Two_pin_element_2d&element, double bound_cost, int bound_distance, int bound_via_num, Coordinate_2d& start, Coordinate_2d& end, int version);
     void clear_net_tree();
 
 private:
     void setup_pqueue();
-    void find_subtree(Vertex_mmm *v, int mode);
+    void find_subtree(Vertex_mmm& v, int mode);
     void adjust_twopin_element();
     void trace_back_to_find_path_2d(MMM_element *end_point);
 
     //Cache System
     void putNetOnColorMap();
-    void bfsSetColorMap(int x, int y);
+    void bfsSetColorMap(const Coordinate_2d& c1);
 
     bool smaller_than_lower_bound(double total_cost, int distance, int via_num, double bound_cost, int bound_distance, int bound_via_num);
 
@@ -106,7 +145,7 @@ private:
     Vertex_mmm* pin2_v;	//source,destination
     int visit_counter;
     int dst_counter;
-
+    std::shared_ptr<spdlog::logger> log_sp;
 };
 
 #endif //INC_MM_MAZEROUTE_H
