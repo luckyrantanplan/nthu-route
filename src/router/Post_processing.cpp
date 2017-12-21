@@ -12,6 +12,8 @@
 #include "parameter.h"
 #include "Range_router.h"
 #include "Route_2pinnets.h"
+#define SPDLOG_TRACE_ON
+#include "../spdlog/spdlog.h"
 
 bool COUNTER::operator <(const COUNTER& o) const {
     return std::tie(total_overflow, bsize) < std::tie(o.total_overflow, o.bsize);
@@ -64,6 +66,8 @@ Post_processing::Post_processing(Congestion& congestion, Construct_2d_tree& cons
         total_no_overflow { false },	//
         construct_2d_tree { construct_2d_tree }, //
         rangeRouter { rangeRouter } {
+    Post_processing_iteration = construct_2d_tree.routing_parameter.get_iteration_p3();
+    log_sp = spdlog::get("NTHUR");
 }
 
 void Post_processing::process(Route_2pinnets& route_2pinnets) {
@@ -73,10 +77,8 @@ void Post_processing::process(Route_2pinnets& route_2pinnets) {
 
     routing_parameter.BOXSIZE_INC = routing_parameter.get_init_box_size_p3();
     int inc_num = routing_parameter.get_box_size_inc_p3();
-    Post_processing_iteration = routing_parameter.get_iteration_p3();
-#ifdef MESSAGE
-    printf("size: (%d %d)\n",BOXSIZE_INC,inc_num);
-#endif
+    SPDLOG_TRACE(log_sp, "size: ({} {}) ", routing_parameter.BOXSIZE_INC, inc_num);
+
     construct_2d_tree.done_iter++;
     congestion.used_cost_flag = MADEOF_COST;
     int cur_overflow = congestion.cal_max_overflow();
@@ -105,9 +107,6 @@ void Post_processing::process(Route_2pinnets& route_2pinnets) {
             route_2pinnets.reallocate_two_pin_list();
         }
     }
-
-#ifdef MESSAGE
-    puts("maze routing complete successfully");
-#endif
+    SPDLOG_TRACE(log_sp, "maze routing complete successfully");
 
 }

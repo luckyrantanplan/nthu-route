@@ -669,8 +669,6 @@ Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterS
      * Global Variable End
      * ********************/
 
-    congestion.cur_iter = -1;                  // current iteration ID.
-
     readLUT();                  // Function in flute, function: unknown
 
     /* TroyLee: NetDirtyBit Counter */
@@ -707,8 +705,8 @@ Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterS
 
     for (congestion.cur_iter = 1, done_iter = congestion.cur_iter; congestion.cur_iter <= routing_parameter.get_iteration_p2(); ++congestion.cur_iter, done_iter = congestion.cur_iter)   //do n-1 times
             {
-        std::cout << "\033[31mIteration:\033[m " << congestion.cur_iter << std::endl;
 
+        SPDLOG_TRACE(log_sp, "Iteration: {} ", congestion.cur_iter);
         congestion.factor = (1.0 - std::exp(-5 * std::exp(-(0.1 * congestion.cur_iter))));
 
         congestion.WL_Cost = congestion.factor;

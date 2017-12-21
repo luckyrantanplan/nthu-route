@@ -71,5 +71,5 @@ void RoutingRegion::endAddANet() {
 }
 
 void RoutingRegion::endBuild() {
-    cout << "\033[33mTotal nets to route=" << netList_.size() << "\033[m" << endl;
+    cout << "Total nets to route= " << netList_.size() << endl;
 }

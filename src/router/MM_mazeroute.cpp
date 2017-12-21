@@ -250,7 +250,7 @@ bool Multisource_multisink_mazeroute::mm_maze_route_p(Two_pin_element_2d &ieleme
 
             SPDLOG_TRACE(log_sp, "next_pos {}", next_pos.toString());
 
-            SPDLOG_TRACE(log_sp, "h.edge() {}", h.edge().toString());
+            SPDLOG_TRACE(log_sp, "h.vertex() {} h.edge() {}",h.vertex().toString(), h.edge().toString());
 
             if (&next_pos != cur_pos.parent && next_pos.walkableID == visit_counter) {
 
@@ -289,6 +289,7 @@ bool Multisource_multisink_mazeroute::mm_maze_route_p(Two_pin_element_2d &ieleme
                 }
 
                 bool needUpdate = false;
+                SPDLOG_TRACE(log_sp, "bool needUpdate ?");
                 if (next_pos.visit != visit_counter) {
                     if (smaller_than_lower_bound(reachCost, total_distance, via_num, bound_cost, bound_distance, bound_via_num)) {
                         needUpdate = true;
@@ -306,6 +307,8 @@ bool Multisource_multisink_mazeroute::mm_maze_route_p(Two_pin_element_2d &ieleme
                     next_pos.via_num = via_num;
                     next_pos.visit = visit_counter;
                     SPDLOG_TRACE(log_sp, "needUpdate next_pos {}", next_pos.toString());
+
+                    SPDLOG_TRACE(log_sp, "next_pos.dst {} == dst_counter {}", next_pos.dst, dst_counter);
                     if (next_pos.dst == dst_counter) {
                         bound_cost = reachCost;
                         bound_distance = total_distance;
@@ -333,6 +336,9 @@ bool Multisource_multisink_mazeroute::mm_maze_route_p(Two_pin_element_2d &ieleme
 
     ++visit_counter;
     ++dst_counter;
+
+    SPDLOG_TRACE(log_sp, "ielement {}", ielement.toString());
+
     return find_path_flag;
 }
 

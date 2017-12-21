@@ -22,7 +22,6 @@
 #define SPDLOG_TRACE_ON
 #include "../spdlog/spdlog.h"
 
-
 #define parameter_h 0.8         // used in the edge cost function 1/0.5 0.8/2
 #define parameter_k 2           // used in the edge cost function
 
@@ -33,6 +32,7 @@ Congestion::Congestion(int x, int y) :
     WL_Cost = 1.0;
     via_cost = 3;
     factor = 1.0;
+    cur_iter = -1;                  // current iteration ID.
     used_cost_flag = FASTROUTE_COST;    // cost function type, i.e., HISTORY_COST, HISTORY_MADEOF_COST, MADEOF_COST, FASTROUTE_COST
     pre_evaluate_congestion_cost_fp = [&]( Edge_2d& edge) {pre_evaluate_congestion_cost_all( edge);};
     log_sp = spdlog::get("NTHUR");
@@ -117,10 +117,13 @@ void Congestion::pre_evaluate_congestion_cost() {
 
     for (Edge_2d& edge : congestionMap2d.all()) {
         pre_evaluate_congestion_cost_fp(edge);
+
         if (edge.isOverflow()) {
             ++edge.history;
         }
+
     }
+    SPDLOG_TRACE(log_sp, "pre_evaluate_congestion_cost gridEdge \n{}", congestionMap2d.toString());
 }
 
 //Check if the specified edge is not overflowed

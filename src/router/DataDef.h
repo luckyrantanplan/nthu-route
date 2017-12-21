@@ -143,8 +143,9 @@ public:
 
     std::string toString() const {
         std::string s = "cur" + std::to_string(static_cast<int>(cur_cap));
-        s += " max " + std::to_string(static_cast<int>(max_cap));
-        s += " use " + std::to_string(used_net.size());
+        s += " max:" + std::to_string(static_cast<int>(max_cap));
+        s += " use:" + std::to_string(used_net.size());
+        s += " cost:" + std::to_string(cost);
         return s;
     }
 };

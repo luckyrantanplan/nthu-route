@@ -115,7 +115,7 @@ class EdgePlane {
     private:
         bool isVertexInside(const Coordinate_2d& c) const {
             return (c.x >= 0 && c.y >= 0 && c.x < (int) range.edgePlane.size() && //
-                    c.y * 2 < (int) range.edgePlane[0].size());
+                    c.y   < (int) range.edgePlane[0].size());
         }
         int index;
         RangeExpression& range;

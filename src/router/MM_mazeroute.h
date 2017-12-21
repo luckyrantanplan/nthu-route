@@ -53,19 +53,21 @@ private:
 
             bool operator()(const MMM_element* lhs, const MMM_element* rhs) const {
 
-                if ((lhs->reachCost - rhs->reachCost) < neg_error_bound) {
-                    return false;
-                } else if ((lhs->reachCost - rhs->reachCost) > error_bound) {
-                    return true;
-                } else {
-                    if (lhs->distance < rhs->distance)
-                        return false;
-                    else if (lhs->distance > rhs->distance)
-                        return true;
-                    else
-                        return lhs->via_num > rhs->via_num;
-                }
-
+                return std::tie(lhs->reachCost, lhs->distance, lhs->via_num) > std::tie(rhs->reachCost, rhs->distance, rhs->via_num);
+                /*
+                 if ((lhs->reachCost - rhs->reachCost) < neg_error_bound) {
+                 return false;
+                 } else if ((lhs->reachCost - rhs->reachCost) > error_bound) {
+                 return true;
+                 } else {
+                 if (lhs->distance < rhs->distance)
+                 return false;
+                 else if (lhs->distance > rhs->distance)
+                 return true;
+                 else
+                 return lhs->via_num > rhs->via_num;
+                 }
+                 */
             }
         };
     public:
