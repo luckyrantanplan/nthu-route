@@ -160,16 +160,15 @@ int Congestion::find_overflow_max(int max_zz) const {
             overflow_max = edge.overUsage();
         }
     }
-
-    printf("2D maximum overflow = %d\n", overflow_max);
+    SPDLOG_TRACE(log_sp, "2D maximum overflow = {}", overflow_max);
 
     if (overflow_max % max_zz) {
         overflow_max = ((overflow_max / max_zz) * 2) + 2;
     } else {
         overflow_max = ((overflow_max / max_zz) * 2);
     }
+    SPDLOG_TRACE(log_sp, "overflow max = = {}", overflow_max);
 
-    printf("overflow max = %d\n", overflow_max);
     return overflow_max;
 }
 

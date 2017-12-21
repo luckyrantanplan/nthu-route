@@ -115,7 +115,7 @@ class EdgePlane {
     private:
         bool isVertexInside(const Coordinate_2d& c) const {
             return (c.x >= 0 && c.y >= 0 && c.x < (int) range.edgePlane.size() && //
-                    c.y   < (int) range.edgePlane[0].size());
+                    c.y < (int) range.edgePlane[0].size());
         }
         int index;
         RangeExpression& range;
@@ -183,32 +183,7 @@ public:
 
     auto allHorizontal();
 
-    std::string toString() {
-        size_t maxSize = 0;
-        for (const T& t : all()) {
-            maxSize = std::max(t.toString().size(), maxSize);
-        }
-        maxSize *= 2;
-        std::string gridString;
-        for (std::size_t y = 0; y < edgePlane_[0].size(); ++y) {
-            std::string l1(maxSize / 2 + maxSize * edgePlane_.size(), ' ');
-            std::string l2((maxSize + 1) * edgePlane_.size(), ' ');
-            for (std::size_t x = 0; x < edgePlane_.size(); ++x) {
-                {
-                    std::string s = edgePlane_[x][y][EAST].toString();
-                    l1.replace((x + 1) * maxSize - s.size(), s.size(), s);
-                }
-                {
-                    std::string s = edgePlane_[x][y][SOUTH].toString();
-                    l2.replace(maxSize / 2 + x * maxSize - s.size(), s.size(), s);
-                }
-            }
-            gridString += l1 + "\n";
-            gridString += l2 + "\n";
-
-        }
-        return gridString;
-    }
+    std::string toString() const;
 
 private:
 ///The real data structure of plane
@@ -311,4 +286,35 @@ template<class T>
 const std::size_t EdgePlane<T>::num_elements() const {
     return edgePlane_.num_elements();
 }
+
+///@brief The data structure for presenting the routing edges in global routing area.
+///@details User can specify the data structure of routing edges by their own, and
+///         the default data structure of routing edges is a integer.
+template<class T>
+inline std::string EdgePlane<T>::toString() const {
+    size_t maxSize = 0;
+    for (const T& t : all()) {
+        maxSize = std::max(t.toString().size(), maxSize);
+    }
+    maxSize *= 2;
+    std::string gridString;
+    for (std::size_t y = 0; y < edgePlane_[0].size(); ++y) {
+        std::string l1(maxSize / 2 + maxSize * edgePlane_.size(), ' ');
+        std::string l2((maxSize + 1) * edgePlane_.size(), ' ');
+        for (std::size_t x = 0; x < edgePlane_.size(); ++x) {
+            {
+                std::string s = edgePlane_[x][y][EAST].toString();
+                l1.replace((x + 1) * maxSize - s.size(), s.size(), s);
+            }
+            {
+                std::string s = edgePlane_[x][y][SOUTH].toString();
+                l2.replace(maxSize / 2 + x * maxSize - s.size(), s.size(), s);
+            }
+        }
+        gridString += l1 + "\n";
+        gridString += l2 + "\n";
+    }
+    return gridString;
+}
+
 #endif /* SRC_GRDB_EDGEPLANE_H_ */

@@ -24,7 +24,7 @@ public:
 
     ~Plane();
 
-  //  void operator=(const Plane&);
+    //  void operator=(const Plane&);
 
     ///@brief Get the map size in x-axis
     int getXSize() const;
@@ -45,6 +45,10 @@ public:
     EdgePlane<EdgeT>& edges();
 
     boost::iterator_range<VertexT*> allVertex();
+
+    boost::iterator_range<const VertexT*> allVertex() const;
+
+    std::string toString() const;
 
 private:
 
@@ -120,6 +124,32 @@ inline EdgePlane<EdgeT>& Plane<VertexT, EdgeT>::edges() {
 template<class VertexT, class EdgeT>
 inline boost::iterator_range<VertexT*> Plane<VertexT, EdgeT>::allVertex() {
     return boost::iterator_range<VertexT*>(plane_.data(), &plane_.data()[plane_.num_elements()]);
+}
+template<class VertexT, class EdgeT>
+inline boost::iterator_range<const VertexT*> Plane<VertexT, EdgeT>::allVertex() const {
+    return boost::iterator_range<const VertexT*>(plane_.data(), &plane_.data()[plane_.num_elements()]);
+}
+
+template<class VertexT, class EdgeT>
+inline std::string Plane<VertexT, EdgeT>::toString() const {
+    std::string s = "edgeplane_\n" + edgeplane_.toString();
+    s += "\nvertex:\n";
+    size_t maxSize = 0;
+    for (const VertexT& t : allVertex()) {
+        maxSize = std::max(t.toString().size(), maxSize);
+    }
+    ++maxSize; //include spacing
+    for (std::size_t y = 0; y < plane_[0].size(); ++y) {
+        std::string l1(maxSize * plane_.size(), ' ');
+        for (std::size_t x = 0; x < plane_.size(); ++x) {
+            {
+                std::string ss = plane_[x][y].toString();
+                l1.replace((x + 1) * maxSize - ss.size(), ss.size(), ss);
+            }
+        }
+        s += l1 + "\n";
+    }
+    return s;
 }
 
 #endif //INC_PLANE_H

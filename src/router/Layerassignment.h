@@ -29,6 +29,14 @@ struct KLAT_NODE {
     int via_cost;
     int via_overflow;
     int pi_z;
+
+    std::string toString() const {
+        std::string s = "val: " + std::to_string(val);
+        s += " via_cost: " + std::to_string(via_cost);
+        s += " via_overflow: " + std::to_string(via_overflow);
+        s += " pi_z: " + std::to_string(pi_z);
+        return s;
+    }
 };
 
 class Edge_3d {
@@ -57,11 +65,27 @@ struct AVERAGE_NODE {
 struct LayerInfo {
     std::vector<KLAT_NODE> klat;
     char path;
+
+    std::string toString() const {
+        std::string s = "klat: [";
+        for (const KLAT_NODE& k : klat) {
+            s += "(" + k.toString() + ") ";
+        }
+        s += "] path: " + std::to_string(path);
+        return s;
+    }
 };
 
 struct EdgeInfo {
     int overflow;
     char path;
+
+    std::string toString() const {
+        std::string s = "overflow: " + std::to_string(overflow);
+        s += " path: " + std::to_string(path);
+
+        return s;
+    }
 };
 
 struct Layer_assignment {

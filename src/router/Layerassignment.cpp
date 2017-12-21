@@ -42,10 +42,10 @@ void Layer_assignment::print_max_overflow() {
             ++lines;
         }
     }
+    SPDLOG_TRACE(log_sp, "       3D # of overflow = {} ", sum);
+    SPDLOG_TRACE(log_sp, "       3D max  overflow = {} ", max);
+    SPDLOG_TRACE(log_sp, "3D overflow edge number = {} ", lines);
 
-    printf("3D # of overflow = %d\n", sum);
-    printf("3D max overflow = %d\n", max);
-    printf("3D overflow edge number = %d\n", lines);
 }
 
 void Layer_assignment::initial_overflow_map() {
@@ -170,6 +170,8 @@ void Layer_assignment::preprocess(int net_id) {
         k.val = -1;
     }
 
+    SPDLOG_TRACE(log_sp, "layerInfo_map {}", layerInfo_map.toString());
+
     std::queue<ElementQueue<Coordinate_2d>> q;
     q.emplace(c, c);	// enqueue
     while (!q.empty()) {
@@ -203,6 +205,7 @@ void Layer_assignment::preprocess(int net_id) {
         q.pop();	// dequeue
     }
     cycle_reduction(c, c);
+    SPDLOG_TRACE(log_sp, "layerInfo_map after cycle reduction {}", layerInfo_map.toString());
 }
 
 void Layer_assignment::VertexCost::addCost(const Coordinate_2d& o, const ElementStack& e, const Layer_assignment& l) {
@@ -468,9 +471,8 @@ void Layer_assignment::sort_net_order() {
 
     std::chrono::duration<double> elapsed_seconds = end - start;
 
-    std::cout << "cost = " << global_pin_cost << "\n" << std::endl;
-
-    std::cout << "time = " << elapsed_seconds.count() << "\n" << std::endl;
+    SPDLOG_TRACE(log_sp, "cost = {}", global_pin_cost);
+    SPDLOG_TRACE(log_sp, "time = {}", elapsed_seconds.count());
 
 }
 
@@ -543,15 +545,14 @@ Layer_assignment::Layer_assignment(const Congestion& congestion, const RoutingRe
 
     calculate_cap();
     overflow_max = congestion.find_overflow_max(cur_map_3d.getZSize());
-    puts("Layer assignment processing...");
+    SPDLOG_TRACE(log_sp, "Layer assignment processing...");
 
     sort_net_order();
     print_max_overflow();
 
-    puts("Layer assignment complete.");
-
+    SPDLOG_TRACE(log_sp, "Layer assignment complete.");
     calculate_wirelength();
-    std::cout << "Outputing result file to " << outputFileName << std::endl;
+    SPDLOG_TRACE(log_sp, "Outputing result file to {}", outputFileName);
     generate_all_output(std::cout);
     std::ofstream ofs(outputFileName, std::ofstream::out | std::ofstream::trunc);
     generate_all_output(ofs);
