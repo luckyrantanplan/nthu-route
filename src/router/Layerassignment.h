@@ -120,6 +120,16 @@ struct Layer_assignment {
         ElementStack(int parent, int val) :
                 choice { }, others { parent }, cost { val } {
         }
+
+        std::string toString() const {
+            std::string s = "choice: [";
+            for (const Coordinate_3d& c : choice) {
+                s += "(" + c.toString() + ") ";
+            }
+            s += "] others: " + std::to_string(others);
+            s += " cost: " + std::to_string(cost);
+            return s;
+        }
     };
 
     struct Segment3d {

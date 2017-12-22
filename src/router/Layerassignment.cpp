@@ -264,35 +264,43 @@ std::vector<Coordinate_3d> Layer_assignment::rec_count(const Coordinate_3d& o, K
     stack.emplace(neighbors.size() - 1, 0);
     while (!stack.empty()) {
         ElementStack e = stack.top();
+        SPDLOG_TRACE(log_sp, " stack.top()={} ", e.toString());
         stack.pop();
-        if (e.cost <= vertexCost.cost) {
-            if (e.others >= 0) {
-                Coordinate_2d child = neighbors[e.others];
-                --e.others;
+        if (e.others >= 0) {
+            Coordinate_2d child = neighbors[e.others];
+            --e.others;
 
+            if (e.cost <= vertexCost.cost) {
                 for (std::size_t k = 0; k < layerInfo_map.vertex(child).klat.size(); ++k) {
                     SPDLOG_TRACE(log_sp, "layerInfo_map.vertex({}).klat[{}] {}", child.toString(), k, layerInfo_map.vertex(child).klat[k].toString());
                     int cost = layerInfo_map.vertex(child).klat[k].val;
+                    ElementStack e1 = e;
                     if (cost >= 0) {
-                        ElementStack e1 = e;
                         e1.choice.push_back(Coordinate_3d { child, static_cast<int32_t>(k) });
                         e1.cost += cost;
-                        stack.push(std::move(e1));
                     }
+                    SPDLOG_TRACE(log_sp, " e1={} ", e1.toString());
+                    stack.push(std::move(e1));
+                    SPDLOG_TRACE(log_sp, " verify e1 stack.top()={} ", stack.top().toString());
                 }
             } else {
-                VertexCost vcost(int_DP_k);
-                vcost.addCost(o.xy(), e, *this);
-                if (vcost < vertexCost) {
-                    vertexCost = std::move(vcost);
-                }
+                stack.push(std::move(e));
             }
+        } else {
+            VertexCost vcost(int_DP_k);
+            vcost.addCost(o.xy(), e, *this);
+            vcost.vertices = e.choice;
+            if (vcost < vertexCost && vcost.vertices.size() > 0) { // change vertices.size to something more correct
+                vertexCost = std::move(vcost);
+
+            }
+
         }     // current e.val is >   min : we do nothing
     }
     klatNode.via_cost = vertexCost.via_cost;
     klatNode.via_overflow = vertexCost.cost;
     klatNode.val = vertexCost.cost;
-    return vertexCost.vertices;
+    return vertexCost.vertices;  // vertices is empty !!!! should fill it correctly (perhaps with ElementStack choice ? )
 }
 
 void Layer_assignment::DP(const Coordinate_3d& c, const Coordinate_3d& parent) {
@@ -335,6 +343,7 @@ void Layer_assignment::DP(const Coordinate_3d& c, const Coordinate_3d& parent) {
             klatNode.val = klatNode.via_overflow;
 
         } else {	// is_end == false
+            SPDLOG_TRACE(log_sp, "layerInfo_map {}", layerInfo_map.toString());
             for (const Coordinate_3d& n : rec_count(c, klatNode)) {
                 SPDLOG_TRACE(log_sp, "rec_count");
                 layerInfo_map.vertex(n.xy()).klat[c.z].pi_z = n.z;
