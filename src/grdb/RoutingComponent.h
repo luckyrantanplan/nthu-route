@@ -166,7 +166,7 @@ inline Plane<Pin, int>& RoutingSpace::layer(int z) {
 }
 
 inline const Plane<Pin, int> & RoutingSpace::layer(int z) const {
-    return layer(z);
+    return routingSpace_[z];
 }
 
 inline
@@ -183,7 +183,5 @@ inline
 int RoutingSpace::getZSize() const {
     return routingSpace_.size();
 }
-
-
 
 #endif /*INC_ROUTINGCOMPONENT_H*/

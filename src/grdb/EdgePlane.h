@@ -179,6 +179,12 @@ public:
 
     const std::size_t num_elements() const;
 
+    ///@brief Get the specified edge
+    const T& east(const Coordinate_2d& c) const;
+
+     ///@brief Get the specified edge
+    const T& south(const Coordinate_2d& c) const;
+
     auto allVertical();
 
     auto allHorizontal();
@@ -232,6 +238,22 @@ boost::iterator_range<T*> EdgePlane<T>::all() {
 template<class T>
 boost::iterator_range<const T*> EdgePlane<T>::all() const {
     return boost::iterator_range<const T*>(edgePlane_.data(), &edgePlane_.data()[edgePlane_.num_elements()]);
+}
+
+///@brief The data structure for presenting the routing edges in global routing area.
+///@details User can specify the data structure of routing edges by their own, and
+///         the default data structure of routing edges is a integer.
+template<class T>
+inline const T& EdgePlane<T>::east(const Coordinate_2d& c) const {
+    return edgePlane_[c.x][c.y][EAST];
+}
+
+///@brief The data structure for presenting the routing edges in global routing area.
+///@details User can specify the data structure of routing edges by their own, and
+///         the default data structure of routing edges is a integer.
+template<class T>
+inline const T& EdgePlane<T>::south(const Coordinate_2d& c) const {
+    return edgePlane_[c.x][c.y][SOUTH];
 }
 
 template<class T>

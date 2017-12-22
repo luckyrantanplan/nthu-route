@@ -33,6 +33,7 @@ public:
     std::string nPinToString(int net_id) const;
 
     Plane<Pin, int>& getLayer(int z);
+    const Plane<Pin, int>& getLayer(int z) const;
 
 public:
     void setGrid(unsigned int x, unsigned int y, unsigned int layerNumber);
@@ -136,6 +137,10 @@ void RoutingRegion::setViaSpacing(unsigned int layerId, unsigned int viaSpacing)
 
 inline std::string RoutingRegion::nPinToString(int net_id) const {
     return netList_[net_id].toString();
+}
+
+inline const Plane<Pin, int>& RoutingRegion::getLayer(int z) const {
+    return routingSpace_.layer(z);
 }
 
 inline Plane<Pin, int>& RoutingRegion::getLayer(int z) {

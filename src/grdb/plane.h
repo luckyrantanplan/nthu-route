@@ -44,6 +44,8 @@ public:
 
     EdgePlane<EdgeT>& edges();
 
+    const EdgePlane<EdgeT>& edges() const;
+
     boost::iterator_range<VertexT*> allVertex();
 
     boost::iterator_range<const VertexT*> allVertex() const;
@@ -114,6 +116,11 @@ inline const VertexT& Plane<VertexT, EdgeT>::vertex(const Coordinate_2d& c) cons
 template<class VertexT, class EdgeT>
 inline const VertexT& Plane<VertexT, EdgeT>::vertex(int x, int y) const {
     return plane_[x][y];
+}
+
+template<class VertexT, class EdgeT>
+inline const EdgePlane<EdgeT>& Plane<VertexT, EdgeT>::edges() const {
+    return edgeplane_;
 }
 
 template<class VertexT, class EdgeT>
