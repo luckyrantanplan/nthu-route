@@ -271,26 +271,29 @@ std::vector<Coordinate_3d> Layer_assignment::rec_count(const Coordinate_3d& o, K
             --e.others;
 
             if (e.cost <= vertexCost.cost) {
+                bool noSolution = true;
                 for (std::size_t k = 0; k < layerInfo_map.vertex(child).klat.size(); ++k) {
                     SPDLOG_TRACE(log_sp, "layerInfo_map.vertex({}).klat[{}] {}", child.toString(), k, layerInfo_map.vertex(child).klat[k].toString());
                     int cost = layerInfo_map.vertex(child).klat[k].val;
-                    ElementStack e1 = e;
                     if (cost >= 0) {
+                        ElementStack e1 = e;
                         e1.choice.push_back(Coordinate_3d { child, static_cast<int32_t>(k) });
                         e1.cost += cost;
+                        SPDLOG_TRACE(log_sp, " e1={} ", e1.toString());
+                        stack.push(std::move(e1));
+                        noSolution = false;
                     }
-                    SPDLOG_TRACE(log_sp, " e1={} ", e1.toString());
-                    stack.push(std::move(e1));
-                    SPDLOG_TRACE(log_sp, " verify e1 stack.top()={} ", stack.top().toString());
+
                 }
-            } else {
-                stack.push(std::move(e));
+                if (noSolution) {
+                    stack.push(std::move(e));  //if there is nothing in the for loop , then the branch is finish, should see the choice value
+                }
             }
         } else {
             VertexCost vcost(int_DP_k);
             vcost.addCost(o.xy(), e, *this);
             vcost.vertices = e.choice;
-            if (vcost < vertexCost && vcost.vertices.size() > 0) { // change vertices.size to something more correct
+            if (vcost < vertexCost) {
                 vertexCost = std::move(vcost);
 
             }
