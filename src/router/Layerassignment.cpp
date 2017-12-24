@@ -94,9 +94,9 @@ void Layer_assignment::update_cur_map_for_klat_xy(int cur_idx, const Coordinate_
 }
 
 void Layer_assignment::update_cur_map_for_klat_z(int min, int max, const Coordinate_2d& start, int net_id) {
-
+    SPDLOG_TRACE(log_sp, "update_cur_map_for_klat_z begin ");
     Coordinate_3d previous { start, min };
-    for (Coordinate_3d k { start, min + 1 }; k.z < max; ++k.z) {
+    for (Coordinate_3d k { start, min + 1 }; k.z <= max; ++k.z) {
         Edge_3d& edge = cur_map_3d.edge(k, previous);
         ++edge.used_net[net_id];
         ++edge.cur_cap;
@@ -140,6 +140,7 @@ void Layer_assignment::update_path_for_klat(const Coordinate_2d& start) {
                 q.emplace(Coordinate_3d { c, pi_z }, Coordinate_3d { h, pi_z });	// enqueue
             }
         }
+        SPDLOG_TRACE(log_sp, " update_cur_map_for_klat_z({},{}, ({}) , {}); ", z_min, z_max, h.toString(), global_net_id);
         update_cur_map_for_klat_z(z_min, z_max, h, global_net_id);
         layerInfo_map.vertex(h).path = 0;	// visited
         q.pop();	// dequeue
