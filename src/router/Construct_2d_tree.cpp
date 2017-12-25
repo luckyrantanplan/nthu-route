@@ -14,8 +14,23 @@
 #include "../grdb/RoutingComponent.h"
 #include "../grdb/RoutingRegion.h"
 #include "Route_2pinnets.h"
-#define SPDLOG_TRACE_ON
+//#define SPDLOG_TRACE_ON
 #include "../spdlog/spdlog.h"
+
+bool Vertex_flute::comp_vertex_fl(const Vertex_flute& a, const Vertex_flute& b) {
+    if (a.c.x < b.c.x)
+        return true;
+    else if (a.c.x > b.c.x)
+        return false;
+    else if (a.c.y < b.c.y)
+        return true;
+    else if (a.c.y > b.c.y)
+        return false;
+    else if (a.type == PIN)
+        return true;
+    else
+        return false;
+}
 
 void Construct_2d_tree::init_2pin_list() {
     int i, netnum;
@@ -150,8 +165,7 @@ void Construct_2d_tree::gen_FR_congestion_map() {
 
     for (int& i : bboxRouteStateMap.all()) {
         i = -1;
-    }
-    SPDLOG_TRACE(log_sp, "initial congestion map: calculating every edge's capacity");
+    }SPDLOG_TRACE(log_sp, "initial congestion map: calculating every edge's capacity");
     congestion.init_2d_map(rr_map);
     SPDLOG_TRACE(log_sp, "initial 2-pin net container");
     init_2pin_list();
@@ -202,9 +216,7 @@ void Construct_2d_tree::gen_FR_congestion_map() {
         }
 
         bbox_route(bbox_2pin_list[i], 0.5);
-    }
-    SPDLOG_TRACE(log_sp, "bbox routing complete");
-    SPDLOG_TRACE(log_sp, "L-shaped pattern routing start...");
+    }SPDLOG_TRACE(log_sp, "bbox routing complete");SPDLOG_TRACE(log_sp, "L-shaped pattern routing start...");
 
 //sort net by their bounding box size, then by their pin number
     vector<const Net*> sort_net;
@@ -276,7 +288,7 @@ double Construct_2d_tree::compute_L_pattern_cost(const Coordinate_2d& c1, const 
 
 Vertex_flute_ptr Construct_2d_tree::findY(Vertex_flute& a, std::function<bool(const int& i, const int& j)> test) {
     Vertex_flute_ptr cur = &a;
-    while (cur->type != PIN) {
+    while (cur->type != Vertex_flute::PIN) {
         Vertex_flute_ptr find = *(cur->neighbor.begin());
         for (vector<Vertex_flute_ptr>::iterator nei = cur->neighbor.begin() + 1; nei != cur->neighbor.end(); ++nei) {
             if (test((*nei)->c.y, find->c.y)) {
@@ -293,7 +305,7 @@ Vertex_flute_ptr Construct_2d_tree::findY(Vertex_flute& a, std::function<bool(co
 
 Vertex_flute_ptr Construct_2d_tree::findX(Vertex_flute& a, std::function<bool(const int& i, const int& j)> test) {
     Vertex_flute_ptr cur = &a;
-    while (cur->type != PIN) {
+    while (cur->type != Vertex_flute::PIN) {
         Vertex_flute_ptr find = *(cur->neighbor.begin());
         for (vector<Vertex_flute_ptr>::iterator nei = cur->neighbor.begin() + 1; nei != cur->neighbor.end(); ++nei) {
             if (test((*nei)->c.x, find->c.x)) {
@@ -342,7 +354,7 @@ void Construct_2d_tree::merge_vertex(Vertex_flute& keep, Vertex_flute& deleted) 
             }
         }
     }
-    deleted.type = DELETED;
+    deleted.type = Vertex_flute::DELETED;
 }
 
 void Construct_2d_tree::move_edge_hor(Vertex_flute& a, int best_pos, Vertex_flute& b, Vertex_flute_ptr& overlap_a, std::function<bool(const int& i, const int& j)> test) {
@@ -491,10 +503,10 @@ void Construct_2d_tree::traverse_tree(double& ori_cost, std::vector<Vertex_flute
 
         node.visit = 1;
 
-        if (node.type == STEINER && node.neighbor.size() <= 3) {	//remove3!!!
+        if (node.type == Vertex_flute::STEINER && node.neighbor.size() <= 3) {	//remove3!!!
 
             for (Vertex_flute_ptr it : node.neighbor)
-                if (it->visit == 0 && (it->type == STEINER && it->neighbor.size() <= 3))	//!!!remove3!!
+                if (it->visit == 0 && (it->type == Vertex_flute::STEINER && it->neighbor.size() <= 3))	//!!!remove3!!
                         {
                     int low = 0;
                     int high = INT_MAX;
@@ -551,7 +563,7 @@ void Construct_2d_tree::dfs_output_tree(Vertex_flute& node, Tree &t) {
     node.index = t.number;
     (t.number) += 1;
     for (Vertex_flute_ptr it : node.neighbor) {
-        if ((it->visit == 0) && (it->type != DELETED)) {
+        if ((it->visit == 0) && (it->type != Vertex_flute::DELETED)) {
             dfs_output_tree(*it, t);                  //keep tracing deeper vertices
             t.branch[it->index].n = node.index;    //make parent of target vertex point to current vertex
         }
@@ -566,39 +578,40 @@ void Construct_2d_tree::edge_shifting(Tree& t) {
     int degSize = 2 * t.deg - 2;
     vertex_fl.reserve(degSize);
     for (int i = 0; i < t.deg; ++i) {
-        vertex_fl.emplace_back((int) t.branch[i].x, (int) t.branch[i].y, PIN);
+        vertex_fl.emplace_back((int) t.branch[i].x, (int) t.branch[i].y, Vertex_flute::PIN);
 
     }
     for (int i = t.deg; i < degSize; ++i) {
-        vertex_fl.emplace_back((int) t.branch[i].x, (int) t.branch[i].y, STEINER);
+        vertex_fl.emplace_back((int) t.branch[i].x, (int) t.branch[i].y, Vertex_flute::STEINER);
 
     }
+    std::sort(vertex_fl.begin(), vertex_fl.end(), [&](const Vertex_flute& a, const Vertex_flute& b) {return Vertex_flute::comp_vertex_fl( a, b);});
 
 //Create edge
-    for (int i = 0; i < degSize; ++i) {
+    for (std::size_t i = 0; i < vertex_fl.size(); ++i) {
         SPDLOG_TRACE(log_sp, "vertex_fl[i] {} ", vertex_fl[i].toString());
         Vertex_flute& vi = vertex_fl[i];
         Vertex_flute& vn = vertex_fl[t.branch[i].n];
 //skip the vertex if it is the same vertex with its neighbor
-        if ((vi.c == vn.c))
-            continue;
-        vi.neighbor.push_back(&vn);
-        vn.neighbor.push_back(&vi);
+        if ((vi.c != vn.c)) {
+
+            vi.neighbor.push_back(&vn);
+            vn.neighbor.push_back(&vi);
 //compute original tree cost
-        ori_cost += compute_L_pattern_cost(vi.c, vn.c, -1);
+            ori_cost += compute_L_pattern_cost(vi.c, vn.c, -1);
+        }
     }
 
     for (int i = 0; i < degSize; ++i) {
         SPDLOG_TRACE(log_sp, "vertex_fl[i] {} ", vertex_fl[i].toString());
     }
-    std::sort(vertex_fl.begin(), vertex_fl.end(), [&](const Vertex_flute& a, const Vertex_flute& b) {return Vertex_flute::comp_vertex_fl( a, b);});
 
     for (int previous = 0, j = 1; j < degSize; ++j) {
         Vertex_flute& vi = vertex_fl[previous];
         Vertex_flute& vj = vertex_fl[j];
         if ((vi.c == vj.c))	//j is redundant
         {
-            vj.type = DELETED;
+            vj.type = Vertex_flute::DELETED;
             for (Vertex_flute_ptr it : vj.neighbor) {
                 if ((it->c != vi.c)) {	//not i,add 0430
                     vi.neighbor.push_back(it);
@@ -680,11 +693,11 @@ Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterS
 // 1. A 2D array that stores max congestion
 // 2. A 2D array that stores parent (x,y) during finding monotonic path
     }
-
+    log_sp->info("gen_FR_congestion_map ");
     gen_FR_congestion_map();        // Generate congestion map by flute, then route all nets by L-shap pattern routing with
 // congestion information from this map. After that, apply edge shifting to the result
 // to get the initial solution.
-
+    log_sp->info(" congestion.cal_total_wirelength();");
     congestion.cal_total_wirelength();        // The report value is the sum of demand on every edge
 
     Route_2pinnets route_2pinnets(*this, rangeRouter, congestion);
@@ -706,7 +719,7 @@ Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterS
     for (congestion.cur_iter = 1, done_iter = congestion.cur_iter; congestion.cur_iter <= routing_parameter.get_iteration_p2(); ++congestion.cur_iter, done_iter = congestion.cur_iter)   //do n-1 times
             {
 
-        SPDLOG_TRACE(log_sp, "Iteration: {} ", congestion.cur_iter);
+        log_sp->info("Iteration: {} ", congestion.cur_iter);
         congestion.factor = (1.0 - std::exp(-5 * std::exp(-(0.1 * congestion.cur_iter))));
 
         congestion.WL_Cost = congestion.factor;
@@ -734,10 +747,10 @@ Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterS
         BOXSIZE_INC += routing_parameter.get_box_size_inc_p2();
     }
 
-    output_2_pin_list();    //order:bbox�p
+    output_2_pin_list();    //order:bbox
 
-    SPDLOG_TRACE(log_sp, "================================================================");
-    SPDLOG_TRACE(log_sp, "===                   Enter Post Processing                  ===");
+    SPDLOG_TRACE(log_sp, "================================================================");    //
+    SPDLOG_TRACE(log_sp, "===                   Enter Post Processing                  ==="); //
     SPDLOG_TRACE(log_sp, "================================================================");
 
     post_processing.process(route_2pinnets);

@@ -19,7 +19,7 @@
 #include <utility>
 #include "../grdb/plane.h"
 #include "../grdb/RoutingRegion.h"
-#define SPDLOG_TRACE_ON
+//#define SPDLOG_TRACE_ON
 #include "../spdlog/spdlog.h"
 
 #define parameter_h 0.8         // used in the edge cost function 1/0.5 0.8/2

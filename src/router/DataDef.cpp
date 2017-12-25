@@ -15,20 +15,7 @@ Edge_2d::Edge_2d() :
 
 }
 
-bool Vertex_flute::comp_vertex_fl(const Vertex_flute& a, const Vertex_flute& b) {
-    if (a.c.x < b.c.x)
-        return true;
-    else if (a.c.x > b.c.x)
-        return false;
-    else if (a.c.y < b.c.y)
-        return true;
-    else if (a.c.y > b.c.y)
-        return false;
-    else if (a.type == PIN)
-        return true;
-    else
-        return false;
-}
+
 
 bool Two_pin_element::comp_2pin_net(Two_pin_element&a, Two_pin_element&b) {
     int a_bbox_size = abs(a.pin1.x - a.pin2.x) + abs(a.pin1.y - a.pin2.y);

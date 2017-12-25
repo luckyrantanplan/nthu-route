@@ -10,7 +10,7 @@
 #include "../grdb/RoutingRegion.h"
 #include "Congestion.h"
 #include "Construct_2d_tree.h"
-#define SPDLOG_TRACE_ON
+//#define SPDLOG_TRACE_ON
 #include "../spdlog/spdlog.h"
 using namespace std;
 

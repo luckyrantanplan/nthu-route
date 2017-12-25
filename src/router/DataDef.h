@@ -22,10 +22,6 @@
 #define error_bound 0.00000000001
 #define neg_error_bound -0.00000000001
 
-enum VertexFluteType {
-    PIN, STEINER, DELETED
-};
-
 enum {
     FASTROUTE_COST, OVERFLOW_COST, CONGESTION_COST, MADEOF_COST, HISTORY_COST, HISTORY_MADEOF_COST
 };
@@ -80,34 +76,7 @@ public:
     static bool comp_2pin_net(Two_pin_element &a, Two_pin_element &b);
 };
 
-class Vertex_flute {
-public:
-    Coordinate_2d c;
-    VertexFluteType type;   //PIN, STEINER, DELETED
-    int index;
-    int visit;
-    std::vector<Vertex_flute *> neighbor;
 
-    Vertex_flute(int x, int y, VertexFluteType type) :
-            c { x, y }, type { type }, index { }, visit(0)/*, copy_ind(-1)*/{
-    }
-
-    //sort by x,y,pin,steiner
-    static bool comp_vertex_fl(const Vertex_flute& a, const Vertex_flute& b);
-
-    std::string toString() const {
-        std::string s = "c: " + c.toString();
-        s += " index: " + std::to_string(index);
-        s += " visit: " + std::to_string(visit);
-        s += " neighbor: [";
-        for (Vertex_flute * n : neighbor) {
-            s += n->c.toString() + " ";
-        }
-        s += "]";
-        return s;
-    }
-
-};
 
 typedef std::unordered_map<int, int> RoutedNetTable;
 
@@ -151,6 +120,6 @@ public:
 };
 
 typedef std::vector<Two_pin_element_2d> Two_pin_list_2d;
-typedef Vertex_flute *Vertex_flute_ptr;
+
 
 #endif /* SRC_DATADEF_H_ */

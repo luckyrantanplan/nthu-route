@@ -27,6 +27,42 @@ namespace spdlog {
 class logger;
 } /* namespace spdlog */
 
+class Vertex_flute {
+public:
+
+    enum Type {
+        PIN, STEINER, DELETED
+    };
+
+    Coordinate_2d c;
+    Type type;   //PIN, STEINER, DELETED
+    int index;
+    int visit;
+    std::vector<Vertex_flute *> neighbor;
+
+    Vertex_flute(int x, int y, Type type) :
+            c { x, y }, type { type }, index { }, visit(0)/*, copy_ind(-1)*/{
+    }
+
+    //sort by x,y,pin,steiner
+    static bool comp_vertex_fl(const Vertex_flute& a, const Vertex_flute& b);
+
+    std::string toString() const {
+        std::string s = "c: " + c.toString();
+        s += " index: " + std::to_string(index);
+        s += " visit: " + std::to_string(visit);
+        s += " neighbor: [";
+        for (Vertex_flute * n : neighbor) {
+            s += n->c.toString() + " ";
+        }
+        s += "]";
+        return s;
+    }
+
+};
+
+typedef Vertex_flute *Vertex_flute_ptr;
+
 struct Construct_2d_tree {
 
     enum {

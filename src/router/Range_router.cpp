@@ -13,7 +13,7 @@
 #include "MonotonicRouting.h"
 #include "parameter.h"
 #include "Post_processing.h"
-#define SPDLOG_TRACE_ON
+//#define SPDLOG_TRACE_ON
 #include "../spdlog/spdlog.h"
 
 using namespace std;

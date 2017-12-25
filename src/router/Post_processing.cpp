@@ -12,7 +12,7 @@
 #include "parameter.h"
 #include "Range_router.h"
 #include "Route_2pinnets.h"
-#define SPDLOG_TRACE_ON
+//#define SPDLOG_TRACE_ON
 #include "../spdlog/spdlog.h"
 
 bool COUNTER::operator <(const COUNTER& o) const {

@@ -18,7 +18,7 @@
 #include "../grdb/RoutingComponent.h"
 #include "../grdb/RoutingRegion.h"
 #include "Congestion.h"
-#define SPDLOG_TRACE_ON
+//#define SPDLOG_TRACE_ON
 #include "../spdlog/spdlog.h"
 
 using namespace std;
@@ -41,10 +41,7 @@ void Layer_assignment::print_max_overflow() {
             sum += edgeLeft.overUsage();
             ++lines;
         }
-    }
-    SPDLOG_TRACE(log_sp, "       3D # of overflow = {} ", sum);
-    SPDLOG_TRACE(log_sp, "       3D max  overflow = {} ", max);
-    SPDLOG_TRACE(log_sp, "3D overflow edge number = {} ", lines);
+    } SPDLOG_TRACE(log_sp, "       3D # of overflow = {} ", sum); SPDLOG_TRACE(log_sp, "       3D max  overflow = {} ", max); SPDLOG_TRACE(log_sp, "3D overflow edge number = {} ", lines);
 
 }
 
@@ -89,8 +86,7 @@ void Layer_assignment::update_cur_map_for_klat_xy(int cur_idx, const Coordinate_
     edge.cur_cap = (edge.used_net.size() * 2);	// need check
     if (edge.isOverflow()) {	// need check
         layerInfo_map.edges().edge(start, end).overflow -= 2;
-    }
-    SPDLOG_TRACE(log_sp, "update_cur_map_for_klat_xy {}-{}: {} ", Coordinate_3d { end, cur_idx }.toString(), Coordinate_3d { start, cur_idx }.toString(), edge.toString());
+    } SPDLOG_TRACE(log_sp, "update_cur_map_for_klat_xy {}-{}: {} ", Coordinate_3d {end, cur_idx}.toString(), Coordinate_3d {start, cur_idx}.toString(), edge.toString());
 }
 
 void Layer_assignment::update_cur_map_for_klat_z(int min, int max, const Coordinate_2d& start, int net_id) {
@@ -139,8 +135,7 @@ void Layer_assignment::update_path_for_klat(const Coordinate_2d& start) {
                 update_cur_map_for_klat_xy(pi_z, h, c, global_net_id);
                 q.emplace(Coordinate_3d { c, pi_z }, Coordinate_3d { h, pi_z });	// enqueue
             }
-        }
-        SPDLOG_TRACE(log_sp, " update_cur_map_for_klat_z({},{}, ({}) , {}); ", z_min, z_max, h.toString(), global_net_id);
+        } SPDLOG_TRACE(log_sp, " update_cur_map_for_klat_z({},{}, ({}) , {}); ", z_min, z_max, h.toString(), global_net_id);
         update_cur_map_for_klat_z(z_min, z_max, h, global_net_id);
         layerInfo_map.vertex(h).path = 0;	// visited
         q.pop();	// dequeue
@@ -232,11 +227,10 @@ void Layer_assignment::VertexCost::addCost(const Coordinate_2d& o, const Element
     cost = e.cost;
     SPDLOG_TRACE(log_sp, " VertexCost::addCost");
     for (Coordinate_3d c2 { o, interval.min }; c2.z < interval.max; ++c2.z) {
-        SPDLOG_TRACE(log_sp, "l.cur_map_3d.edge(c2, Coordinate_3d  o, c2.z + 1 ) {}", Coordinate_3d { o, c2.z + 1 }.toString());
+        SPDLOG_TRACE(log_sp, "l.cur_map_3d.edge(c2, Coordinate_3d  o, c2.z + 1 ) {}", Coordinate_3d {o, c2.z + 1}.toString());
         if (l.cur_map_3d.edge(c2, Coordinate_3d { o, c2.z + 1 }).isOverflow()) {
             ++cost;
-        }
-        SPDLOG_TRACE(log_sp, "l.cur_map_3d.edge(c2, Coordinate_3d o, c2.z + 1 ) success");
+        } SPDLOG_TRACE(log_sp, "l.cur_map_3d.edge(c2, Coordinate_3d o, c2.z + 1 ) success");
     }
     via_cost = 0;
     for (const Coordinate_3d& c : e.choice) {
@@ -321,10 +315,10 @@ void Layer_assignment::DP(const Coordinate_3d& c, const Coordinate_3d& parent) {
                 is_end = false;
                 for (Coordinate_3d c2 { handle.vertex(), 0 }; c2.z < cur_map_3d.getZSize(); ++c2.z) {	// use global_max_layer to substitute max_zz
 
-                    SPDLOG_TRACE(log_sp, "  (c1, c2.z)  : {}", Coordinate_3d { c1, c2.z }.toString());
+                    SPDLOG_TRACE(log_sp, "  (c1, c2.z)  : {}", Coordinate_3d {c1, c2.z}.toString());
 
                     Edge_3d& edge = cur_map_3d.edge(Coordinate_3d { c1, c2.z }, c2);
-                    SPDLOG_TRACE(log_sp, "  (c1, c2.z)  : {} Success edge {}", Coordinate_3d { c1, c2.z }.toString(), edge.toString());
+                    SPDLOG_TRACE(log_sp, "  (c1, c2.z)  : {} Success edge {}", Coordinate_3d {c1, c2.z}.toString(), edge.toString());
                     if (((handle.edge().overflow <= 0) && edge.overUsage() < 0) ||	//
                             ((edge.overUsage()) < overflow_max)) {	// pass without overflow
                         DP(c2, c);
@@ -336,12 +330,11 @@ void Layer_assignment::DP(const Coordinate_3d& c, const Coordinate_3d& parent) {
             klatNode.via_cost = global_via_cost * c.z;
             klatNode.via_overflow = 0;
             for (Coordinate_3d c2 { c1, 0 }; c2.z < c.z; ++c2.z) {
-                SPDLOG_TRACE(log_sp, "cur_map_3d.edge({},{}).isOverflow() ", c2.toString(), Coordinate_3d { c1, c.z + 1 }.toString());
+                SPDLOG_TRACE(log_sp, "cur_map_3d.edge({},{}).isOverflow() ", c2.toString(), Coordinate_3d {c1, c.z + 1}.toString());
 
                 if (cur_map_3d.edge(c2, Coordinate_3d { c1, c.z + 1 }).overUsage() >= 0) {
                     ++klatNode.via_overflow;
-                }
-                SPDLOG_TRACE(log_sp, "cur_map_3d.edge({}, {}).isOverflow() Success", c2.toString(), Coordinate_3d { c1, c.z + 1 }.toString());
+                } SPDLOG_TRACE(log_sp, "cur_map_3d.edge({}, {}).isOverflow() Success", c2.toString(), Coordinate_3d {c1, c.z + 1}.toString());
 
             }
             klatNode.val = klatNode.via_overflow;
@@ -353,8 +346,7 @@ void Layer_assignment::DP(const Coordinate_3d& c, const Coordinate_3d& parent) {
                 layerInfo_map.vertex(n.xy()).klat[c.z].pi_z = n.z;
             }
         }
-    }
-    SPDLOG_TRACE(log_sp, "  END DP c: {} parent: {}", c.toString(), parent.toString());
+    } SPDLOG_TRACE(log_sp, "  END DP c: {} parent: {}", c.toString(), parent.toString());
 }
 
 void Layer_assignment::collectComb(Coordinate_3d c2, Coordinate_3d& c, std::vector<std::vector<Segment3d> >& comb) {
@@ -500,8 +492,7 @@ void Layer_assignment::sort_net_order() {
 
     std::chrono::duration<double> elapsed_seconds = end - start;
 
-    SPDLOG_TRACE(log_sp, "cost = {}", global_pin_cost);
-    SPDLOG_TRACE(log_sp, "time = {}", elapsed_seconds.count());
+    SPDLOG_TRACE(log_sp, "cost = {}", global_pin_cost); SPDLOG_TRACE(log_sp, "time = {}", elapsed_seconds.count());
 
 }
 
@@ -515,9 +506,7 @@ void Layer_assignment::calculate_cap() {
             if (max < edge.overUsage() * 2)
                 max = edge.overUsage() * 2;
         }
-    }
-    SPDLOG_TRACE(log_sp, "2D sum overflow = {}", overflow);
-    SPDLOG_TRACE(log_sp, "2D max overflow = {}", max);
+    } SPDLOG_TRACE(log_sp, "2D sum overflow = {}", overflow); SPDLOG_TRACE(log_sp, "2D max overflow = {}", max);
 }
 
 void Layer_assignment::generate_all_output(std::ostream & output) {
