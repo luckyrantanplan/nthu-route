@@ -735,13 +735,16 @@ Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterS
         int cur_overflow = congestion.cal_max_overflow();
         congestion.cal_total_wirelength();
 
-        if (cur_overflow == 0)
+        if (cur_overflow == 0) {
+            log_sp->info("No more overflow =0");
             break;
+        }
 
         route_2pinnets.reallocate_two_pin_list();
         SPDLOG_TRACE(log_sp, "Memory Usage:{}", printMemoryUsage());
 
         if (cur_overflow <= routing_parameter.get_overflow_threshold()) {
+            log_sp->info("cur overflow {} <= overflow_threshold {} ", cur_overflow, routing_parameter.get_overflow_threshold());
             break;
         }
         BOXSIZE_INC += routing_parameter.get_box_size_inc_p2();

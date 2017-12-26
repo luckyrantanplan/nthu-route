@@ -23,7 +23,7 @@ public:
     int get_netNumber() const;                 //get net number
 
     const std::string& get_netName(int netPos) const;	//get net name
-
+    const int& get_netSerialId(int netId) const;
     int get_netPinNumber(int netPos) const;		//get pin number of the specified net
 
     NetList& get_netList();
@@ -105,6 +105,10 @@ int RoutingRegion::get_tileHeight() const {
 
 inline const std::string& RoutingRegion::get_netName(int netId) const {
     return netList_[netId].get_name();
+}
+
+inline const int& RoutingRegion::get_netSerialId(int netId) const {
+    return netList_[netId].serialNumber;
 }
 
 inline
