@@ -25,8 +25,9 @@ void RoutingRegion::setHorizontalCapacity(unsigned int layerId, unsigned int cap
 }
 
 void RoutingRegion::setNetNumber(unsigned int netNumber) {
-    netList_ = std::vector<Net>();
-    netSerial2NetId_ = NetIdLookupTable(netNumber);
+    netList_.clear();
+    netList_.reserve(netNumber);
+    netSerial2NetId_.reserve(netNumber);
 
 }
 
@@ -67,7 +68,7 @@ void RoutingRegion::endAddANet() {
     if (netList_.back().get_pinNumber() <= 1) {
         netList_.pop_back();
     }
-
+    pinTable_.clear();
 }
 
 void RoutingRegion::endBuild() {
