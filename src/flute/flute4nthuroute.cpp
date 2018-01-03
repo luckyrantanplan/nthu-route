@@ -38,6 +38,10 @@ void Flute::printTree(Tree& routingTree) {
     printtree(routingTree);
 }
 
+void Flute::plotTree(Tree& routingTree){
+    plottree(routingTree);
+}
+
 int Flute::treeWireLength(Tree& routingTree) {
     return static_cast<int>(wirelength(routingTree));
 }

@@ -36,12 +36,12 @@ public:
 
     Coordinate_2d c;
     Type type;   //PIN, STEINER, DELETED
-    int index;
+
     int visit;
     std::vector<Vertex_flute *> neighbor;
 
     Vertex_flute(int x, int y, Type type) :
-            c { x, y }, type { type }, index { }, visit(0)/*, copy_ind(-1)*/{
+            c { x, y }, type { type }, visit(0)/*, copy_ind(-1)*/{
     }
 
     //sort by x,y,pin,steiner
@@ -49,7 +49,7 @@ public:
 
     std::string toString() const {
         std::string s = "c: " + c.toString();
-        s += " index: " + std::to_string(index);
+
         s += " visit: " + std::to_string(visit);
         s += " neighbor: [";
         for (Vertex_flute * n : neighbor) {
@@ -92,7 +92,6 @@ struct Construct_2d_tree {
      * ********************/
 
     std::vector<Two_pin_list_2d> net_2pin_list;      //store 2pin list of each net
-    Tree global_flutetree;
     std::vector<Two_pin_list_2d> bbox_2pin_list;    //store bbox 2pin list of each net
 
     std::shared_ptr<spdlog::logger> log_sp;
@@ -113,8 +112,8 @@ struct Construct_2d_tree {
     void merge_vertex(Vertex_flute& keep, Vertex_flute& deleted);
     bool move_edge(Vertex_flute& a, Vertex_flute& b, int best_pos, int dir);
     void traverse_tree(double& ori_cost, std::vector<Vertex_flute>& vertex_fl);
-    void dfs_output_tree(Vertex_flute& node, Tree& t);
-    void edge_shifting(Tree& t);
+    void dfs_output_tree(Vertex_flute& node, int parent, Tree& t);
+    void edge_shifting(Tree& t, int i);
     void output_2_pin_list();
     Construct_2d_tree(RoutingParameters & routingparam, ParameterSet & param, RoutingRegion & rr, Congestion& congestion);
     void walkL(const Coordinate_2d& a, const Coordinate_2d& b, std::function<void(const Coordinate_2d& e1, const Coordinate_2d& e2)> f);

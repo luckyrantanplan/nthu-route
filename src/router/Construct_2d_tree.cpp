@@ -2,20 +2,29 @@
 
 #include <boost/range/iterator_range_core.hpp>
 #include <algorithm>
+#include <cassert>
 #include <climits>
 #include <cmath>
+#include <cstdlib>
 #include <iostream>
-#include <fstream>
 #include <iterator>
+#include <memory>
+#include <numeric>
 #include <string>
+#include <unordered_map>
+
+#include <fstream>
 
 #include "../flute/flute-function.h"
 #include "../flute/flute4nthuroute.h"
 #include "../grdb/RoutingComponent.h"
 #include "../grdb/RoutingRegion.h"
-#include "Route_2pinnets.h"
 //#define SPDLOG_TRACE_ON
+#include "../spdlog/details/logger_impl.h"
+#include "../spdlog/details/spdlog_impl.h"
+#include "../spdlog/logger.h"
 #include "../spdlog/spdlog.h"
+#include "Route_2pinnets.h"
 
 bool Vertex_flute::comp_vertex_fl(const Vertex_flute& a, const Vertex_flute& b) {
     if (a.c.x < b.c.x)
@@ -189,6 +198,13 @@ void Construct_2d_tree::gen_FR_congestion_map() {
 //call flute to gen steiner tree and put the result in flutetree[]
         netRoutingTreeRouter.routeNet(rr_map.get_nPin(i), tree);
 
+        if (i == 164803 || i == 156740) {
+            std::cout << "i " << i << std::endl;
+            netRoutingTreeRouter.plotTree(tree);
+            std::cout << std::endl;
+            std::cout << rr_map.nPinToString(i) << std::endl;
+
+        } //
         SPDLOG_TRACE(log_sp, "rr_map.nPinList(i): {}", rr_map.nPinToString(i));
 //The total node # in a tree, those nodes include pin and steiner point
 //And it is defined as ((2 * degree of a tree) - 2) by the authors of flute
@@ -216,7 +232,9 @@ void Construct_2d_tree::gen_FR_congestion_map() {
         }
 
         bbox_route(bbox_2pin_list[i], 0.5);
-    }SPDLOG_TRACE(log_sp, "bbox routing complete");SPDLOG_TRACE(log_sp, "L-shaped pattern routing start...");
+    }	//
+    SPDLOG_TRACE(log_sp, "bbox routing complete");	//
+    SPDLOG_TRACE(log_sp, "L-shaped pattern routing start...");
 
 //sort net by their bounding box size, then by their pin number
     vector<const Net*> sort_net;
@@ -230,8 +248,7 @@ void Construct_2d_tree::gen_FR_congestion_map() {
     for (const Net* it : sort_net) {
         int netId = it->id;
         Tree& ftreeId = flutetree[netId];
-        edge_shifting(ftreeId);
-        global_flutetree = ftreeId;
+        edge_shifting(ftreeId, netId);
 
         net_flutetree[netId] = ftreeId;
 
@@ -295,10 +312,12 @@ Vertex_flute_ptr Construct_2d_tree::findY(Vertex_flute& a, std::function<bool(co
                 find = *nei;
             }
         }
+      //  assert(test(find->c.y, cur->c.y) || (find->c.y == a.c.y) || (find->type == Vertex_flute::PIN));
         cur = find;
         if ((cur->c.y == a.c.y) || (cur->c.x != a.c.x)) {	//no neighboring vertex next to  a
             break;
         }
+
     }
     return cur;
 }
@@ -312,6 +331,7 @@ Vertex_flute_ptr Construct_2d_tree::findX(Vertex_flute& a, std::function<bool(co
                 find = *nei;
             }
         }
+      //  assert(test(find->c.x, cur->c.x) || (find->c.x == a.c.x) || (find->type == Vertex_flute::PIN));
         cur = find;
         if (cur->c.x == a.c.x || cur->c.y != a.c.y) {	//no neighboring vertex in the right of a
             break;
@@ -556,85 +576,83 @@ void Construct_2d_tree::traverse_tree(double& ori_cost, std::vector<Vertex_flute
     }
 }
 
-void Construct_2d_tree::dfs_output_tree(Vertex_flute& node, Tree &t) {
+void Construct_2d_tree::dfs_output_tree(Vertex_flute& node, int parent, Tree &t) {
     node.visit = 1;
-    t.branch[t.number].x = node.c.x;
-    t.branch[t.number].y = node.c.y;
-    node.index = t.number;
-    (t.number) += 1;
+    int i = t.number;
+    ++t.number;
+    t.branch[i].x = node.c.x;
+    t.branch[i].y = node.c.y;
+    t.branch[i].n = parent;
     for (Vertex_flute_ptr it : node.neighbor) {
         if ((it->visit == 0) && (it->type != Vertex_flute::DELETED)) {
-            dfs_output_tree(*it, t);                  //keep tracing deeper vertices
-            t.branch[it->index].n = node.index;    //make parent of target vertex point to current vertex
+            dfs_output_tree(*it, i, t);                  //keep tracing deeper vertices
         }
     }
 }
 
-void Construct_2d_tree::edge_shifting(Tree& t) {
+void Construct_2d_tree::edge_shifting(Tree& t, int j) {
 
     double ori_cost = 0;            // the original cost without edge shifting
     std::vector<Vertex_flute> vertex_fl;
+    std::size_t degSize = 2 * t.deg - 2;
+
+    std::unordered_map<Coordinate_2d, int> indexmap;
+    indexmap.reserve(degSize);
 //Create vertex
-    int degSize = 2 * t.deg - 2;
     vertex_fl.reserve(degSize);
+
+
     for (int i = 0; i < t.deg; ++i) {
-        vertex_fl.emplace_back((int) t.branch[i].x, (int) t.branch[i].y, Vertex_flute::PIN);
+
+        Coordinate_2d c { (int) t.branch[i].x, (int) t.branch[i].y };
+        bool inserted = indexmap.insert( { c, static_cast<int>(vertex_fl.size()) }).second;
+        if (inserted) {
+            vertex_fl.emplace_back(c.x, c.y, Vertex_flute::PIN);
+        }
 
     }
-    for (int i = t.deg; i < degSize; ++i) {
-        vertex_fl.emplace_back((int) t.branch[i].x, (int) t.branch[i].y, Vertex_flute::STEINER);
+    for (std::size_t i = t.deg; i < degSize; ++i) {
+        Coordinate_2d c { (int) t.branch[i].x, (int) t.branch[i].y };
+        bool inserted = indexmap.insert( { c, static_cast<int>(vertex_fl.size()) }).second;
+        if (inserted) {
+            vertex_fl.emplace_back(c.x, c.y, Vertex_flute::STEINER);
+        }
 
     }
-    std::sort(vertex_fl.begin(), vertex_fl.end(), [&](const Vertex_flute& a, const Vertex_flute& b) {return Vertex_flute::comp_vertex_fl( a, b);});
 
 //Create edge
-    for (std::size_t i = 0; i < vertex_fl.size(); ++i) {
-        SPDLOG_TRACE(log_sp, "vertex_fl[i] {} ", vertex_fl[i].toString());
-        Vertex_flute& vi = vertex_fl[i];
-        Vertex_flute& vn = vertex_fl[t.branch[i].n];
+    for (std::size_t i = 0; i < degSize; ++i) {
+        Branch b = t.branch[i];
+        Coordinate_2d c1 { (int) b.x, (int) b.y };
+        Coordinate_2d c2 { (int) t.branch[b.n].x, (int) t.branch[b.n].y };
+        Vertex_flute& vi = vertex_fl.at(indexmap.at(c1));
+        Vertex_flute& vn = vertex_fl.at(indexmap.at(c2));
 //skip the vertex if it is the same vertex with its neighbor
         if ((vi.c != vn.c)) {
 
-            vi.neighbor.push_back(&vn);
-            vn.neighbor.push_back(&vi);
+            if (std::find(vi.neighbor.begin(), vi.neighbor.end(), &vn) == vi.neighbor.end()) {
+                vi.neighbor.push_back(&vn);
+
+                vn.neighbor.push_back(&vi);
 //compute original tree cost
-            ori_cost += compute_L_pattern_cost(vi.c, vn.c, -1);
+                ori_cost += compute_L_pattern_cost(vi.c, vn.c, -1);
+            }
+
         }
     }
 
-    for (int i = 0; i < degSize; ++i) {
+    for (std::size_t i = 0; i < vertex_fl.size(); ++i) {
         SPDLOG_TRACE(log_sp, "vertex_fl[i] {} ", vertex_fl[i].toString());
     }
 
-    for (int previous = 0, j = 1; j < degSize; ++j) {
-        Vertex_flute& vi = vertex_fl[previous];
-        Vertex_flute& vj = vertex_fl[j];
-        if ((vi.c == vj.c))	//j is redundant
-        {
-            vj.type = Vertex_flute::DELETED;
-            for (Vertex_flute_ptr it : vj.neighbor) {
-                if ((it->c != vi.c)) {	//not i,add 0430
-                    vi.neighbor.push_back(it);
-                    for (int k = 0; k < (int) it->neighbor.size(); ++k) {
-                        if (it->neighbor[k]->c == vi.c) {
-                            it->neighbor[k] = &vi;	//modify it's neighbor to i
-                            break;
-                        }
-                    }
-                }
-            }
-        } else
-            previous = j;
-    }
-    for (int i = 0; i < degSize; ++i) {
-        SPDLOG_TRACE(log_sp, "after remove redundant {} ", vertex_fl[i].toString());
-    }
     for (Vertex_flute& fl : vertex_fl) {
         fl.visit = 0;
     }
+
+
     traverse_tree(ori_cost, vertex_fl);	// dfs to find 2 adjacent Steiner points(h or v edge) and do edge_shifting
 
-    for (int i = 0; i < degSize; ++i) {
+    for (std::size_t i = 0; i < degSize; ++i) {
         SPDLOG_TRACE(log_sp, "after traverse_tree {} ", vertex_fl[i].toString());
     }
 
@@ -646,9 +664,22 @@ void Construct_2d_tree::edge_shifting(Tree& t) {
     t.number = 0;
 
 //2. begin to out put the 2-pin lists to a Tree structure
-    dfs_output_tree(vertex_fl[0], t);
-    t.branch[0].n = 0;	//because neighbor of root is not assign in dfs_output_tree()
+    dfs_output_tree(vertex_fl[0], 0, t);
 
+    if (j == 164803) {
+        std::cout << "j " << j << std::endl;
+        Flute netRoutingTreeRouter;
+
+        for (int i = 0; i < t.number; ++i) {
+            printf("%d %d\n", static_cast<int>(t.branch[i].x), static_cast<int>(t.branch[i].y));
+            printf("%d %d\n\n", static_cast<int>(t.branch[t.branch[i].n].x), static_cast<int>(t.branch[t.branch[i].n].y));
+        }
+
+        std::cout << std::endl;
+        std::cout << rr_map.nPinToString(j) << std::endl;
+
+
+    }
 }
 //=====================end edge shifting=============================
 

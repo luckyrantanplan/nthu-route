@@ -52,7 +52,7 @@ void Layer_assignment::initial_overflow_map() {
     }
 }
 
-void Layer_assignment::malloc_space(const RoutingRegion& rr) {
+void Layer_assignment::initLayerInfo(const RoutingRegion& rr) {
 
     for (LayerInfo& layerInfo : layerInfo_map.allVertex()) {
         layerInfo.path = 0;  // non-visited
@@ -559,7 +559,7 @@ Layer_assignment::Layer_assignment(const Congestion& congestion, const RoutingRe
     max_xx = rr_map.get_gridx();
     max_yy = rr_map.get_gridy();
 
-    malloc_space(rr_map);
+    initLayerInfo(rr_map);
 
     calculate_cap();
     overflow_max = congestion.find_overflow_max(cur_map_3d.getZSize());

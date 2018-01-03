@@ -195,7 +195,7 @@ struct Layer_assignment {
     void print_max_overflow();
 
     void initial_overflow_map();
-    void malloc_space(const RoutingRegion& rr);
+    void initLayerInfo(const RoutingRegion& rr);
     void update_cur_map_for_klat_xy(int cur_idx, const Coordinate_2d& start, const Coordinate_2d& end, int net_id);
     void update_cur_map_for_klat_z(int min, int max, const Coordinate_2d& start, int net_id);
     void update_path_for_klat(const Coordinate_2d& start);

@@ -7,11 +7,13 @@
 #ifndef INC_GEOMETRY_H
 #define INC_GEOMETRY_H
 
+#include <boost/functional/hash.hpp>
 #include <algorithm>
 #include <array>
-#include <cstdlib>
+#include <cstddef>
 #include <functional>
-#include <utility>
+#include <string>
+#include <unordered_map>
 
 /**
  * @brief Defined the flags about position, i.e. Direction, Corner
@@ -74,6 +76,28 @@ public:
     }
 
 };
+
+namespace std {
+
+template<>
+struct hash<Coordinate_2d> {
+    std::size_t operator()(const Coordinate_2d& c) const {
+        // Start with a hash value of 0    .
+        std::size_t seed = 0;
+
+        // Compute individual hash values for first,
+        // second and third and combine them using XOR
+        // and bit shifting:
+        boost::hash_combine(seed, hash<int>()(c.x));
+        boost::hash_combine(seed, hash<int>()(c.y));
+
+        // Return the result.
+        return seed;
+
+    }
+};
+
+}
 
 class Coordinate_3d {
 public:

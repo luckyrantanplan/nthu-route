@@ -7,19 +7,19 @@
 #include "../misc/geometry.h"
 
 class Flute {
-    public:
-                Flute ();
-                ~Flute ();
+public:
+    Flute();
+    ~Flute();
 
-    void        routeNet (const std::vector<Pin>& pinList, Tree& routingTree);
+    void routeNet(const std::vector<Pin>& pinList, Tree& routingTree);
 
-    void        printTree (Tree& routingTree);
+    void printTree(Tree& routingTree);
+    void plotTree(Tree& routingTree);
+    int treeWireLength(Tree& routingTree);
 
-    int         treeWireLength (Tree& routingTree);
-
-    private:
-    DTYPE*      x_;             ///< temporal integer array used by flute
-    DTYPE*      y_;             ///< temporal integer array used by flute
+private:
+    DTYPE* x_;             ///< temporal integer array used by flute
+    DTYPE* y_;             ///< temporal integer array used by flute
 };
 
 #endif //INC_FLUTE_4_NTHUROUTE_H
