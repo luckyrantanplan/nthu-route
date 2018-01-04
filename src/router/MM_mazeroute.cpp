@@ -1,16 +1,27 @@
 #include "MM_mazeroute.h"
 
-#include <array>
+#include <boost/heap/detail/stable_heap.hpp>
+#include <boost/multi_array/base.hpp>
+#include <boost/multi_array/multi_array_ref.hpp>
+#include <boost/multi_array/subarray.hpp>
+#include <sys/types.h>
 #include <cassert>
+#include <cstdio>
+#include <iostream>
 #include <iterator>
 #include <stack>
-#include <utility>
 
 #include "../flute/flute-ds.h"
+#include "../flute/flute4nthuroute.h"
+#include "../grdb/EdgePlane.h"
 #include "../grdb/RoutingRegion.h"
+#include "../spdlog/common.h"
+#include "../spdlog/details/spdlog_impl.h"
+#include "../spdlog/logger.h"
 #include "Congestion.h"
 #include "Construct_2d_tree.h"
-//#define SPDLOG_TRACE_ON
+
+#define SPDLOG_TRACE_ON
 #include "../spdlog/spdlog.h"
 using namespace std;
 
@@ -47,7 +58,7 @@ Multisource_multisink_mazeroute::Multisource_multisink_mazeroute(Construct_2d_tr
 void Multisource_multisink_mazeroute::trace_back_to_find_path_2d(MMM_element *end_point) {
     MMM_element *cur_pos = end_point;
     while (1) {
-
+        SPDLOG_TRACE(log_sp, "cur_pos->coor {}", cur_pos->coor.toString());
         element->path.push_back(cur_pos->coor);
         if (cur_pos == cur_pos->parent) {
             break;
@@ -138,6 +149,17 @@ void Multisource_multisink_mazeroute::setup_pqueue() {
     int cur_net = element->net_id;
     if (net_tree[cur_net].empty()) {
         Tree& t = construct_2d_tree.net_flutetree[cur_net];
+
+        if (log_sp->level() == spdlog::level::trace) {
+            Flute netRoutingTreeRouter;
+
+            for (int i = 0; i < t.number; ++i) {
+                printf("%d %d\n", static_cast<int>(t.branch[i].x), static_cast<int>(t.branch[i].y));
+                printf("%d %d\n\n", static_cast<int>(t.branch[t.branch[i].n].x), static_cast<int>(t.branch[t.branch[i].n].y));
+            }
+
+            std::cout << std::endl;
+        }
         net_tree[cur_net].reserve(t.number); // avoid re allocation that could invalidate pointer
         for (int i = 0; i < t.number; ++i) {
             Branch& branch = t.branch[i];
@@ -231,12 +253,6 @@ bool Multisource_multisink_mazeroute::mm_maze_route_p(Two_pin_element_2d &ieleme
         }
     }
 
-    for (u_int32_t i = 0; i < mmm_map.size(); ++i) {
-        for (u_int32_t j = 0; j < mmm_map[0].size(); ++j) {
-            SPDLOG_TRACE(log_sp, "mm_maze_route_p {}", mmm_map[i][j].toString());
-        }
-    }
-
     while (!pqueue.empty()) {
         MMM_element& cur_pos = *pqueue.top();
 
@@ -250,7 +266,7 @@ bool Multisource_multisink_mazeroute::mm_maze_route_p(Two_pin_element_2d &ieleme
 
             SPDLOG_TRACE(log_sp, "next_pos {}", next_pos.toString());
 
-            SPDLOG_TRACE(log_sp, "h.vertex() {} h.edge() {}",h.vertex().toString(), h.edge().toString());
+            SPDLOG_TRACE(log_sp, "h.vertex() {} h.edge() {}", h.vertex().toString(), h.edge().toString());
 
             if (&next_pos != cur_pos.parent && next_pos.walkableID == visit_counter) {
 

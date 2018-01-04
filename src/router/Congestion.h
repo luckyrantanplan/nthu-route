@@ -54,7 +54,7 @@ public:
     int cal_total_wirelength();
     Statistic stat_congestion();
     void update_congestion_map_insert_two_pin_net(Two_pin_element_2d& element);
-    void update_congestion_map_remove_two_pin_net(Two_pin_element_2d& element);
+    void update_congestion_map_remove_two_pin_net(const std::vector<Coordinate_2d>& path,const int net_id);
 };
 
 #endif /* SRC_ROUTER_CONGESTION_H_ */

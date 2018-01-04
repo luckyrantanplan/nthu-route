@@ -243,15 +243,15 @@ void Congestion::update_congestion_map_insert_two_pin_net(Two_pin_element_2d& el
 
 //Remove a net from an edge.
 //If the net pass that edge more than once, this function will only decrease the counter.
-void Congestion::update_congestion_map_remove_two_pin_net(Two_pin_element_2d& element) {
+void Congestion::update_congestion_map_remove_two_pin_net(const std::vector<Coordinate_2d>& path,const int net_id) {
 
-    for (int i = element.path.size() - 2; i >= 0; --i) {
-        Edge_2d& edge = congestionMap2d.edge(element.path[i], element.path[i + 1]);
-        RoutedNetTable::iterator find_result = edge.used_net.find(element.net_id);
+    for (int i = path.size() - 2; i >= 0; --i) {
+        Edge_2d& edge = congestionMap2d.edge(path[i], path[i + 1]);
+        RoutedNetTable::iterator find_result = edge.used_net.find(net_id);
 
         --(find_result->second);
         if (find_result->second == 0) {
-            edge.used_net.erase(element.net_id);
+            edge.used_net.erase(net_id);
             --(edge.cur_cap);
             if (used_cost_flag != FASTROUTE_COST) {
                 pre_evaluate_congestion_cost_fp(edge);

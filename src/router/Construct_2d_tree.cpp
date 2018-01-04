@@ -666,7 +666,7 @@ void Construct_2d_tree::edge_shifting(Tree& t, int j) {
 //2. begin to out put the 2-pin lists to a Tree structure
     dfs_output_tree(vertex_fl[0], 0, t);
 
-    if (j == 164803) {
+    if (j == 134776) {
         std::cout << "j " << j << std::endl;
         Flute netRoutingTreeRouter;
 

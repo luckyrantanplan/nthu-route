@@ -13,7 +13,7 @@
 #include "MonotonicRouting.h"
 #include "parameter.h"
 #include "Post_processing.h"
-//#define SPDLOG_TRACE_ON
+#define SPDLOG_TRACE_ON
 #include "../spdlog/spdlog.h"
 
 using namespace std;
@@ -214,7 +214,7 @@ void RangeRouter::range_router(Two_pin_element_2d& two_pin, int version) {
 
         construct_2d_tree.NetDirtyBit[two_pin.net_id] = true;
 
-        congestion.update_congestion_map_remove_two_pin_net(two_pin);
+        congestion.update_congestion_map_remove_two_pin_net(two_pin.path, two_pin.net_id);
 
         std::vector<Coordinate_2d> bound_path(two_pin.path);
 
@@ -319,8 +319,14 @@ void RangeRouter::specify_all_range(boost::multi_array<Point_fc, 2>& gridCell) {
             return Two_pin_element_2d::comp_stn_2pin(*a,*b);});
 
         for (Two_pin_element_2d * two_pin : twopin_list) {
+
+            if (two_pin->net_id == 134776 ) {
+                spdlog::set_level(spdlog::level::trace);
+            }
             SPDLOG_TRACE(log_sp, "range_router(twopin, 2);", two_pin->toString());
             range_router(*two_pin, 2);
+            spdlog::set_level(spdlog::level::info);
+
         }
     }
 

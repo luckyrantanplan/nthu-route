@@ -571,7 +571,7 @@ Layer_assignment::Layer_assignment(const Congestion& congestion, const RoutingRe
     SPDLOG_TRACE(log_sp, "Layer assignment complete.");
     calculate_wirelength();
     SPDLOG_TRACE(log_sp, "Outputing result file to {}", outputFileName);
-    generate_all_output(std::cout);
+    // generate_all_output(std::cout);
     std::ofstream ofs(outputFileName, std::ofstream::out | std::ofstream::trunc);
     generate_all_output(ofs);
     ofs << std::flush;

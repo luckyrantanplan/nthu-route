@@ -5,8 +5,10 @@
 #include <sys/types.h>
 #include <cstdint>
 #include <memory>
+#include <string>
 #include <vector>
 
+#include "../flute/flute-ds.h"
 #include "../misc/geometry.h"
 #include "DataDef.h"
 
@@ -121,6 +123,9 @@ struct Route_2pinnets {
     void bfs_for_find_two_pin_list(Coordinate_2d start_coor, int net_id);
     void reallocate_two_pin_list();
 
+private:
+    void add_two_pin(int net_id, std::vector<Coordinate_2d>& path);
+    Tree& fillTree(int offset, int net_id);
 };
 
 #endif //INC_REOUTE_2PINNETS_H

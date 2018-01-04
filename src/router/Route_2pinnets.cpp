@@ -3,22 +3,31 @@
 #include <boost/multi_array/base.hpp>
 #include <boost/multi_array/multi_array_ref.hpp>
 #include <boost/multi_array/subarray.hpp>
+#include <boost/range/iterator_range_core.hpp>
 #include <stdlib.h>
-#include <sys/types.h>
 #include <algorithm>
+#include <cstdio>
+#include <iostream>
 #include <iterator>
 #include <queue>
+#include <stack>
 #include <utility>
 
 #include "../flute/flute-ds.h"
+#include "../flute/flute4nthuroute.h"
 #include "../grdb/EdgePlane.h"
 #include "../grdb/RoutingComponent.h"
 #include "../grdb/RoutingRegion.h"
-#include "../misc/geometry.h"
+
+#define SPDLOG_TRACE_ON
+#include "../spdlog/common.h"
+#include "../spdlog/details/logger_impl.h"
+#include "../spdlog/details/spdlog_impl.h"
+#include "../spdlog/logger.h"
 #include "Congestion.h"
 #include "Construct_2d_tree.h"
+#include "Range_router.h"
 
-//#define SPDLOG_TRACE_ON
 #include "../spdlog/spdlog.h"
 
 using namespace std;
@@ -125,107 +134,159 @@ Coordinate_2d Route_2pinnets::determine_is_terminal_or_steiner_point(Coordinate_
     return result;
 }
 
-void Route_2pinnets::bfs_for_find_two_pin_list(Coordinate_2d start_coor, int net_id) {
+void Route_2pinnets::add_two_pin(int net_id, std::vector<Coordinate_2d>& path) {
+    if (path.size() > 1) {
+        construct_2d_tree.two_pin_list.emplace_back();
+        Two_pin_element_2d& two_pin = construct_2d_tree.two_pin_list.back();
+        two_pin.pin1 = path.front();
+        two_pin.net_id = net_id;
+        two_pin.pin2 = path.back();
+        two_pin.path = path;
+        path.clear();
+        path.push_back(two_pin.pin2);
+    }
+}
 
-    vector<BranchClass> branch_xy;
+Tree& Route_2pinnets::fillTree(int offset, int net_id) {
+    int sizeTree = construct_2d_tree.two_pin_list.size() - offset;
+    Tree& tree = construct_2d_tree.net_flutetree[net_id];
+    if (tree.number < sizeTree + 1) {
+        if (net_id == 75548) {
+            std::cout << "tree.number" << tree.number << std::endl;
+        }
 
-    std::queue<ElementQueue> queue;
-    uint32_t index = 0;
-    queue.emplace(start_coor, start_coor, index);
-    ++index;
-    {
-        Coordinate_2d& head = queue.front().coor;
-        colorMap[head.x][head.y].traverse = net_id;
-
-        branch_xy.emplace_back(head, queue.front().index);
+        free(tree.branch);
+        tree.branch = (Branch*) (malloc((sizeTree + 1) * sizeof(Branch))); // n+1 vertex for n edge
     }
 
-    while (!queue.empty()) {
-        for (EdgePlane<Edge_2d>::Handle& h : congestion.congestionMap2d.neighbors(queue.front().coor)) {
-            ElementQueue& headElement = queue.front();
-            if (h.vertex() != headElement.parent && h.edge().lookupNet(net_id)) {
+    {
+        std::unordered_map<Coordinate_2d, int> indexmap;
+        indexmap.reserve(sizeTree + 1);
 
-                Two_pin_element_2d two_pin;
-                Coordinate_2d head = headElement.coor;
-                two_pin.pin1 = head;
-                two_pin.net_id = net_id;
-                two_pin.path.push_back(head);
-                bool exit_loop = false;
-                Coordinate_2d c = h.vertex();
-                while (!exit_loop) {
-                    exit_loop = true;
-                    colorMap[head.x][head.y].traverse = net_id;
-                    two_pin.path.push_back(c);
-                    PointType pointType;
-                    Coordinate_2d nextc = determine_is_terminal_or_steiner_point(c, head, net_id, pointType);
+        Two_pin_element_2d& first_pin = construct_2d_tree.two_pin_list.at(offset);
+        indexmap.emplace(first_pin.pin1, 0);
 
-                    switch (pointType) {
-                    case oneDegreeTerminal: {
-                        if (colorMap[c.x][c.y].traverse != net_id) {
-                            two_pin.pin2 = c;
-                            construct_2d_tree.two_pin_list.push_back(two_pin);
+        tree.branch[0].x = first_pin.pin1.x;
+        tree.branch[0].y = first_pin.pin1.y;
+        tree.branch[0].n = 0;
 
-                            branch_xy.emplace_back(c, headElement.index);
+        for (int i = 1; i < sizeTree + 1; ++i) {
+            Two_pin_element_2d& two_pin = construct_2d_tree.two_pin_list.at(offset + i-1);
 
-                            colorMap[c.x][c.y].traverse = net_id;
-                        } else {
+            indexmap.emplace(two_pin.pin2, i);
 
-                            congestion.update_congestion_map_remove_two_pin_net(two_pin);
-                            construct_2d_tree.NetDirtyBit[two_pin.net_id] = true;
+            tree.branch[i].x = two_pin.pin2.x;
+            tree.branch[i].y = two_pin.pin2.y;
+            tree.branch[i].n = indexmap.at(two_pin.pin1);
 
-                        }
-                        break;
-                    }
-                    case severalDegreeTerminal:
-                    case steinerPoint: {
-                        if (colorMap[c.x][c.y].traverse != net_id) {
-                            two_pin.pin2 = c;
-                            construct_2d_tree.two_pin_list.push_back(two_pin);
+        }
+        tree.number = sizeTree + 1;
+    }
+    return tree;
+}
 
-                            branch_xy.emplace_back(c, headElement.index);
-                            queue.emplace(c, head, index);
-                            ++index;
+void Route_2pinnets::bfs_for_find_two_pin_list(Coordinate_2d start_coor, int net_id) {
+    if (net_id == 134776) {
+        spdlog::set_level(spdlog::level::trace);
+    }
+    std::stack<std::vector<Coordinate_2d>> stack;
+    stack.emplace();
+    stack.top().push_back(start_coor);
 
-                            colorMap[c.x][c.y].traverse = net_id;
-                        } else {
-                            congestion.update_congestion_map_remove_two_pin_net(two_pin);
-                            construct_2d_tree.NetDirtyBit[two_pin.net_id] = true;
-                        }
-                        break;
-                    }
-                    case oneDegreeNonterminal: {
-                        congestion.update_congestion_map_remove_two_pin_net(two_pin);
-                        construct_2d_tree.NetDirtyBit[two_pin.net_id] = true;
+    int offset = construct_2d_tree.two_pin_list.size();
 
-                        break;
-                    }
-                    case twoDegree: {
-                        head = c;
-                        c = nextc;
-                        exit_loop = false;
-                        break;
-                    }
+    while (!stack.empty()) {
+        std::vector<Coordinate_2d>& path = stack.top();
+        const Coordinate_2d& c = path.back();
+        colorMap[c.x][c.y].traverse = net_id;
 
-                    }
+        if (colorMap[c.x][c.y].terminal == net_id) {
+            add_two_pin(net_id, path);
+        }
+
+        std::vector<Coordinate_2d> neighbors;
+        neighbors.reserve(4);
+        for (EdgePlane<Edge_2d>::Handle& h : congestion.congestionMap2d.neighbors(c)) {
+            if (h.edge().lookupNet(net_id) && //
+                    (colorMap[h.vertex().x][h.vertex().y].traverse != net_id)) {
+                neighbors.push_back(h.vertex());
+            }
+        }
+
+        switch (neighbors.size()) {
+        case 0:
+            congestion.update_congestion_map_remove_two_pin_net(path, net_id);
+            stack.pop();
+            break;
+        case 1:
+            path.push_back(neighbors.at(0));
+            break;
+        case 2:
+            add_two_pin(net_id, path);
+            stack.emplace(path);
+            stack.top().emplace_back(neighbors.at(1));
+            path.emplace_back(neighbors.at(0));
+            break;
+        case 3:
+            add_two_pin(net_id, path);
+            stack.emplace(path);
+            stack.top().emplace_back(neighbors.at(1));
+            stack.emplace(path);
+            stack.top().emplace_back(neighbors.at(2));
+            path.emplace_back(neighbors.at(0));
+            break;
+        case 4:
+            add_two_pin(net_id, path);
+            stack.emplace(path);
+            stack.top().emplace_back(neighbors.at(1));
+            stack.emplace(path);
+            stack.top().emplace_back(neighbors.at(2));
+            stack.emplace(path);
+            stack.top().emplace_back(neighbors.at(3));
+            path.emplace_back(neighbors.at(0));
+            break;
+        }
+    }
+
+    Tree& tree = fillTree(offset, net_id);
+
+    if (log_sp->level() == spdlog::level::trace) {
+        SPDLOG_TRACE(log_sp, "true net_id={} in congestion ", net_id);
+        for (int x = 0; x < congestion.congestionMap2d.getXSize(); ++x) {
+            for (int y = 1; y < congestion.congestionMap2d.getYSize(); ++y) {
+                Coordinate_2d c1 { x, y - 1 };
+                Coordinate_2d c2 { x, y };
+                if (congestion.congestionMap2d.edge(c1, c2).lookupNet(net_id)) {
+                    printf("%d %d\n", c1.x, c1.y);
+                    printf("%d %d\n\n", c2.x, c2.y);
                 }
             }
         }
-        queue.pop();
+        for (int y = 0; y < congestion.congestionMap2d.getYSize(); ++y) {
+            for (int x = 1; x < congestion.congestionMap2d.getXSize(); ++x) {
+                Coordinate_2d c1 { x - 1, y };
+                Coordinate_2d c2 { x, y };
+                if (congestion.congestionMap2d.edge(c1, c2).lookupNet(net_id)) {
+                    printf("%d %d\n", c1.x, c1.y);
+                    printf("%d %d\n\n", c2.x, c2.y);
+                }
+            }
+        } //
+        std::cout << "end congestion true" << std::endl;
+        SPDLOG_TRACE(log_sp, "end true net_id={} in congestion ", net_id);
     }
 
-    Tree& tree = construct_2d_tree.net_flutetree[net_id];
-    if (tree.number < (int) branch_xy.size()) {
-        free(tree.branch);
-        tree.branch = (Branch *) malloc(branch_xy.size() * sizeof(Branch));
-    }
+    if (log_sp->level() == spdlog::level::trace) {
+        Flute netRoutingTreeRouter;
 
-    tree.number = branch_xy.size();
-    for (int i = 0; i < tree.number; ++i) {
-        tree.branch[i].x = branch_xy[i].x;
-        tree.branch[i].y = branch_xy[i].y;
-        tree.branch[i].n = branch_xy[i].n;
-    }
+        for (int i = 0; i < tree.number; ++i) {
+            printf("%d %d\n", static_cast<int>(tree.branch[i].x), static_cast<int>(tree.branch[i].y));
+            printf("%d %d\n\n", static_cast<int>(tree.branch[tree.branch[i].n].x), static_cast<int>(tree.branch[tree.branch[i].n].y));
+        }
 
+        std::cout << "end dump tree 2 for net id " << net_id << std::endl;
+    }
+    spdlog::set_level(spdlog::level::info);
 }
 
 void Route_2pinnets::reallocate_two_pin_list() {

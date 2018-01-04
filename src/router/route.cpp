@@ -20,7 +20,7 @@ int main(int argc, char* argv[]) {
 
     auto console_sp = spdlog::stdout_logger_mt("NTHUR");
     spdlog::logger& log = *console_sp;
-    spdlog::set_level(spdlog::level::trace);
+    spdlog::set_level(spdlog::level::info);
     spdlog::set_pattern("%Y%m%d%H%M%S.%f] %L %v");
     SPDLOG_TRACE(console_sp, "test the trace");
 
