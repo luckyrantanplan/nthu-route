@@ -171,7 +171,7 @@ Tree& Route_2pinnets::fillTree(int offset, int net_id) {
         tree.branch[0].n = 0;
 
         for (int i = 1; i < sizeTree + 1; ++i) {
-            Two_pin_element_2d& two_pin = construct_2d_tree.two_pin_list.at(offset + i-1);
+            Two_pin_element_2d& two_pin = construct_2d_tree.two_pin_list.at(offset + i - 1);
 
             indexmap.emplace(two_pin.pin2, i);
 
@@ -186,7 +186,7 @@ Tree& Route_2pinnets::fillTree(int offset, int net_id) {
 }
 
 void Route_2pinnets::bfs_for_find_two_pin_list(Coordinate_2d start_coor, int net_id) {
-    if (net_id == 134776) {
+    if (net_id == 55978) { //55978
         spdlog::set_level(spdlog::level::trace);
     }
     std::stack<std::vector<Coordinate_2d>> stack;
@@ -250,30 +250,11 @@ void Route_2pinnets::bfs_for_find_two_pin_list(Coordinate_2d start_coor, int net
 
     Tree& tree = fillTree(offset, net_id);
 
+    if (net_id == 55978) { //55978
+        spdlog::set_level(spdlog::level::trace);
+    }
     if (log_sp->level() == spdlog::level::trace) {
-        SPDLOG_TRACE(log_sp, "true net_id={} in congestion ", net_id);
-        for (int x = 0; x < congestion.congestionMap2d.getXSize(); ++x) {
-            for (int y = 1; y < congestion.congestionMap2d.getYSize(); ++y) {
-                Coordinate_2d c1 { x, y - 1 };
-                Coordinate_2d c2 { x, y };
-                if (congestion.congestionMap2d.edge(c1, c2).lookupNet(net_id)) {
-                    printf("%d %d\n", c1.x, c1.y);
-                    printf("%d %d\n\n", c2.x, c2.y);
-                }
-            }
-        }
-        for (int y = 0; y < congestion.congestionMap2d.getYSize(); ++y) {
-            for (int x = 1; x < congestion.congestionMap2d.getXSize(); ++x) {
-                Coordinate_2d c1 { x - 1, y };
-                Coordinate_2d c2 { x, y };
-                if (congestion.congestionMap2d.edge(c1, c2).lookupNet(net_id)) {
-                    printf("%d %d\n", c1.x, c1.y);
-                    printf("%d %d\n\n", c2.x, c2.y);
-                }
-            }
-        } //
-        std::cout << "end congestion true" << std::endl;
-        SPDLOG_TRACE(log_sp, "end true net_id={} in congestion ", net_id);
+        congestion.plotCongestionNet(net_id);
     }
 
     if (log_sp->level() == spdlog::level::trace) {

@@ -18,7 +18,7 @@
 #include "../grdb/RoutingComponent.h"
 #include "../grdb/RoutingRegion.h"
 #include "Congestion.h"
-//#define SPDLOG_TRACE_ON
+#define SPDLOG_TRACE_ON
 #include "../spdlog/spdlog.h"
 
 using namespace std;
@@ -41,7 +41,10 @@ void Layer_assignment::print_max_overflow() {
             sum += edgeLeft.overUsage();
             ++lines;
         }
-    }SPDLOG_TRACE(log_sp, "       3D # of overflow = {} ", sum);SPDLOG_TRACE(log_sp, "       3D max  overflow = {} ", max);SPDLOG_TRACE(log_sp, "3D overflow edge number = {} ", lines);
+    }
+    SPDLOG_TRACE(log_sp, "       3D # of overflow = {} ", sum);
+    SPDLOG_TRACE(log_sp, "       3D max  overflow = {} ", max);
+    SPDLOG_TRACE(log_sp, "3D overflow edge number = {} ", lines);
 
 }
 
@@ -86,7 +89,8 @@ void Layer_assignment::update_cur_map_for_klat_xy(int cur_idx, const Coordinate_
     edge.cur_cap = (edge.used_net.size() * 2);	// need check
     if (edge.isOverflow()) {	// need check
         layerInfo_map.edges().edge(start, end).overflow -= 2;
-    }SPDLOG_TRACE(log_sp, "update_cur_map_for_klat_xy {}-{}: {} ", Coordinate_3d {end, cur_idx}.toString(), Coordinate_3d {start, cur_idx}.toString(), edge.toString());
+    }
+    SPDLOG_TRACE(log_sp, "update_cur_map_for_klat_xy {}-{}: {} ", Coordinate_3d {end, cur_idx}.toString(), Coordinate_3d {start, cur_idx}.toString(), edge.toString());
 }
 
 void Layer_assignment::update_cur_map_for_klat_z(int min, int max, const Coordinate_2d& start, int net_id) {
@@ -96,7 +100,7 @@ void Layer_assignment::update_cur_map_for_klat_z(int min, int max, const Coordin
         Edge_3d& edge = cur_map_3d.edge(k, previous);
         ++edge.used_net[net_id];
         ++edge.cur_cap;
-        SPDLOG_TRACE(log_sp, "update_cur_map_for_klat_z {}-{} : {} ", previous.toString(), k.toString(), edge.toString());
+        //  SPDLOG_TRACE(log_sp, "update_cur_map_for_klat_z {}-{} : {} ", previous.toString(), k.toString(), edge.toString());
 
         previous = k;
     }
@@ -135,13 +139,16 @@ void Layer_assignment::update_path_for_klat(const Coordinate_2d& start) {
                 update_cur_map_for_klat_xy(pi_z, h, c, global_net_id);
                 q.emplace(Coordinate_3d { c, pi_z }, Coordinate_3d { h, pi_z });	// enqueue
             }
-        }SPDLOG_TRACE(log_sp, " update_cur_map_for_klat_z({},{}, ({}) , {}); ", z_min, z_max, h.toString(), global_net_id);
+        }
+        SPDLOG_TRACE(log_sp, " update_cur_map_for_klat_z({},{}, ({}) , {}); ", z_min, z_max, h.toString(), global_net_id);
         update_cur_map_for_klat_z(z_min, z_max, h, global_net_id);
         layerInfo_map.vertex(h).path = 0;	// visited
         q.pop();	// dequeue
     }
-    if (pin_num != global_pin_num)
-        printf("net : %d, pin number error %d vs %d\n", global_net_id, pin_num, global_pin_num);
+    if (pin_num != global_pin_num) {
+        log_sp->error("net : {}, pin number error {} vs {}", global_net_id, pin_num, global_pin_num);
+        exit(-1);
+    }
 }
 
 void Layer_assignment::cycle_reduction(const Coordinate_2d& c, const Coordinate_2d& parent) {
@@ -179,7 +186,11 @@ void Layer_assignment::preprocess(int net_id) {
         k.val = -1;
     }
 
-    SPDLOG_TRACE(log_sp, "layerInfo_map {}", layerInfo_map.toString());
+    // SPDLOG_TRACE(log_sp, "layerInfo_map {}", layerInfo_map.toString());
+
+    if (log_sp->level() == spdlog::level::trace) {
+        congestion.plotCongestionNet(net_id);
+    }
 
     std::queue<ElementQueue<Coordinate_2d>> q;
     q.emplace(c, c);	// enqueue
@@ -214,7 +225,7 @@ void Layer_assignment::preprocess(int net_id) {
         q.pop();	// dequeue
     }
     cycle_reduction(c, c);
-    SPDLOG_TRACE(log_sp, "layerInfo_map after cycle reduction {}", layerInfo_map.toString());
+    //  SPDLOG_TRACE(log_sp, "layerInfo_map after cycle reduction {}", layerInfo_map.toString());
 }
 
 void Layer_assignment::VertexCost::addCost(const Coordinate_2d& o, const ElementStack& e, const Layer_assignment& l) {
@@ -340,13 +351,14 @@ void Layer_assignment::DP(const Coordinate_3d& c, const Coordinate_3d& parent) {
             klatNode.val = klatNode.via_overflow;
 
         } else {	// is_end == false
-            SPDLOG_TRACE(log_sp, "layerInfo_map {}", layerInfo_map.toString());
+            // SPDLOG_TRACE(log_sp, "layerInfo_map {}", layerInfo_map.toString());
             for (const Coordinate_3d& n : rec_count(c, klatNode)) {
                 SPDLOG_TRACE(log_sp, "rec_count");
                 layerInfo_map.vertex(n.xy()).klat[c.z].pi_z = n.z;
             }
         }
-    }SPDLOG_TRACE(log_sp, "  END DP c: {} parent: {}", c.toString(), parent.toString());
+    }           //
+    SPDLOG_TRACE(log_sp, "  END DP c: {} parent: {}", c.toString(), parent.toString());
 }
 
 void Layer_assignment::collectComb(Coordinate_3d c2, Coordinate_3d& c, std::vector<std::vector<Segment3d> >& comb) {
@@ -392,6 +404,10 @@ void Layer_assignment::generate_output(int net_id, const std::vector<Segment3d>&
 }
 
 int Layer_assignment::klat(int net_id) { //SOLAC + APEC
+    if (net_id == 55978) { //55978
+        spdlog::set_level(spdlog::level::trace);
+    }
+
     const std::vector<Pin>& pin_list = rr_map.get_nPin(net_id);
 
     Coordinate_2d start = pin_list[0].get_tileXY();
@@ -405,6 +421,7 @@ int Layer_assignment::klat(int net_id) { //SOLAC + APEC
     SPDLOG_TRACE(log_sp, "  update_path_for_klat(start); ");
     update_path_for_klat(start);
 
+    spdlog::set_level(spdlog::level::info);
     return layerInfo_map.vertex(start).klat[0].val;
 }
 
@@ -492,7 +509,8 @@ void Layer_assignment::sort_net_order() {
 
     std::chrono::duration<double> elapsed_seconds = end - start;
 
-    SPDLOG_TRACE(log_sp, "cost = {}", global_pin_cost);SPDLOG_TRACE(log_sp, "time = {}", elapsed_seconds.count());
+    SPDLOG_TRACE(log_sp, "cost = {}", global_pin_cost);	//
+    SPDLOG_TRACE(log_sp, "time = {}", elapsed_seconds.count());
 
 }
 
@@ -506,7 +524,9 @@ void Layer_assignment::calculate_cap() {
             if (max < edge.overUsage() * 2)
                 max = edge.overUsage() * 2;
         }
-    }SPDLOG_TRACE(log_sp, "2D sum overflow = {}", overflow);SPDLOG_TRACE(log_sp, "2D max overflow = {}", max);
+    }
+    SPDLOG_TRACE(log_sp, "2D sum overflow = {}", overflow);	//
+    SPDLOG_TRACE(log_sp, "2D max overflow = {}", max);
 }
 
 void Layer_assignment::generate_all_output(std::ostream & output) {

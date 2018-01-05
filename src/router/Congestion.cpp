@@ -10,16 +10,19 @@
 #include <boost/range/combine.hpp>
 #include <boost/range/detail/combine_cxx11.hpp>
 #include <boost/range/iterator_range_core.hpp>
+#include <boost/tuple/detail/tuple_basic.hpp>
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
+#include <iostream>
 #include <limits>
-#include <memory>
 #include <unordered_map>
 #include <utility>
+
 #include "../grdb/plane.h"
 #include "../grdb/RoutingRegion.h"
-//#define SPDLOG_TRACE_ON
+#include "../spdlog/details/spdlog_impl.h"
+#include "../spdlog/logger.h"
 #include "../spdlog/spdlog.h"
 
 #define parameter_h 0.8         // used in the edge cost function 1/0.5 0.8/2
@@ -128,10 +131,10 @@ void Congestion::pre_evaluate_congestion_cost() {
 
 //Check if the specified edge is not overflowed
 //Return false if the edge is overflowed
-bool Congestion::check_path_no_overflow(std::vector<Coordinate_2d>& path, int net_id, int inc_flag) {
+bool Congestion::check_path_no_overflow(const std::vector<Coordinate_2d>& path,const int net_id,const int inc_flag) const {
     for (int i = path.size() - 2; i >= 0; --i) {
 
-        Edge_2d& edge = congestionMap2d.edge(path[i], path[i + 1]);
+        const Edge_2d& edge = congestionMap2d.edge(path[i], path[i + 1]);
         //There are two modes:
         // 1. inc_flag = 0: Just report if the specified edge is overflowd
         // 2. inc_flag = 1: Check if the specified edge will be overflowed if wd add a demond on it.
@@ -258,4 +261,30 @@ void Congestion::update_congestion_map_remove_two_pin_net(const std::vector<Coor
             }
         }
     }
+}
+
+void Congestion::plotCongestionNet(int net_id) const{
+    SPDLOG_TRACE(log_sp, "true net_id={} in congestion ", net_id);
+    for (int x = 0; x <congestionMap2d.getXSize(); ++x) {
+        for (int y = 1; y <congestionMap2d.getYSize(); ++y) {
+            Coordinate_2d c1 { x, y - 1 };
+            Coordinate_2d c2 { x, y };
+            if ( congestionMap2d.edge(c1, c2).lookupNet(net_id)) {
+                printf("%d %d\n", c1.x, c1.y);
+                printf("%d %d\n\n", c2.x, c2.y);
+            }
+        }
+    }
+    for (int y = 0; y <congestionMap2d.getYSize(); ++y) {
+        for (int x = 1; x <congestionMap2d.getXSize(); ++x) {
+            Coordinate_2d c1 { x - 1, y };
+            Coordinate_2d c2 { x, y };
+            if ( congestionMap2d.edge(c1, c2).lookupNet(net_id)) {
+                printf("%d %d\n", c1.x, c1.y);
+                printf("%d %d\n\n", c2.x, c2.y);
+            }
+        }
+    } //
+    std::cout << "end congestion true" << std::endl;
+    SPDLOG_TRACE(log_sp, "end true net_id={} in congestion ", net_id);
 }

@@ -126,6 +126,7 @@ struct Route_2pinnets {
 private:
     void add_two_pin(int net_id, std::vector<Coordinate_2d>& path);
     Tree& fillTree(int offset, int net_id);
+
 };
 
 #endif //INC_REOUTE_2PINNETS_H

@@ -198,7 +198,7 @@ void Construct_2d_tree::gen_FR_congestion_map() {
 //call flute to gen steiner tree and put the result in flutetree[]
         netRoutingTreeRouter.routeNet(rr_map.get_nPin(i), tree);
 
-        if (i == 164803 || i == 156740) {
+        if (i == 55978) {
             std::cout << "i " << i << std::endl;
             netRoutingTreeRouter.plotTree(tree);
             std::cout << std::endl;
@@ -312,7 +312,7 @@ Vertex_flute_ptr Construct_2d_tree::findY(Vertex_flute& a, std::function<bool(co
                 find = *nei;
             }
         }
-      //  assert(test(find->c.y, cur->c.y) || (find->c.y == a.c.y) || (find->type == Vertex_flute::PIN));
+        //  assert(test(find->c.y, cur->c.y) || (find->c.y == a.c.y) || (find->type == Vertex_flute::PIN));
         cur = find;
         if ((cur->c.y == a.c.y) || (cur->c.x != a.c.x)) {	//no neighboring vertex next to  a
             break;
@@ -331,7 +331,7 @@ Vertex_flute_ptr Construct_2d_tree::findX(Vertex_flute& a, std::function<bool(co
                 find = *nei;
             }
         }
-      //  assert(test(find->c.x, cur->c.x) || (find->c.x == a.c.x) || (find->type == Vertex_flute::PIN));
+        //  assert(test(find->c.x, cur->c.x) || (find->c.x == a.c.x) || (find->type == Vertex_flute::PIN));
         cur = find;
         if (cur->c.x == a.c.x || cur->c.y != a.c.y) {	//no neighboring vertex in the right of a
             break;
@@ -601,7 +601,6 @@ void Construct_2d_tree::edge_shifting(Tree& t, int j) {
 //Create vertex
     vertex_fl.reserve(degSize);
 
-
     for (int i = 0; i < t.deg; ++i) {
 
         Coordinate_2d c { (int) t.branch[i].x, (int) t.branch[i].y };
@@ -649,7 +648,6 @@ void Construct_2d_tree::edge_shifting(Tree& t, int j) {
         fl.visit = 0;
     }
 
-
     traverse_tree(ori_cost, vertex_fl);	// dfs to find 2 adjacent Steiner points(h or v edge) and do edge_shifting
 
     for (std::size_t i = 0; i < degSize; ++i) {
@@ -666,7 +664,7 @@ void Construct_2d_tree::edge_shifting(Tree& t, int j) {
 //2. begin to out put the 2-pin lists to a Tree structure
     dfs_output_tree(vertex_fl[0], 0, t);
 
-    if (j == 134776) {
+    if (j == 55978) {
         std::cout << "j " << j << std::endl;
         Flute netRoutingTreeRouter;
 
@@ -677,7 +675,6 @@ void Construct_2d_tree::edge_shifting(Tree& t, int j) {
 
         std::cout << std::endl;
         std::cout << rr_map.nPinToString(j) << std::endl;
-
 
     }
 }
@@ -788,6 +785,8 @@ Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterS
     SPDLOG_TRACE(log_sp, "================================================================");
 
     post_processing.process(route_2pinnets);
+
+
 }
 
 std::string Construct_2d_tree::printMemoryUsage() {
