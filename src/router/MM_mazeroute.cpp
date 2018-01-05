@@ -147,7 +147,8 @@ void Multisource_multisink_mazeroute::clear_net_tree() {
 void Multisource_multisink_mazeroute::setup_pqueue() {
 
     int cur_net = element->net_id;
-    if (net_tree[cur_net].empty()) {
+    vector<Vertex_mmm>& vertexV = net_tree[cur_net];
+    if (vertexV.empty()) {
         Tree& t = construct_2d_tree.net_flutetree[cur_net];
 
         if (log_sp->level() == spdlog::level::trace) {
@@ -160,23 +161,34 @@ void Multisource_multisink_mazeroute::setup_pqueue() {
 
             std::cout << std::endl;
         }
-        net_tree[cur_net].reserve(t.number); // avoid re allocation that could invalidate pointer
-        for (int i = 0; i < t.number; ++i) {
-            Branch& branch = t.branch[i];
+        vertexV.reserve(t.number); // avoid re allocation that could invalidate pointer
 
-            net_tree[cur_net].emplace_back(Coordinate_2d((int) branch.x, (int) branch.y));
-        }
+        std::unordered_map<Coordinate_2d, int> indexmap;
+        indexmap.reserve(t.number);
+
         for (int i = 0; i < t.number; ++i) {
-            Vertex_mmm& a = net_tree[cur_net][i];
-            Vertex_mmm& b = net_tree[cur_net][t.branch[i].n];
-            if (a.coor != b.coor) {
-                a.neighbor.push_back(&b);
-                b.neighbor.push_back(&a);
+
+            Coordinate_2d c { (int) t.branch[i].x, (int) t.branch[i].y };
+            bool inserted = indexmap.insert( { c, static_cast<int>(vertexV.size()) }).second;
+            if (inserted) {
+                vertexV.emplace_back(c);
+            }
+        }
+
+        for (int i = 0; i < t.number; ++i) {
+            Branch b = t.branch[i];
+            Coordinate_2d c1 { (int) b.x, (int) b.y };
+            Coordinate_2d c2 { (int) t.branch[b.n].x, (int) t.branch[b.n].y };
+            Vertex_mmm& v1 = vertexV.at(indexmap.at(c1));
+            Vertex_mmm& v2 = vertexV.at(indexmap.at(c2));
+            if (v1.coor != v2.coor) {
+                v1.neighbor.push_back(&v2);
+                v2.neighbor.push_back(&v1);
             }
         }
     }
 
-    for (const Vertex_mmm& v : net_tree[cur_net]) {
+    for (const Vertex_mmm& v : vertexV) {
         SPDLOG_TRACE(log_sp, "Vertex_mmm {}", v.toString());
     }
 
@@ -189,7 +201,7 @@ void Multisource_multisink_mazeroute::setup_pqueue() {
 //find pin1 and pin2 in tree
     pin1_v = nullptr;
     pin2_v = nullptr;
-    for (Vertex_mmm& vert : net_tree[cur_net]) {
+    for (Vertex_mmm& vert : vertexV) {
         if (vert.coor == element->pin1) {
             pin1_v = &vert;
             pin1_v->visit = visit_counter;
