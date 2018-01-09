@@ -212,10 +212,6 @@ void RangeRouter::range_router(Two_pin_element_2d& two_pin, int version) {
     if (!congestion.check_path_no_overflow(two_pin.path, two_pin.net_id, false)) {
         ++total_twopin;
 
-        if (two_pin.net_id == debug_net_id) {
-                spdlog::set_level(spdlog::level::trace);
-            }
-
         construct_2d_tree.NetDirtyBit[two_pin.net_id] = true;
 
         congestion.update_congestion_map_remove_two_pin_net(two_pin.path, two_pin.net_id);
@@ -263,7 +259,6 @@ void RangeRouter::query_range_2pin(const Rectangle& r, //
     for (int x = r.upLeft.x; x <= r.downRight.x; ++x) {
         for (int y = r.upLeft.y; y <= r.downRight.y; ++y) {
             Point_fc& cell = (gridCell[x][y]);
-            SPDLOG_TRACE(log_sp, "query_range_2pin cell:{}", cell.toString());
 
             for (Two_pin_element_2d* twopin : cell.points) {   //for each pin or steiner point
                 if (twopin->done != construct_2d_tree.done_iter) {
@@ -295,9 +290,6 @@ void RangeRouter::specify_all_range(boost::multi_array<Point_fc, 2>& gridCell) {
 
     total_twopin = 0;
 
-    log_sp->info("Range_router 294");
-       congestion.plotCongestionNet(debug_net_id);
-
     for (int i = interval_list.size() - 1; i >= 0; --i) {
         Interval_element& ele = interval_list[i];
         range_vector.clear();
@@ -328,17 +320,11 @@ void RangeRouter::specify_all_range(boost::multi_array<Point_fc, 2>& gridCell) {
 
         for (Two_pin_element_2d * two_pin : twopin_list) {
 
-            if (two_pin->net_id == debug_net_id) {
-                spdlog::set_level(spdlog::level::trace);
-            }
-            SPDLOG_TRACE(log_sp, "range_router(twopin, 2);", two_pin->toString());
             range_router(*two_pin, 2);
-            spdlog::set_level(spdlog::level::info);
 
         }
     }
-    log_sp->info("Range_router 332");
-    congestion.plotCongestionNet(debug_net_id);
+
     twopin_list.clear();
     int length = construct_2d_tree.two_pin_list.size();
     for (int i = 0; i < length; ++i) {
@@ -355,8 +341,6 @@ void RangeRouter::specify_all_range(boost::multi_array<Point_fc, 2>& gridCell) {
         range_router(*twopin_list[i], 2);
     }
 
-    log_sp->info("Range_router 350");
-    congestion.plotCongestionNet(debug_net_id);
     construct_2d_tree.mazeroute_in_range.clear_net_tree();
 }
 

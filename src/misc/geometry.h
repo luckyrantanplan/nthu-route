@@ -18,11 +18,6 @@
 /**
  * @brief Defined the flags about position, i.e. Direction, Corner
  */
-//class Position {
-//public:
-enum DirectionType {
-    DIR_NORTH = 0, DIR_SOUTH, DIR_EAST, DIR_WEST, DIR_UP, DIR_DOWN
-};
 
 enum OrientationType {
     FRONT, BACK, LEFT, RIGHT, UP, DOWN

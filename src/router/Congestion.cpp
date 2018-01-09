@@ -92,7 +92,7 @@ int Congestion::cal_max_overflow() {
 
     //obtain the max. overflow and total overflowed value of RIGHT edge of every gCell
 
-    SPDLOG_TRACE(log_sp, "cal max overflow= {} cur_cap-max_cap= {}", max_2d_of, dif_curmax);
+    log_sp->info("cal max overflow= {} cur_cap-max_cap= {}", max_2d_of, dif_curmax);
 
     SPDLOG_TRACE(log_sp, "gridEdge \n{}", congestionMap2d.toString());
 
@@ -125,13 +125,12 @@ void Congestion::pre_evaluate_congestion_cost() {
             ++edge.history;
         }
 
-    }
-    SPDLOG_TRACE(log_sp, "pre_evaluate_congestion_cost gridEdge \n{}", congestionMap2d.toString());
+    } SPDLOG_TRACE(log_sp, "pre_evaluate_congestion_cost gridEdge \n{}", congestionMap2d.toString());
 }
 
 //Check if the specified edge is not overflowed
 //Return false if the edge is overflowed
-bool Congestion::check_path_no_overflow(const std::vector<Coordinate_2d>& path,const int net_id,const int inc_flag) const {
+bool Congestion::check_path_no_overflow(const std::vector<Coordinate_2d>& path, const int net_id, const int inc_flag) const {
     for (int i = path.size() - 2; i >= 0; --i) {
 
         const Edge_2d& edge = congestionMap2d.edge(path[i], path[i + 1]);
@@ -162,15 +161,13 @@ int Congestion::find_overflow_max(int max_zz) const {
         if (edge.overUsage() > overflow_max) {
             overflow_max = edge.overUsage();
         }
-    }
-    SPDLOG_TRACE(log_sp, "2D maximum overflow = {}", overflow_max);
+    } SPDLOG_TRACE(log_sp, "2D maximum overflow = {}", overflow_max);
 
     if (overflow_max % max_zz) {
         overflow_max = ((overflow_max / max_zz) * 2) + 2;
     } else {
         overflow_max = ((overflow_max / max_zz) * 2);
-    }
-    SPDLOG_TRACE(log_sp, "overflow max = = {}", overflow_max);
+    } SPDLOG_TRACE(log_sp, "overflow max = = {}", overflow_max);
 
     return overflow_max;
 }
@@ -198,7 +195,7 @@ int Congestion::cal_total_wirelength() {
 
     }
 
-    printf("total wirelength:%d\n", total_wl);
+    log_sp->info("total wire length: {}", total_wl);
     return total_wl;
 }
 
@@ -246,7 +243,7 @@ void Congestion::update_congestion_map_insert_two_pin_net(Two_pin_element_2d& el
 
 //Remove a net from an edge.
 //If the net pass that edge more than once, this function will only decrease the counter.
-void Congestion::update_congestion_map_remove_two_pin_net(const std::vector<Coordinate_2d>& path,const int net_id) {
+void Congestion::update_congestion_map_remove_two_pin_net(const std::vector<Coordinate_2d>& path, const int net_id) {
 
     for (int i = path.size() - 2; i >= 0; --i) {
         Edge_2d& edge = congestionMap2d.edge(path[i], path[i + 1]);
@@ -263,23 +260,23 @@ void Congestion::update_congestion_map_remove_two_pin_net(const std::vector<Coor
     }
 }
 
-void Congestion::plotCongestionNet(int net_id) const{
+void Congestion::plotCongestionNet(int net_id) const {
     SPDLOG_TRACE(log_sp, "true net_id={} in congestion ", net_id);
-    for (int x = 0; x <congestionMap2d.getXSize(); ++x) {
-        for (int y = 1; y <congestionMap2d.getYSize(); ++y) {
+    for (int x = 0; x < congestionMap2d.getXSize(); ++x) {
+        for (int y = 1; y < congestionMap2d.getYSize(); ++y) {
             Coordinate_2d c1 { x, y - 1 };
             Coordinate_2d c2 { x, y };
-            if ( congestionMap2d.edge(c1, c2).lookupNet(net_id)) {
+            if (congestionMap2d.edge(c1, c2).lookupNet(net_id)) {
                 printf("%d %d\n", c1.x, c1.y);
                 printf("%d %d\n\n", c2.x, c2.y);
             }
         }
     }
-    for (int y = 0; y <congestionMap2d.getYSize(); ++y) {
-        for (int x = 1; x <congestionMap2d.getXSize(); ++x) {
+    for (int y = 0; y < congestionMap2d.getYSize(); ++y) {
+        for (int x = 1; x < congestionMap2d.getXSize(); ++x) {
             Coordinate_2d c1 { x - 1, y };
             Coordinate_2d c2 { x, y };
-            if ( congestionMap2d.edge(c1, c2).lookupNet(net_id)) {
+            if (congestionMap2d.edge(c1, c2).lookupNet(net_id)) {
                 printf("%d %d\n", c1.x, c1.y);
                 printf("%d %d\n\n", c2.x, c2.y);
             }

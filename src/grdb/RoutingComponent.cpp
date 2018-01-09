@@ -1,6 +1,5 @@
 #include "RoutingComponent.h"
 #include "../misc/geometry.h"
-#include "../misc/debug.h"
 
 #include <climits>
 
@@ -52,7 +51,7 @@ std::string Net::toString() const {
     s += " maxPinY: " + std::to_string(maxPinY);
     s += " pin_list: [";
     for (const Pin& p : pin_list) {
-        s +="("+ p.toString() + ") ";
+        s += "(" + p.toString() + ") ";
     }
     s += "]";
     return s;

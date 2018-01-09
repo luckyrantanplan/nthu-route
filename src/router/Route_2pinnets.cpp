@@ -151,44 +151,37 @@ Tree& Route_2pinnets::fillTree(int offset, int net_id) {
     int sizeTree = construct_2d_tree.two_pin_list.size() - offset;
     Tree& tree = construct_2d_tree.net_flutetree[net_id];
     if (tree.number < sizeTree + 1) {
-        if (net_id == 75548) {
-            std::cout << "tree.number" << tree.number << std::endl;
-        }
-
         free(tree.branch);
         tree.branch = (Branch*) (malloc((sizeTree + 1) * sizeof(Branch))); // n+1 vertex for n edge
     }
 
-    {
-        std::unordered_map<Coordinate_2d, int> indexmap;
-        indexmap.reserve(sizeTree + 1);
+    std::unordered_map<Coordinate_2d, int> indexmap;
+    indexmap.reserve(sizeTree + 1);
 
-        Two_pin_element_2d& first_pin = construct_2d_tree.two_pin_list.at(offset);
-        indexmap.emplace(first_pin.pin1, 0);
+    Two_pin_element_2d& first_pin = construct_2d_tree.two_pin_list.at(offset);
+    indexmap.emplace(first_pin.pin1, 0);
 
-        tree.branch[0].x = first_pin.pin1.x;
-        tree.branch[0].y = first_pin.pin1.y;
-        tree.branch[0].n = 0;
+    tree.branch[0].x = first_pin.pin1.x;
+    tree.branch[0].y = first_pin.pin1.y;
+    tree.branch[0].n = 0;
 
-        for (int i = 1; i < sizeTree + 1; ++i) {
-            Two_pin_element_2d& two_pin = construct_2d_tree.two_pin_list.at(offset + i - 1);
+    for (int i = 1; i < sizeTree + 1; ++i) {
+        Two_pin_element_2d& two_pin = construct_2d_tree.two_pin_list.at(offset + i - 1);
 
-            indexmap.emplace(two_pin.pin2, i);
+        indexmap.emplace(two_pin.pin2, i);
 
-            tree.branch[i].x = two_pin.pin2.x;
-            tree.branch[i].y = two_pin.pin2.y;
-            tree.branch[i].n = indexmap.at(two_pin.pin1);
+        tree.branch[i].x = two_pin.pin2.x;
+        tree.branch[i].y = two_pin.pin2.y;
+        tree.branch[i].n = indexmap.at(two_pin.pin1);
 
-        }
-        tree.number = sizeTree + 1;
     }
+    tree.number = sizeTree + 1;
+
     return tree;
 }
 
 void Route_2pinnets::bfs_for_find_two_pin_list(Coordinate_2d start_coor, int net_id) {
-    if (net_id == debug_net_id) {
-        spdlog::set_level(spdlog::level::trace);
-    }
+
     std::stack<std::vector<Coordinate_2d>> stack;
     stack.emplace();
     stack.top().push_back(start_coor);
@@ -218,56 +211,19 @@ void Route_2pinnets::bfs_for_find_two_pin_list(Coordinate_2d start_coor, int net
             congestion.update_congestion_map_remove_two_pin_net(path, net_id);
             stack.pop();
             break;
+        default:
+            add_two_pin(net_id, path);
+            for (std::size_t i = 1; i < neighbors.size(); ++i) {
+                stack.emplace(path);
+                stack.top().emplace_back(neighbors.at(i));
+            }  // no break on purpose !!!
         case 1:
-            path.push_back(neighbors.at(0));
-            break;
-        case 2:
-            add_two_pin(net_id, path);
-            stack.emplace(path);
-            stack.top().emplace_back(neighbors.at(1));
-            path.emplace_back(neighbors.at(0));
-            break;
-        case 3:
-            add_two_pin(net_id, path);
-            stack.emplace(path);
-            stack.top().emplace_back(neighbors.at(1));
-            stack.emplace(path);
-            stack.top().emplace_back(neighbors.at(2));
-            path.emplace_back(neighbors.at(0));
-            break;
-        case 4:
-            add_two_pin(net_id, path);
-            stack.emplace(path);
-            stack.top().emplace_back(neighbors.at(1));
-            stack.emplace(path);
-            stack.top().emplace_back(neighbors.at(2));
-            stack.emplace(path);
-            stack.top().emplace_back(neighbors.at(3));
             path.emplace_back(neighbors.at(0));
             break;
         }
     }
 
-    Tree& tree = fillTree(offset, net_id);
-
-    if (net_id == debug_net_id) {
-        spdlog::set_level(spdlog::level::trace);
-    }
-    if (log_sp->level() == spdlog::level::trace) {
-        congestion.plotCongestionNet(net_id);
-    }
-
-    if (log_sp->level() == spdlog::level::trace) {
-        Flute netRoutingTreeRouter;
-
-        for (int i = 0; i < tree.number; ++i) {
-            printf("%d %d\n", static_cast<int>(tree.branch[i].x), static_cast<int>(tree.branch[i].y));
-            printf("%d %d\n\n", static_cast<int>(tree.branch[tree.branch[i].n].x), static_cast<int>(tree.branch[tree.branch[i].n].y));
-        }
-
-        std::cout << "end dump tree 2 for net id " << net_id << std::endl;
-    }
-    spdlog::set_level(spdlog::level::info);
+    fillTree(offset, net_id);
 }
 
 void Route_2pinnets::reallocate_two_pin_list() {

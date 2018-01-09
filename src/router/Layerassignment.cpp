@@ -41,7 +41,10 @@ void Layer_assignment::print_max_overflow() {
             sum += edgeLeft.overUsage();
             ++lines;
         }
-    }SPDLOG_TRACE(log_sp, "       3D # of overflow = {} ", sum);SPDLOG_TRACE(log_sp, "       3D max  overflow = {} ", max);SPDLOG_TRACE(log_sp, "3D overflow edge number = {} ", lines);
+    }
+    log_sp->info("       3D # of overflow = {} ", sum);
+    log_sp->info("       3D max  overflow = {} ", max);
+    log_sp->info("3D overflow edge number = {} ", lines);
 
 }
 
@@ -399,9 +402,6 @@ void Layer_assignment::generate_output(int net_id, const std::vector<Segment3d>&
 }
 
 int Layer_assignment::klat(int net_id) { //SOLAC + APEC
-    if (net_id == debug_net_id) {
-        spdlog::set_level(spdlog::level::trace);
-    }
 
     const std::vector<Pin>& pin_list = rr_map.get_nPin(net_id);
 
@@ -411,12 +411,11 @@ int Layer_assignment::klat(int net_id) { //SOLAC + APEC
     preprocess(net_id);
 // Find a pin as starting point
 // klat start with a pin
-    SPDLOG_TRACE(log_sp, "   DP(start, start); ");
+
     DP(start, start);
-    SPDLOG_TRACE(log_sp, "  update_path_for_klat(start); ");
+
     update_path_for_klat(start);
 
-    spdlog::set_level(spdlog::level::info);
     return layerInfo_map.vertex(start).klat[0].val;
 }
 
@@ -479,7 +478,7 @@ void Layer_assignment::calculate_wirelength() {
     }
     z *= global_via_cost;
 
-    SPDLOG_TRACE(log_sp, "total wirelength = {} + {} = {}", xy, z, (xy + z));
+    log_sp->info("total wire length = {} + {} = {}", xy, z, (xy + z));
 }
 
 void Layer_assignment::sort_net_order() {
@@ -504,8 +503,8 @@ void Layer_assignment::sort_net_order() {
 
     std::chrono::duration<double> elapsed_seconds = end - start;
 
-    SPDLOG_TRACE(log_sp, "cost = {}", global_pin_cost);	//
-    SPDLOG_TRACE(log_sp, "time = {}", elapsed_seconds.count());
+    log_sp->info("cost = {}", global_pin_cost);	//
+    log_sp->info("time = {}", elapsed_seconds.count());
 
 }
 
@@ -519,8 +518,9 @@ void Layer_assignment::calculate_cap() {
             if (max < edge.overUsage() * 2)
                 max = edge.overUsage() * 2;
         }
-    }SPDLOG_TRACE(log_sp, "2D sum overflow = {}", overflow);	//
-    SPDLOG_TRACE(log_sp, "2D max overflow = {}", max);
+    }
+    log_sp->info("2D sum overflow = {}", overflow);	//
+    log_sp->info("2D max overflow = {}", max);
 }
 
 void Layer_assignment::generate_all_output(std::ostream & output) {
@@ -558,13 +558,10 @@ void Layer_assignment::generate_all_output(std::ostream & output) {
     for (int i = 0; i < rr_map.get_netNumber(); ++i) {
         generate_output(i, comb[i], output);
     }
-    log_sp->info(" generate_output({}, comb[{}]", debug_net_id, debug_net_id);
-    generate_output(debug_net_id, comb[debug_net_id], std::cout);
-    log_sp->info("OK");
+
 }
 
 void Layer_assignment::plotNet(int net_id) const {
-    SPDLOG_TRACE(log_sp, "true net_id={} in congestion ", net_id);
 
     std::vector<std::vector<Segment3d> > comb { static_cast<std::size_t>(rr_map.get_netNumber()) };
     Coordinate_3d c2;
@@ -626,15 +623,13 @@ Layer_assignment::Layer_assignment(const Congestion& congestion, const RoutingRe
 
     calculate_cap();
     overflow_max = congestion.find_overflow_max(cur_map_3d.getZSize());
-    SPDLOG_TRACE(log_sp, "Layer assignment processing...");
+    log_sp->info("Layer assignment processing...");
 
     sort_net_order();
 
-    plotNet(debug_net_id);
-
     print_max_overflow();
 
-    SPDLOG_TRACE(log_sp, "Layer assignment complete.");
+    log_sp->info("Layer assignment complete.");
     calculate_wirelength();
     log_sp->info("Outputing result file to {}", outputFileName);
     // generate_all_output(std::cout);

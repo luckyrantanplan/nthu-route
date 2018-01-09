@@ -188,10 +188,6 @@ void Multisource_multisink_mazeroute::setup_pqueue() {
         }
     }
 
-    for (const Vertex_mmm& v : vertexV) {
-        SPDLOG_TRACE(log_sp, "Vertex_mmm {}", v.toString());
-    }
-
     while (!pqueue.empty()) {
         MMM_element& cur_pos = *pqueue.top();
         pqueue.pop();

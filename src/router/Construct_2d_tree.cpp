@@ -196,15 +196,8 @@ void Construct_2d_tree::gen_FR_congestion_map() {
 
         Tree& tree = flutetree[i];
 //call flute to gen steiner tree and put the result in flutetree[]
-        netRoutingTreeRouter.routeNet(rr_map.get_nPin(i), tree);
+        netRoutingTreeRouter.routeNet(rr_map.get_nPin(i), tree);	//
 
-        if (rr_map.get_netSerialId(i) == debug_serial_id) {
-            std::cout << "i " << i << std::endl;
-            netRoutingTreeRouter.plotTree(tree);
-            std::cout << std::endl;
-            std::cout << rr_map.nPinToString(i) << std::endl;
-
-        } //
         SPDLOG_TRACE(log_sp, "rr_map.nPinList(i): {}", rr_map.nPinToString(i));
 //The total node # in a tree, those nodes include pin and steiner point
 //And it is defined as ((2 * degree of a tree) - 2) by the authors of flute
@@ -664,19 +657,6 @@ void Construct_2d_tree::edge_shifting(Tree& t, int j) {
 //2. begin to out put the 2-pin lists to a Tree structure
     dfs_output_tree(vertex_fl[0], 0, t);
 
-    if (j == debug_net_id) {
-        std::cout << "j " << j << std::endl;
-        Flute netRoutingTreeRouter;
-
-        for (int i = 0; i < t.number; ++i) {
-            printf("%d %d\n", static_cast<int>(t.branch[i].x), static_cast<int>(t.branch[i].y));
-            printf("%d %d\n\n", static_cast<int>(t.branch[t.branch[i].n].x), static_cast<int>(t.branch[t.branch[i].n].y));
-        }
-
-        std::cout << std::endl;
-        std::cout << rr_map.nPinToString(j) << std::endl;
-
-    }
 }
 //=====================end edge shifting=============================
 
@@ -727,7 +707,7 @@ Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterS
 // to get the initial solution.
     log_sp->info(" congestion.cal_total_wirelength();");
     congestion.cal_total_wirelength();        // The report value is the sum of demand on every edge
-
+    congestion.cal_max_overflow();
     Route_2pinnets route_2pinnets(*this, rangeRouter, congestion);
 
     route_2pinnets.allocate_gridcell();        //question: I don't know what this for. (jalamorm, 07/10/31)
@@ -748,6 +728,7 @@ Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterS
             {
 
         log_sp->info("Iteration: {} ", congestion.cur_iter);
+
         congestion.factor = (1.0 - std::exp(-5 * std::exp(-(0.1 * congestion.cur_iter))));
 
         congestion.WL_Cost = congestion.factor;

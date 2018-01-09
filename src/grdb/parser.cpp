@@ -12,7 +12,6 @@
 #include <cstring>
 #include <iostream>
 
-
 #define MAX_STRING_BUFER_LENGTH 512
 #define MAX_PIN 1000
 
