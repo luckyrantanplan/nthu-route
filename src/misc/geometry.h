@@ -124,7 +124,9 @@ public:
     }
 
     bool isAligned(const Coordinate_3d& c) const {
-        return x == c.x || y == c.y || z == c.z;
+        return (x == c.x && y == c.y) || //
+                (y == c.y && z == c.z) || //
+                (x == c.x && z == c.z);
     }
 
     bool operator==(const Coordinate_3d& other) const {

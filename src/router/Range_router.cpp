@@ -212,7 +212,7 @@ void RangeRouter::range_router(Two_pin_element_2d& two_pin, int version) {
     if (!congestion.check_path_no_overflow(two_pin.path, two_pin.net_id, false)) {
         ++total_twopin;
 
-        if (two_pin.net_id == 55978) { //55978
+        if (two_pin.net_id == debug_net_id) {
                 spdlog::set_level(spdlog::level::trace);
             }
 
@@ -296,7 +296,7 @@ void RangeRouter::specify_all_range(boost::multi_array<Point_fc, 2>& gridCell) {
     total_twopin = 0;
 
     log_sp->info("Range_router 294");
-       congestion.plotCongestionNet(55978); //55978
+       congestion.plotCongestionNet(debug_net_id);
 
     for (int i = interval_list.size() - 1; i >= 0; --i) {
         Interval_element& ele = interval_list[i];
@@ -328,7 +328,7 @@ void RangeRouter::specify_all_range(boost::multi_array<Point_fc, 2>& gridCell) {
 
         for (Two_pin_element_2d * two_pin : twopin_list) {
 
-            if (two_pin->net_id == 55978) { //55978
+            if (two_pin->net_id == debug_net_id) {
                 spdlog::set_level(spdlog::level::trace);
             }
             SPDLOG_TRACE(log_sp, "range_router(twopin, 2);", two_pin->toString());
@@ -338,7 +338,7 @@ void RangeRouter::specify_all_range(boost::multi_array<Point_fc, 2>& gridCell) {
         }
     }
     log_sp->info("Range_router 332");
-    congestion.plotCongestionNet(55978); //55978
+    congestion.plotCongestionNet(debug_net_id);
     twopin_list.clear();
     int length = construct_2d_tree.two_pin_list.size();
     for (int i = 0; i < length; ++i) {
@@ -356,7 +356,7 @@ void RangeRouter::specify_all_range(boost::multi_array<Point_fc, 2>& gridCell) {
     }
 
     log_sp->info("Range_router 350");
-    congestion.plotCongestionNet(55978); //55978
+    congestion.plotCongestionNet(debug_net_id);
     construct_2d_tree.mazeroute_in_range.clear_net_tree();
 }
 

@@ -186,7 +186,7 @@ Tree& Route_2pinnets::fillTree(int offset, int net_id) {
 }
 
 void Route_2pinnets::bfs_for_find_two_pin_list(Coordinate_2d start_coor, int net_id) {
-    if (net_id == 55978) { //55978
+    if (net_id == debug_net_id) {
         spdlog::set_level(spdlog::level::trace);
     }
     std::stack<std::vector<Coordinate_2d>> stack;
@@ -250,7 +250,7 @@ void Route_2pinnets::bfs_for_find_two_pin_list(Coordinate_2d start_coor, int net
 
     Tree& tree = fillTree(offset, net_id);
 
-    if (net_id == 55978) { //55978
+    if (net_id == debug_net_id) {
         spdlog::set_level(spdlog::level::trace);
     }
     if (log_sp->level() == spdlog::level::trace) {

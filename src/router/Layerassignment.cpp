@@ -18,7 +18,7 @@
 #include "../grdb/RoutingComponent.h"
 #include "../grdb/RoutingRegion.h"
 #include "Congestion.h"
-#define SPDLOG_TRACE_ON
+//#define SPDLOG_TRACE_ON
 #include "../spdlog/spdlog.h"
 
 using namespace std;
@@ -41,10 +41,7 @@ void Layer_assignment::print_max_overflow() {
             sum += edgeLeft.overUsage();
             ++lines;
         }
-    }
-    SPDLOG_TRACE(log_sp, "       3D # of overflow = {} ", sum);
-    SPDLOG_TRACE(log_sp, "       3D max  overflow = {} ", max);
-    SPDLOG_TRACE(log_sp, "3D overflow edge number = {} ", lines);
+    }SPDLOG_TRACE(log_sp, "       3D # of overflow = {} ", sum);SPDLOG_TRACE(log_sp, "       3D max  overflow = {} ", max);SPDLOG_TRACE(log_sp, "3D overflow edge number = {} ", lines);
 
 }
 
@@ -89,8 +86,7 @@ void Layer_assignment::update_cur_map_for_klat_xy(int cur_idx, const Coordinate_
     edge.cur_cap = (edge.used_net.size() * 2);	// need check
     if (edge.isOverflow()) {	// need check
         layerInfo_map.edges().edge(start, end).overflow -= 2;
-    }
-    SPDLOG_TRACE(log_sp, "update_cur_map_for_klat_xy {}-{}: {} ", Coordinate_3d {end, cur_idx}.toString(), Coordinate_3d {start, cur_idx}.toString(), edge.toString());
+    }SPDLOG_TRACE(log_sp, "update_cur_map_for_klat_xy {}-{}: {} ", Coordinate_3d {end, cur_idx}.toString(), Coordinate_3d {start, cur_idx}.toString(), edge.toString());
 }
 
 void Layer_assignment::update_cur_map_for_klat_z(int min, int max, const Coordinate_2d& start, int net_id) {
@@ -139,8 +135,7 @@ void Layer_assignment::update_path_for_klat(const Coordinate_2d& start) {
                 update_cur_map_for_klat_xy(pi_z, h, c, global_net_id);
                 q.emplace(Coordinate_3d { c, pi_z }, Coordinate_3d { h, pi_z });	// enqueue
             }
-        }
-        SPDLOG_TRACE(log_sp, " update_cur_map_for_klat_z({},{}, ({}) , {}); ", z_min, z_max, h.toString(), global_net_id);
+        }SPDLOG_TRACE(log_sp, " update_cur_map_for_klat_z({},{}, ({}) , {}); ", z_min, z_max, h.toString(), global_net_id);
         update_cur_map_for_klat_z(z_min, z_max, h, global_net_id);
         layerInfo_map.vertex(h).path = 0;	// visited
         q.pop();	// dequeue
@@ -404,7 +399,7 @@ void Layer_assignment::generate_output(int net_id, const std::vector<Segment3d>&
 }
 
 int Layer_assignment::klat(int net_id) { //SOLAC + APEC
-    if (net_id == 55978) { //55978
+    if (net_id == debug_net_id) {
         spdlog::set_level(spdlog::level::trace);
     }
 
@@ -524,8 +519,7 @@ void Layer_assignment::calculate_cap() {
             if (max < edge.overUsage() * 2)
                 max = edge.overUsage() * 2;
         }
-    }
-    SPDLOG_TRACE(log_sp, "2D sum overflow = {}", overflow);	//
+    }SPDLOG_TRACE(log_sp, "2D sum overflow = {}", overflow);	//
     SPDLOG_TRACE(log_sp, "2D max overflow = {}", max);
 }
 
@@ -564,6 +558,55 @@ void Layer_assignment::generate_all_output(std::ostream & output) {
     for (int i = 0; i < rr_map.get_netNumber(); ++i) {
         generate_output(i, comb[i], output);
     }
+    log_sp->info(" generate_output({}, comb[{}]", debug_net_id, debug_net_id);
+    generate_output(debug_net_id, comb[debug_net_id], std::cout);
+    log_sp->info("OK");
+}
+
+void Layer_assignment::plotNet(int net_id) const {
+    SPDLOG_TRACE(log_sp, "true net_id={} in congestion ", net_id);
+
+    std::vector<std::vector<Segment3d> > comb { static_cast<std::size_t>(rr_map.get_netNumber()) };
+    Coordinate_3d c2;
+    for (Coordinate_3d c { 0, 0, 0 }; c.x < cur_map_3d.getXSize(); ++c.x) {
+        c2.x = c.x;
+        for (c.y = 0; c.y < cur_map_3d.getYSize(); ++c.y) {
+            c2.y = c.y;
+            for (c.z = 1; c.z < cur_map_3d.getZSize(); ++c.z) {
+                c2.z = c.z - 1;
+                if (cur_map_3d.edge(c, c2).used_net.find(net_id) != cur_map_3d.edge(c, c2).used_net.end()) {
+                    printf("%d %d %d\n", c.x, c.y, c.z);
+                    printf("%d %d %d\n\n", c2.x, c2.y, c2.z);
+                }
+            }
+        }
+        for (c.z = 0; c.z < cur_map_3d.getZSize(); ++c.z) {
+            c2.z = c.z;
+            for (c.y = 1; c.y < cur_map_3d.getYSize(); ++c.y) {
+                c2.y = c.y - 1;
+                if (cur_map_3d.edge(c, c2).used_net.find(net_id) != cur_map_3d.edge(c, c2).used_net.end()) {
+                    printf("%d %d %d\n", c.x, c.y, c.z);
+                    printf("%d %d %d\n\n", c2.x, c2.y, c2.z);
+                }
+            }
+        }
+    }
+    for (Coordinate_3d c { 0, 0, 0 }; c.y < cur_map_3d.getYSize(); ++c.y) {
+        c2.y = c.y;
+        for (c.z = 0; c.z < cur_map_3d.getZSize(); ++c.z) {
+            c2.z = c.z;
+            for (c.x = 1; c.x < cur_map_3d.getXSize(); ++c.x) {
+                c2.x = c.x - 1;
+                if (cur_map_3d.edge(c, c2).used_net.find(net_id) != cur_map_3d.edge(c, c2).used_net.end()) {
+                    printf("%d %d %d\n", c.x, c.y, c.z);
+                    printf("%d %d %d\n\n", c2.x, c2.y, c2.z);
+                }
+            }
+        }
+    }
+
+    std::cout << "end Layer net true" << std::endl;
+    SPDLOG_TRACE(log_sp, "end true net_id={} in congestion ", net_id);
 }
 
 Layer_assignment::Layer_assignment(const Congestion& congestion, const RoutingRegion& rr_map, const std::string& outputFileNamePtr) :
@@ -586,14 +629,18 @@ Layer_assignment::Layer_assignment(const Congestion& congestion, const RoutingRe
     SPDLOG_TRACE(log_sp, "Layer assignment processing...");
 
     sort_net_order();
+
+    plotNet(debug_net_id);
+
     print_max_overflow();
 
     SPDLOG_TRACE(log_sp, "Layer assignment complete.");
     calculate_wirelength();
-    SPDLOG_TRACE(log_sp, "Outputing result file to {}", outputFileName);
+    log_sp->info("Outputing result file to {}", outputFileName);
     // generate_all_output(std::cout);
     std::ofstream ofs(outputFileName, std::ofstream::out | std::ofstream::trunc);
     generate_all_output(ofs);
+
     ofs << std::flush;
 
 }

@@ -198,7 +198,7 @@ void Construct_2d_tree::gen_FR_congestion_map() {
 //call flute to gen steiner tree and put the result in flutetree[]
         netRoutingTreeRouter.routeNet(rr_map.get_nPin(i), tree);
 
-        if (i == 55978) {
+        if (rr_map.get_netSerialId(i) == debug_serial_id) {
             std::cout << "i " << i << std::endl;
             netRoutingTreeRouter.plotTree(tree);
             std::cout << std::endl;
@@ -664,7 +664,7 @@ void Construct_2d_tree::edge_shifting(Tree& t, int j) {
 //2. begin to out put the 2-pin lists to a Tree structure
     dfs_output_tree(vertex_fl[0], 0, t);
 
-    if (j == 55978) {
+    if (j == debug_net_id) {
         std::cout << "j " << j << std::endl;
         Flute netRoutingTreeRouter;
 
@@ -785,7 +785,6 @@ Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterS
     SPDLOG_TRACE(log_sp, "================================================================");
 
     post_processing.process(route_2pinnets);
-
 
 }
 

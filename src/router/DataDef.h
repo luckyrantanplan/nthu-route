@@ -22,6 +22,10 @@
 #define error_bound 0.00000000001
 #define neg_error_bound -0.00000000001
 
+
+constexpr int debug_net_id=661;
+constexpr int debug_serial_id=1007;
+
 enum {
     FASTROUTE_COST, OVERFLOW_COST, CONGESTION_COST, MADEOF_COST, HISTORY_COST, HISTORY_MADEOF_COST
 };
