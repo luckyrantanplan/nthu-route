@@ -476,15 +476,17 @@ void Layer_assignment::sort_net_order() {
     auto start = std::chrono::system_clock::now();
     for (int i = 0; i < max; ++i) {
         global_pin_cost += klat(temp_net_order[i]);	// others
+        if (i == 127457) {
+            for (Edge_3d& edgeLeft : cur_map_3d.all()) {
 
-        for (Edge_3d& edgeLeft : cur_map_3d.all()) {
+                if (edgeLeft.isOverflow()) {
+                    log_sp->info("edgeLeft.isOverflow() for {} (counter is {}", temp_net_order[i], i);
 
-            if (edgeLeft.isOverflow()) {
-                log_sp->info("edgeLeft.isOverflow() for {} (counter is {}", temp_net_order[i], i);
-                exit(-1);
+                    plotNet(temp_net_order[i]);
+                    exit(-1);
+                }
             }
         }
-
     }
 
     auto end = std::chrono::system_clock::now();
