@@ -174,7 +174,8 @@ int Congestion::find_overflow_max(int max_zz) const {
 
 /*assign the estimated track# to each edge*/
 void Congestion::init_2d_map(RoutingRegion& rr_map) {
-#ifdef IBM_CASE
+#define IBM_CASE
+    #ifdef IBM_CASE
     int divisor=2;
 #else
     int divisor = 1;
