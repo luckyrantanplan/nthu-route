@@ -86,6 +86,7 @@ public:
 
     const T& front(const Coordinate_3d& c) const;
 
+    T& front(const Coordinate_3d& c);
 private:
 
     T& get(const Coordinate_3d& c, const EdgeDir dir);
@@ -242,6 +243,14 @@ inline const T& EdgePlane3d<T>::south(const Coordinate_3d& c) const {
 ///         the default data structure of routing edges is a integer.
 template<class T>
 inline const T& EdgePlane3d<T>::front(const Coordinate_3d& c) const {
+    return get(c, FRONT);
+}
+
+///@brief The data structure for presenting the routing edges in global routing area.
+///@details User can specify the data structure of routing edges by their own, and
+///         the default data structure of routing edges is a integer.
+template<class T>
+inline T& EdgePlane3d<T>::front(const Coordinate_3d& c) {
     return get(c, FRONT);
 }
 

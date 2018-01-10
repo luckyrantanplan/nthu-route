@@ -46,8 +46,7 @@
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.2136047453" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
 						</toolChain>
-				</folderInfo>	
-					
+					</folderInfo>
 				</configuration>
 			</storageModule>
 			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
@@ -101,7 +100,6 @@
 							</tool>
 						</toolChain>
 					</folderInfo>
-					
 				</configuration>
 			</storageModule>
 			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>

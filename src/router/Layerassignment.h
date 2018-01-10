@@ -221,7 +221,7 @@ private:
     void init_union(const Coordinate_2d& c1, const Coordinate_2d& c2);
     void collectComb(Coordinate_3d c2, Coordinate_3d& c, std::vector<std::vector<Segment3d> >& comb);
     void plotNet(int net_id) const;
-
+    void printEdge(const Coordinate_3d& c, const Coordinate_3d& c2) const;
 };
 
 #endif //INC_LAYER_ASSIGNMENT_H
