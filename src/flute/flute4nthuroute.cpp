@@ -1,5 +1,9 @@
 #include "flute4nthuroute.h"
 
+#include <stddef.h>
+#include <vector>
+#include <cassert>
+
 Flute::Flute() :
         x_(NULL), y_(NULL) {
     readLUT();      //Read in the binary lookup table - POWVFILE, POSTFILE
@@ -37,7 +41,7 @@ void Flute::printTree(Tree& routingTree) {
     printtree(routingTree);
 }
 
-void Flute::plotTree(Tree& routingTree){
+void Flute::plotTree(Tree& routingTree) {
     plottree(routingTree);
 }
 
