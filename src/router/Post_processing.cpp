@@ -17,7 +17,6 @@
 
 namespace NTHUR {
 
-
 bool COUNTER::operator <(const COUNTER& o) const {
     return std::tie(total_overflow, bsize) < std::tie(o.total_overflow, o.bsize);
 
@@ -90,13 +89,8 @@ void Post_processing::process(Route_2pinnets& route_2pinnets) {
         //The other update will be done by update_add(remove)_edge
         congestion.pre_evaluate_congestion_cost();
         for (int i = 0; i < Post_processing_iteration; ++i, ++construct_2d_tree.done_iter) {
-            printf("\033[31mIteration: \033[m%d\n", i + 1);
-#ifdef MESSAGE
-            monotonic_solved_counter = maze_solved_counter = no_overflow_counter = 0;
-            printf("no_overflow:%d monotonic:%d maze:%d\n",
-                    no_overflow_counter,monotonic_solved_counter,maze_solved_counter);
-            printf("pre_of:%d cur_of:%d\n", cur_overflow);
-#endif
+            log_sp->info(" Iteration:  {}", i + 1);
+
             total_no_overflow = true;
 
             initial_for_post_processing();
@@ -110,7 +104,7 @@ void Post_processing::process(Route_2pinnets& route_2pinnets) {
             route_2pinnets.reallocate_two_pin_list();
         }
     }
-    SPDLOG_TRACE(log_sp, "maze routing complete successfully");
+    log_sp->info("maze routing complete successfully");
 
 }
 

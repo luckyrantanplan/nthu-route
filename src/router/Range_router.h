@@ -104,7 +104,7 @@ public:
 
 private:
     std::string printIfBound(const Rectangle& r, const Rectangle& bound, const int interval_index, const Coordinate_2d& c1, const Coordinate_2d& c2) const;
-
+    std::string print_interval() const;
 }
 ;
 

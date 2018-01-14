@@ -23,7 +23,6 @@
 
 namespace NTHUR {
 
-
 using namespace std;
 
 Edge_3d::Edge_3d() :
@@ -497,7 +496,7 @@ void Layer_assignment::sort_net_order() {
     std::chrono::duration<double> elapsed_seconds = end - start;
 
     log_sp->info("cost = {}", global_pin_cost);	//
-    log_sp->info("time = {}", elapsed_seconds.count());
+    log_sp->info("time = {}s", elapsed_seconds.count());
 
 }
 
@@ -555,8 +554,6 @@ void Layer_assignment::generate_all_output(std::ostream & output) {
 }
 
 void Layer_assignment::printEdge(const Coordinate_3d& c, const Coordinate_3d& c2) const {
-    // printf("%d %d %d\n", c.x, c.y, c.z);
-    // printf("%d %d %d\n\n", c2.x, c2.y, c2.z);
 
     log_sp->info("Edge3d {} between {} and {}", cur_map_3d.edge(c, c2).toString(), c.toString(), c2.toString());
 }
@@ -599,8 +596,7 @@ void Layer_assignment::plotNet(int net_id) const {
         }
     }
 
-    std::cout << "end Layer plotNet true" << std::endl;
-    SPDLOG_TRACE(log_sp, "end true net_id={} in congestion ", net_id);
+    log_sp->info("end Layer plotNet true");
 }
 
 Layer_assignment::Layer_assignment(const Congestion& congestion, const RoutingRegion& rr_map, const std::string& outputFileNamePtr) :
@@ -628,14 +624,13 @@ Layer_assignment::Layer_assignment(const Congestion& congestion, const RoutingRe
 
     log_sp->info("Layer assignment complete.");
     calculate_wirelength();
-    log_sp->info("Outputing result file to {}", outputFileName);
-    // generate_all_output(std::cout);
+    log_sp->info("Outputting result file to {}", outputFileName);
+
     std::ofstream ofs(outputFileName, std::ofstream::out | std::ofstream::trunc);
     generate_all_output(ofs);
 
     ofs << std::flush;
 
 }
-
 
 } // namespace NTHUR

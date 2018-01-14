@@ -97,8 +97,6 @@ struct Construct_2d_tree {
 
     std::shared_ptr<spdlog::logger> log_sp;
 
-    std::string printMemoryUsage();
-
     void init_2pin_list();
     void init_flute();
     void bbox_route(Two_pin_list_2d& list, const double value);

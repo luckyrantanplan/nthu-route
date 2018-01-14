@@ -155,14 +155,7 @@ void Multisource_multisink_mazeroute::setup_pqueue() {
         const TreeFlute& t = construct_2d_tree.net_flutetree[cur_net];
 
         if (log_sp->level() == spdlog::level::trace) {
-            Flute netRoutingTreeRouter;
-
-            for (int i = 0; i < t.number; ++i) {
-                printf("%d %d\n", static_cast<int>(t.branch[i].x), static_cast<int>(t.branch[i].y));
-                printf("%d %d\n\n", static_cast<int>(t.branch[t.branch[i].n].x), static_cast<int>(t.branch[t.branch[i].n].y));
-            }
-
-            std::cout << std::endl;
+            log_sp->trace(t.plot());
         }
         vertexV.reserve(t.number); // avoid re allocation that could invalidate pointer
 

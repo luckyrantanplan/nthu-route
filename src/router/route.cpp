@@ -40,7 +40,7 @@ int main(int argc, char* argv[]) {
     log.info("= For internal data structure                         =");
     log.info("=======================================================\n");
 
-    clock_t t0 = clock();
+    auto t0 = std::chrono::system_clock::now();
     NTHUR::ParameterAnalyzer ap(argc, argv);
 
     NTHUR::RoutingRegion routingData;
@@ -49,20 +49,24 @@ int main(int argc, char* argv[]) {
 
     NTHUR::Congestion congestion(routingData.get_gridx(), routingData.get_gridy());
 
-    clock_t t1 = clock();
+    auto t1 = std::chrono::system_clock::now();
     NTHUR::Construct_2d_tree tree(ap.routing_param(), ap.parameter(), routingData, congestion);
-    clock_t t2 = clock();
+    auto t2 = std::chrono::system_clock::now();
     // now the post processing is handle by Construct_2d_tree
-    clock_t t3 = clock();
-    printf("\033[33mtime:\033[m %.2f %.2f %.2f\n", (double) (t2 - t1) / CLOCKS_PER_SEC, (double) (t3 - t2) / CLOCKS_PER_SEC, (double) (t3 - t1) / CLOCKS_PER_SEC);
+
+    std::chrono::duration<double> duration12 = t2 - t1;
+
+    log.info(" time: {}", duration12.count());
 
     if (ap.caseType() == 0) {
         //IBM Cases
     } else {
         //ISPD'07 Cases
         NTHUR::Layer_assignment(congestion, tree.rr_map, ap.output());
-        clock_t t4 = clock();
-        printf("time: %.2f %.2f\n", (double) (t4 - t3) / CLOCKS_PER_SEC, (double) (t4 - t0) / CLOCKS_PER_SEC);
+        auto t4 = std::chrono::system_clock::now();
+        std::chrono::duration<double> duration42 = t4 - t2;
+        std::chrono::duration<double> duration40 = t4 - t0;
+        log.info(" time: {} {}", duration42.count(), duration40.count());
     }
 
     return 0;

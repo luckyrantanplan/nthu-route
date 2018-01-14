@@ -10,7 +10,7 @@
 #include "Construct_2d_tree.h"
 #include "MM_mazeroute.h"
 
-#define SPDLOG_TRACE_ON
+//#define SPDLOG_TRACE_ON
 #include "../spdlog/spdlog.h"
 
 bool NTHUR::RangeRouter::double_equal(double a, double b) {
@@ -44,13 +44,19 @@ void NTHUR::RangeRouter::define_interval() {
     for (Interval_element& ele : interval_list) {
         ele.grid_edge_vector.clear();
     }
-#ifdef MESSAGE
-    printf("interval value: ");
-    for (int i=0; i<intervalCount; ++i)
-    printf("%lf ",interval_list[i].begin_value);
-    printf("%lf ",interval_list[intervalCount-1].end_value);
-    putchar('\n');
-#endif
+
+    SPDLOG_TRACE(print_interval());
+
+}
+
+std::string NTHUR::RangeRouter::print_interval() const {
+
+    std::string s("interval value: ");
+    for (uint32_t i = 0; i < interval_list.size(); ++i) {
+        s += std::to_string(interval_list[i].begin_value) + " ";
+    }
+    s += std::to_string(interval_list[interval_list.size() - 1].end_value) + "\n";
+    return s;
 }
 
 void NTHUR::RangeRouter::insert_to_interval(Coordinate_2d coor_2d, Coordinate_2d c2) {
@@ -81,17 +87,6 @@ void NTHUR::RangeRouter::divide_grid_edge_into_interval() {
 
     }
 
-#ifdef DEBUG_INTERVAL_LIST	
-    int grid_edge_in_interval_num = 0;
-    for (int i = 0; i < intervalCount; ++i)
-    {
-        grid_edge_in_interval_num += interval_list[i].grid_edge_vector.size();
-    }
-    if (grid_edge_in_interval_num != num_of_grid_edge)
-    {
-        printf("Mismatch: in interval %d , true %d\n",grid_edge_in_interval_num,num_of_grid_edge);
-    }
-#endif
 }
 
 void NTHUR::RangeRouter::walkFrame(const Rectangle& r, std::function<void(Coordinate_2d& i, Coordinate_2d& before)> accumulate) {
@@ -179,8 +174,7 @@ void NTHUR::RangeRouter::expand_range(Coordinate_2d c1, Coordinate_2d c2, int in
         r.expand(1);
         SPDLOG_TRACE(log_sp, "r after  r.expand(1): {}", r.toString());
     }                                // end of while loop
-    SPDLOG_TRACE(log_sp, "r: {} bound: {}", r.toString(), bound.toString());
-    SPDLOG_TRACE(log_sp, "printIfBound:{}", printIfBound(r, bound, interval_index, c1, c2));
+    SPDLOG_TRACE(log_sp, "r: {} bound: {}", r.toString(), bound.toString());SPDLOG_TRACE(log_sp, "printIfBound:{}", printIfBound(r, bound, interval_index, c1, c2));
 
     r.expand(congestion.cur_iter / 10); // extraExpandRange
     bound.clip(r);

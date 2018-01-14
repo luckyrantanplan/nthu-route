@@ -263,15 +263,15 @@ void Congestion::update_congestion_map_remove_two_pin_net(const std::vector<Coor
     }
 }
 
-void Congestion::plotCongestionNet(int net_id) const {
-    SPDLOG_TRACE(log_sp, "true net_id={} in congestion ", net_id);
+std::string Congestion::plotCongestionNet(int net_id) const {
+    std::string s;
     for (int x = 0; x < congestionMap2d.getXSize(); ++x) {
         for (int y = 1; y < congestionMap2d.getYSize(); ++y) {
             Coordinate_2d c1 { x, y - 1 };
             Coordinate_2d c2 { x, y };
             if (congestionMap2d.edge(c1, c2).lookupNet(net_id)) {
-                printf("%d %d\n", c1.x, c1.y);
-                printf("%d %d\n\n", c2.x, c2.y);
+                s += std::to_string(c1.x) + " " + std::to_string(c1.y) + "\n";
+                s += std::to_string(c2.x) + " " + std::to_string(c2.y) + "\n\n";
             }
         }
     }
@@ -280,13 +280,13 @@ void Congestion::plotCongestionNet(int net_id) const {
             Coordinate_2d c1 { x - 1, y };
             Coordinate_2d c2 { x, y };
             if (congestionMap2d.edge(c1, c2).lookupNet(net_id)) {
-                printf("%d %d\n", c1.x, c1.y);
-                printf("%d %d\n\n", c2.x, c2.y);
+                s += std::to_string(c1.x) + " " + std::to_string(c1.y) + "\n";
+                s += std::to_string(c2.x) + " " + std::to_string(c2.y) + "\n\n";
             }
         }
     } //
-    std::cout << "end congestion true" << std::endl;
-    SPDLOG_TRACE(log_sp, "end true net_id={} in congestion ", net_id);
+    s += "end congestion for net_id" + std::to_string(net_id) + "true\n";
+    return s;
 }
 
 } // namespace NTHUR

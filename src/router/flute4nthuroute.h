@@ -7,7 +7,7 @@
 #include "../grdb/RoutingComponent.h"
 #include "../flute/flute-ds.h"           // flute data structure
 
-namespace NTHUR{
+namespace NTHUR {
 
 struct TreeFlute {
     int deg;          // degree
@@ -24,6 +24,17 @@ struct TreeFlute {
         for (int i = 0; i < 2 * deg - 2; ++i) {
             branch[i] = tree.branch[i];
         }
+    }
+
+    std::string plot() const {
+        std::string s;
+        for (int i = 0; i < number; ++i) {
+            const Branch& b = branch[i];
+            s += std::to_string(static_cast<int>(b.x)) + " " + std::to_string(static_cast<int>(b.y)) + "\n";
+            s += std::to_string(static_cast<int>(branch[b.n].x)) + " " + std::to_string(static_cast<int>(branch[b.n].y)) + "\n\n";
+        }
+
+        return s;
     }
 };
 

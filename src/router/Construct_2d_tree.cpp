@@ -672,9 +672,8 @@ void Construct_2d_tree::output_2_pin_list() {
  output 2-pin list to stage2
  return max_overflow;
  */
-}
 
-NTHUR::Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterSet& param, RoutingRegion& rr, Congestion& congestion) :
+Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterSet& param, RoutingRegion& rr, Congestion& congestion) :
 //
 //
         parameter_set { param }, //
@@ -686,7 +685,7 @@ NTHUR::Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, Par
         rangeRouter { *this, congestion, true }, //
         post_processing { congestion, *this, rangeRouter }  //
 {
-    log_sp =  spdlog::get("NTHUR");
+    log_sp = spdlog::get("NTHUR");
     /***********************
      * Global Variable End
      * ********************/
@@ -751,7 +750,6 @@ NTHUR::Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, Par
         }
 
         route_2pinnets.reallocate_two_pin_list();
-        SPDLOG_TRACE(log_sp, "Memory Usage:{}", printMemoryUsage());
 
         if (cur_overflow <= routing_parameter.get_overflow_threshold()) {
             log_sp->info("cur overflow {} <= overflow_threshold {} ", cur_overflow, routing_parameter.get_overflow_threshold());
@@ -762,26 +760,12 @@ NTHUR::Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, Par
 
     output_2_pin_list();    //order:bbox
 
-    SPDLOG_TRACE(log_sp, "================================================================");    //
-    SPDLOG_TRACE(log_sp, "===                   Enter Post Processing                  ==="); //
-    SPDLOG_TRACE(log_sp, "================================================================");
+    log_sp->info("================================================================");    //
+    log_sp->info("===                   Enter Post Processing                  ==="); //
+    log_sp->info("================================================================");
 
     post_processing.process(route_2pinnets);
 
-}
-namespace NTHUR {
-std::string Construct_2d_tree::printMemoryUsage() {
-
-//for print out memory usage
-    std::ifstream mem("/proc/self/status");
-    std::string memory;
-    for (unsigned i = 0; i < 13; ++i) {
-        getline(mem, memory);
-        if (i > 10) {
-            return memory;
-        }
-    }
-    return memory;
 }
 
 } // namespace NTHUR

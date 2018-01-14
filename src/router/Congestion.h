@@ -56,7 +56,7 @@ public:
     void update_congestion_map_insert_two_pin_net(Two_pin_element_2d& element);
     void update_congestion_map_remove_two_pin_net(const std::vector<Coordinate_2d>& path, const int net_id);
 
-    void plotCongestionNet(int net_id) const;
+    std::string plotCongestionNet(int net_id) const;
 };
 
 } // namespace NTHUR

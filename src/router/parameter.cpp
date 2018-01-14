@@ -1,12 +1,15 @@
 #include "parameter.h"
 
 #include <getopt.h>
-#include <cstdio>
 #include <cstdlib>
 #include <iostream>
+#include <memory>
 
 #include "../grdb/parser.h"
 #include "../misc/filehandler.h"
+#include "../spdlog/details/logger_impl.h"
+#include "../spdlog/details/spdlog_impl.h"
+#include "../spdlog/logger.h"
 #include "DataDef.h"
 
 namespace NTHUR {
@@ -59,10 +62,31 @@ using namespace std;
 #define outputPrefix "out="
 #define paraPrefix "par="
 
+inline ParameterSet::ParameterSet(int pattern_route_obj, //
+        int pattern_route_cost, //
+        int iter_2d, //
+        int maze_route_cost, //
+        int maze_size_mode, //
+        int maze_route_list_cost, //
+        int maze_route_list_order, //
+        int _overflow_threshold, //
+        int _iter_p3) :
+        pattern_route_obj(pattern_route_obj), //
+        pattern_route_cost(pattern_route_cost), //
+        iter_2d(iter_2d), //
+        maze_route_cost(maze_route_cost), //
+        maze_size_mode(maze_size_mode), //
+        maze_route_list_cost(maze_route_list_cost), //
+        maze_route_list_order(maze_route_list_order), //
+        overflow_threshold(_overflow_threshold), //
+        iter_p3(_iter_p3) {
+    log_sp = spdlog::get("NTHUR");
+}
+
 void ParameterSet::setSet() {
     push_parameter(MIN_TOTAL_COST, FASTROUTE_COST, 200, MAZE_ROUTING_MADEOF_COST, WINDOW_MODE6, T_OVERFLOW, DEC); //2	//n3
 
-    printf("parameter setting:%d %d   %d %d %d %d %d\n", pattern_route_obj, pattern_route_cost, iter_2d, maze_route_cost, maze_size_mode, maze_route_list_cost, maze_route_list_order);
+    log_sp->info("parameter setting:{} {}   {} {} {} {} {}", pattern_route_obj, pattern_route_cost, iter_2d, maze_route_cost, maze_size_mode, maze_route_list_cost, maze_route_list_order);
 }
 
 void ParameterSet::setInputfile(std::string input) {
