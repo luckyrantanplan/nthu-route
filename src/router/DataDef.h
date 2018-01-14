@@ -19,15 +19,13 @@
 //If wanna run IBM testcase, please enable this define
 //#define IBM_CASE
 
-#define error_bound 0.00000000001
-#define neg_error_bound -0.00000000001
-
 namespace NTHUR {
 
+constexpr double error_bound = 0.00000000001;
+constexpr double neg_error_bound = -0.00000000001;
 
-
-constexpr int debug_net_id=661;
-constexpr int debug_serial_id=1007;
+constexpr int debug_net_id = 661;
+constexpr int debug_serial_id = 1007;
 
 enum {
     FASTROUTE_COST, OVERFLOW_COST, CONGESTION_COST, MADEOF_COST, HISTORY_COST, HISTORY_MADEOF_COST
@@ -83,8 +81,6 @@ public:
     static bool comp_2pin_net(Two_pin_element &a, Two_pin_element &b);
 };
 
-
-
 typedef std::unordered_map<int, int> RoutedNetTable;
 
 class Edge_2d {
@@ -127,7 +123,6 @@ public:
 };
 
 typedef std::vector<Two_pin_element_2d> Two_pin_list_2d;
-
 
 } // namespace NTHUR
 
