@@ -1,24 +1,12 @@
 #include "flute4nthuroute.h"
 
-#include <stddef.h>
-#include <vector>
 #include <cassert>
 
-Flute::Flute() :
-        x_(NULL), y_(NULL) {
+#include "flute-function.h"
+
+Flute::Flute() {
     readLUT();      //Read in the binary lookup table - POWVFILE, POSTFILE
 
-    x_ = new DTYPE[MAXD];    //int array used as input of FLUTE
-    y_ = new DTYPE[MAXD];    //int array used as input of FLUTE
-}
-
-Flute::~Flute() {
-    if (x_ != NULL) {
-        delete[] x_;
-    }
-    if (y_ != NULL) {
-        delete[] y_;
-    }
 }
 
 void Flute::routeNet(const std::vector<Pin>& pinList, Tree& routingTree) {
@@ -34,7 +22,7 @@ void Flute::routeNet(const std::vector<Pin>& pinList, Tree& routingTree) {
     }
 
     // obtain the routing tree by FLUTE
-    routingTree = flute(pinNumber, x_, y_, ACCURACY);
+    routingTree = flute(pinNumber, x_.data(), y_.data(), ACCURACY);
 }
 
 void Flute::printTree(Tree& routingTree) {
