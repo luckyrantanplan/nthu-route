@@ -12,11 +12,10 @@
 #include <cstring>
 #include <iostream>
 
+#include "RoutingRegion.h"
+
 #define MAX_STRING_BUFER_LENGTH 512
 #define MAX_PIN 1000
-
-using std::cerr;
-using std::endl;
 
 //====== GRParser =========
 
@@ -35,7 +34,7 @@ void Parser07::parse() {
         parseNets();
         adjustCapacity();
     } else {
-        cerr << "Error opening test case." << endl;
+        std::cerr << "Error opening test case." << std::endl;
         abort();
     }
 
@@ -143,7 +142,7 @@ void Parser07::parseANet() {
 
     // Get net information
     fh_.getline(stringBuffer.data(), MAX_STRING_BUFER_LENGTH);
-    string netName = strtok(stringBuffer.data(), delims_.c_str());
+    std::string netName = strtok(stringBuffer.data(), delims_.c_str());
     int netSerial = atoi(strtok(NULL, delims_.c_str()));    // read net serial number
     int pinNumber = atoi(strtok(NULL, delims_.c_str()));    // read pin number
     int minWidth = atoi(strtok(NULL, delims_.c_str())); // read net minmum width
@@ -212,7 +211,7 @@ void Parser98::parse() {
         parseRoutingRegion();
         parseNets();
     } else {
-        cerr << "Error opening test case." << endl;
+        std::cerr << "Error opening test case." << std::endl;
         abort();
     }
 
@@ -293,7 +292,7 @@ void Parser98::parseANet() {
     std::array<char, MAX_STRING_BUFER_LENGTH> stringBuffer;
     // Get net information
     fh_.getline(stringBuffer.data(), MAX_STRING_BUFER_LENGTH);
-    string netName = strtok(stringBuffer.data(), delims_.c_str());
+    std::string netName = strtok(stringBuffer.data(), delims_.c_str());
     int netSerialNumber = atoi(strtok(NULL, delims_.c_str()));
     int pinNumber = atoi(strtok(NULL, delims_.c_str()));
     int minWidth = 1;

@@ -10,17 +10,15 @@
 #include <string>
 
 #include "../misc/filehandler.h"
-#include "../grdb/RoutingRegion.h"
 
-
-using Jm::FileHandler;
+class RoutingRegion;
 
 /** 
  * @brief Global Router Parser for parsing ISPD'07 test case
  */
 class Parser07 {
-    string fname_;      ///< File name
-    string delims_;
+    std::string fname_;      ///< File name
+    std::string delims_;
     FileHandler fh_;    ///< File Handler
     RoutingRegion& builder_;    ///< Data stucture builder
 public:
@@ -46,8 +44,8 @@ private:
  * @brief Global Router Parser for parsing ISPD'98 test case
  */
 class Parser98 {
-    string fname_;      ///< File name
-    string delims_;
+    std::string fname_;      ///< File name
+    std::string delims_;
     FileHandler fh_;    ///< File Handler
     RoutingRegion& builder_;  ///< Data stucture builder
 public:

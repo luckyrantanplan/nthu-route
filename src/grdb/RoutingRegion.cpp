@@ -2,8 +2,6 @@
 #include "RoutingRegion.h"
 #include "../misc/geometry.h"
 
-using namespace std;
-
 /***************
  RoutingRegion
  **************/
@@ -58,8 +56,8 @@ void RoutingRegion::addPin(unsigned int x, unsigned int y, unsigned int layer) {
     int tileX = ((x - get_llx()) / get_tileWidth());
     int tileY = ((y - get_lly()) / get_tileHeight());
 
-    if (pinTable_.find(pair<int, int>(tileX, tileY)) == pinTable_.end()) {
-        pinTable_.insert(pair<int, int>(tileX, tileY));
+    if (pinTable_.find(std::pair<int, int>(tileX, tileY)) == pinTable_.end()) {
+        pinTable_.insert(std::pair<int, int>(tileX, tileY));
         netList_.back().add_pin(routingSpace_.tile(tileX, tileY, layer));
     }
 }
@@ -72,5 +70,5 @@ void RoutingRegion::endAddANet() {
 }
 
 void RoutingRegion::endBuild() {
-    cout << "Total nets to route= " << netList_.size() << endl;
+    std::cout << "Total nets to route= " << netList_.size() << std::endl;
 }
