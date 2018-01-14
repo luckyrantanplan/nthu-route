@@ -7,11 +7,43 @@
 #include "../grdb/RoutingComponent.h"
 #include "flute-ds.h"           // flute data structure
 
+struct TreeFlute {
+    int deg;          // degree
+    DTYPE length;     // total wirelength
+    std::vector<Branch> branch;   // array of tree branches
+
+    int number;
+
+    void set(const Tree& tree) {
+        deg = tree.deg;
+        length = tree.length;
+        number = tree.number;
+        branch.resize(2 * deg - 2);
+        for (int i = 0; i < 2 * deg - 2; ++i) {
+            branch[i] = tree.branch[i];
+        }
+    }
+};
+
+struct TreeWrapper {
+
+    Tree tree;
+
+    TreeWrapper() {
+        tree.branch = nullptr;
+    }
+    ~TreeWrapper() {
+        if (tree.branch != nullptr) {
+            free(tree.branch);
+        }
+    }
+};
+
 class Flute {
 public:
     Flute();
 
-    void routeNet(const std::vector<Pin>& pinList, Tree& routingTree);
+    void routeNet(const std::vector<Pin>& pinList, TreeFlute& result);
 
     void printTree(Tree& routingTree);
     void plotTree(Tree& routingTree);

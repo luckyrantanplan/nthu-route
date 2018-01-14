@@ -147,13 +147,11 @@ void Route_2pinnets::add_two_pin(int net_id, std::vector<Coordinate_2d>& path) {
     }
 }
 
-Tree& Route_2pinnets::fillTree(int offset, int net_id) {
+void Route_2pinnets::fillTree(int offset, int net_id) {
     int sizeTree = construct_2d_tree.two_pin_list.size() - offset;
-    Tree& tree = construct_2d_tree.net_flutetree[net_id];
-    if (tree.number < sizeTree + 1) {
-        free(tree.branch);
-        tree.branch = (Branch*) (malloc((sizeTree + 1) * sizeof(Branch))); // n+1 vertex for n edge
-    }
+    TreeFlute& tree = construct_2d_tree.net_flutetree[net_id];
+
+    tree.branch.resize(sizeTree + 1);
 
     std::unordered_map<Coordinate_2d, int> indexmap;
     indexmap.reserve(sizeTree + 1);
@@ -177,7 +175,6 @@ Tree& Route_2pinnets::fillTree(int offset, int net_id) {
     }
     tree.number = sizeTree + 1;
 
-    return tree;
 }
 
 void Route_2pinnets::bfs_for_find_two_pin_list(Coordinate_2d start_coor, int net_id) {

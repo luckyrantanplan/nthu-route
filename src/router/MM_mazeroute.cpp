@@ -149,7 +149,7 @@ void Multisource_multisink_mazeroute::setup_pqueue() {
     int cur_net = element->net_id;
     vector<Vertex_mmm>& vertexV = net_tree[cur_net];
     if (vertexV.empty()) {
-        Tree& t = construct_2d_tree.net_flutetree[cur_net];
+        const TreeFlute& t = construct_2d_tree.net_flutetree[cur_net];
 
         if (log_sp->level() == spdlog::level::trace) {
             Flute netRoutingTreeRouter;

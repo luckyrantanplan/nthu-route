@@ -33,14 +33,14 @@ public:
         y = iy;
     }
 
-    std::string toString() const{
-        std::string s="x:"+std::to_string(x);
-        s+=" y:"+std::to_string(y);
-        s+=" points:[";
-        for (Two_pin_element_2d* twoPin: points){
-            s+="("+twoPin->toString()+") ";
+    std::string toString() const {
+        std::string s = "x:" + std::to_string(x);
+        s += " y:" + std::to_string(y);
+        s += " points:[";
+        for (Two_pin_element_2d* twoPin : points) {
+            s += "(" + twoPin->toString() + ") ";
         }
-        s+="]";
+        s += "]";
         return s;
     }
 
@@ -125,7 +125,7 @@ struct Route_2pinnets {
 
 private:
     void add_two_pin(int net_id, std::vector<Coordinate_2d>& path);
-    Tree& fillTree(int offset, int net_id);
+    void fillTree(int offset, int net_id);
 
 };
 

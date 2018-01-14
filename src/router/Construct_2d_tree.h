@@ -2,14 +2,13 @@
 #define _CONSTRUCT_2D_TREE_H_
 
 #include <functional>
-#include <map>
-#include <set>
+#include <memory>
+#include <string>
 #include <vector>
 
-#include "../flute/flute-ds.h"
+#include "../flute/flute4nthuroute.h"
 #include "../grdb/EdgePlane.h"
 #include "../misc/geometry.h"
-#include "Congestion.h"
 #include "DataDef.h"
 #include "MM_mazeroute.h"
 #include "parameter.h"
@@ -80,7 +79,7 @@ struct Construct_2d_tree {
     int done_iter;
 
     int BOXSIZE_INC;
-    std::vector<Tree> net_flutetree;
+    std::vector<TreeFlute> net_flutetree;
 
     std::vector<bool> NetDirtyBit;
     Congestion& congestion;
@@ -112,8 +111,8 @@ struct Construct_2d_tree {
     void merge_vertex(Vertex_flute& keep, Vertex_flute& deleted);
     bool move_edge(Vertex_flute& a, Vertex_flute& b, int best_pos, int dir);
     void traverse_tree(double& ori_cost, std::vector<Vertex_flute>& vertex_fl);
-    void dfs_output_tree(Vertex_flute& node, int parent, Tree& t);
-    void edge_shifting(Tree& t, int i);
+    void dfs_output_tree(Vertex_flute& node, int parent, TreeFlute& t);
+    void edge_shifting(TreeFlute& t, int i);
     void output_2_pin_list();
     Construct_2d_tree(RoutingParameters & routingparam, ParameterSet & param, RoutingRegion & rr, Congestion& congestion);
     void walkL(const Coordinate_2d& a, const Coordinate_2d& b, std::function<void(const Coordinate_2d& e1, const Coordinate_2d& e2)> f);

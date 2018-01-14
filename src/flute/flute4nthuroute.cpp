@@ -9,7 +9,7 @@ Flute::Flute() {
 
 }
 
-void Flute::routeNet(const std::vector<Pin>& pinList, Tree& routingTree) {
+void Flute::routeNet(const std::vector<Pin>& pinList, TreeFlute& result) {
     int pinNumber = pinList.size();
 
     //The pin number must <= MAXD, or the flute will crash
@@ -22,7 +22,11 @@ void Flute::routeNet(const std::vector<Pin>& pinList, Tree& routingTree) {
     }
 
     // obtain the routing tree by FLUTE
-    routingTree = flute(pinNumber, x_.data(), y_.data(), ACCURACY);
+    TreeWrapper routingTree;
+
+    routingTree.tree = flute(pinNumber, x_.data(), y_.data(), ACCURACY);
+    result.set(routingTree.tree);
+
 }
 
 void Flute::printTree(Tree& routingTree) {

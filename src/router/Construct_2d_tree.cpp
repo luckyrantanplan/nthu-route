@@ -2,16 +2,14 @@
 
 #include <boost/range/iterator_range_core.hpp>
 #include <algorithm>
-#include <cassert>
 #include <climits>
 #include <cmath>
+#include <cstddef>
 #include <cstdlib>
 #include <iostream>
 #include <iterator>
-#include <memory>
-#include <numeric>
-#include <string>
 #include <unordered_map>
+#include <utility>
 
 #include <fstream>
 
@@ -24,6 +22,7 @@
 #include "../spdlog/details/spdlog_impl.h"
 #include "../spdlog/logger.h"
 #include "../spdlog/spdlog.h"
+#include "Congestion.h"
 #include "Route_2pinnets.h"
 
 bool Vertex_flute::comp_vertex_fl(const Vertex_flute& a, const Vertex_flute& b) {
@@ -187,17 +186,16 @@ void Construct_2d_tree::gen_FR_congestion_map() {
 
 //for storing the RSMT which returned by flute
     Flute netRoutingTreeRouter;
-    std::vector<Tree> flutetree(rr_map.get_netNumber());
+    std::vector<TreeFlute> flutetree(rr_map.get_netNumber());
 
 //Get every net's possible RSMT by flute, then use it to calculate the possible congestion
 //In this section, we won't get a real routing result, but a possible congestion information.
     for (int i = 0; i < rr_map.get_netNumber(); ++i) {	//i:net id
         SPDLOG_TRACE(log_sp, "bbox route net {} start...pin_num={}", i, rr_map.get_netPinNumber(i));
 
-        Tree& tree = flutetree[i];
 //call flute to gen steiner tree and put the result in flutetree[]
+        TreeFlute& tree = flutetree[i];
         netRoutingTreeRouter.routeNet(rr_map.get_nPin(i), tree);	//
-
         SPDLOG_TRACE(log_sp, "rr_map.nPinList(i): {}", rr_map.nPinToString(i));
 //The total node # in a tree, those nodes include pin and steiner point
 //And it is defined as ((2 * degree of a tree) - 2) by the authors of flute
@@ -240,7 +238,7 @@ void Construct_2d_tree::gen_FR_congestion_map() {
 //Edge shifting will also be applied to the routing.
     for (const Net* it : sort_net) {
         int netId = it->id;
-        Tree& ftreeId = flutetree[netId];
+        TreeFlute& ftreeId = flutetree[netId];
         edge_shifting(ftreeId, netId);
 
         net_flutetree[netId] = ftreeId;
@@ -569,7 +567,7 @@ void Construct_2d_tree::traverse_tree(double& ori_cost, std::vector<Vertex_flute
     }
 }
 
-void Construct_2d_tree::dfs_output_tree(Vertex_flute& node, int parent, Tree &t) {
+void Construct_2d_tree::dfs_output_tree(Vertex_flute& node, int parent, TreeFlute &t) {
     node.visit = 1;
     int i = t.number;
     ++t.number;
@@ -583,7 +581,7 @@ void Construct_2d_tree::dfs_output_tree(Vertex_flute& node, int parent, Tree &t)
     }
 }
 
-void Construct_2d_tree::edge_shifting(Tree& t, int j) {
+void Construct_2d_tree::edge_shifting(TreeFlute& t, int j) {
 
     double ori_cost = 0;            // the original cost without edge shifting
     std::vector<Vertex_flute> vertex_fl;
@@ -724,7 +722,7 @@ Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterS
     congestion.used_cost_flag = HISTORY_COST;
     BOXSIZE_INC = routing_parameter.get_init_box_size_p2();
 
-    for (congestion.cur_iter = 1, done_iter = congestion.cur_iter; congestion.cur_iter <= routing_parameter.get_iteration_p2(); ++congestion.cur_iter, done_iter = congestion.cur_iter)   //do n-1 times
+    for (congestion.cur_iter = 1, done_iter = congestion.cur_iter; congestion.cur_iter <= routing_parameter.get_iteration_p2(); ++congestion.cur_iter, done_iter = congestion.cur_iter) //do n-1 times
             {
 
         log_sp->info("Iteration: {} ", congestion.cur_iter);
