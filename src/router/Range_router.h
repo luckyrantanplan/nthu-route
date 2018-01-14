@@ -19,11 +19,13 @@ namespace spdlog {
 class logger;
 } /* namespace spdlog */
 
-class Congestion;
+namespace NTHUR {
 
-#define INTERVAL_NUM 10
-#define EXPAND_RANGE_SIZE 10
-#define EXPAND_RANGE_INC 1
+constexpr int INTERVAL_NUM = 10;
+constexpr int EXPAND_RANGE_SIZE = 10;
+constexpr int EXPAND_RANGE_INC = 1;
+
+class Congestion;
 
 class Point_fc;
 struct Construct_2d_tree;
@@ -105,5 +107,7 @@ private:
 
 }
 ;
+
+} // namespace NTHUR
 
 #endif //INC_RANGE_ROUTER_H

@@ -8,6 +8,9 @@
 #include <set>
 #include <unordered_map>
 
+namespace NTHUR {
+
+
 class RoutingRegion {
 public:
 
@@ -151,4 +154,6 @@ inline Plane<Pin, int>& RoutingRegion::getLayer(int z) {
     return routingSpace_.layer(z);
 
 }
+} // namespace NTHUR
+
 #endif /*INC_ROUTINGREGION_H*/

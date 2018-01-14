@@ -12,7 +12,7 @@
 #include <stack>
 
 #include "../flute/flute-ds.h"
-#include "../flute/flute4nthuroute.h"
+#include "flute4nthuroute.h"
 #include "../grdb/EdgePlane.h"
 #include "../grdb/RoutingRegion.h"
 #include "../spdlog/common.h"
@@ -23,6 +23,9 @@
 
 #define SPDLOG_TRACE_ON
 #include "../spdlog/spdlog.h"
+
+namespace NTHUR {
+
 using namespace std;
 
 Multisource_multisink_mazeroute::Vertex_mmm::Vertex_mmm(const Coordinate_2d& xy) :
@@ -388,3 +391,4 @@ bool Multisource_multisink_mazeroute::smaller_than_lower_bound(double total_cost
     }
 }
 
+} // namespace NTHUR

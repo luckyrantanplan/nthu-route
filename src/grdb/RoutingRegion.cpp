@@ -2,6 +2,9 @@
 #include "RoutingRegion.h"
 #include "../misc/geometry.h"
 
+namespace NTHUR {
+
+
 /***************
  RoutingRegion
  **************/
@@ -72,3 +75,5 @@ void RoutingRegion::endAddANet() {
 void RoutingRegion::endBuild() {
     std::cout << "Total nets to route= " << netList_.size() << std::endl;
 }
+
+} // namespace NTHUR

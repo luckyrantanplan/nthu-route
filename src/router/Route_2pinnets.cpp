@@ -14,7 +14,7 @@
 #include <utility>
 
 #include "../flute/flute-ds.h"
-#include "../flute/flute4nthuroute.h"
+#include "flute4nthuroute.h"
 #include "../grdb/EdgePlane.h"
 #include "../grdb/RoutingComponent.h"
 #include "../grdb/RoutingRegion.h"
@@ -29,6 +29,8 @@
 #include "Range_router.h"
 
 #include "../spdlog/spdlog.h"
+
+namespace NTHUR {
 
 using namespace std;
 
@@ -249,3 +251,5 @@ void Route_2pinnets::reallocate_two_pin_list() {
     }
 
 }
+
+} // namespace NTHUR

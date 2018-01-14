@@ -25,10 +25,12 @@
 #include "../spdlog/logger.h"
 #include "../spdlog/spdlog.h"
 
-#define parameter_h 0.8         // used in the edge cost function 1/0.5 0.8/2
-#define parameter_k 2           // used in the edge cost function
+namespace NTHUR {
 
-Congestion::Congestion(int x, int y) :
+constexpr double parameter_h = 0.8;         // used in the edge cost function 1/0.5 0.8/2
+constexpr double parameter_k = 2;           // used in the edge cost function
+}
+NTHUR::Congestion::Congestion(int x, int y) :
         congestionMap2d { x, y }  //
 {
     exponent = 5.0;
@@ -40,7 +42,7 @@ Congestion::Congestion(int x, int y) :
     pre_evaluate_congestion_cost_fp = [&]( Edge_2d& edge) {pre_evaluate_congestion_cost_all( edge);};
     log_sp = spdlog::get("NTHUR");
 }
-
+namespace NTHUR {
 Congestion::~Congestion() {
     // TODO Auto-generated destructor stub
 }
@@ -125,7 +127,7 @@ void Congestion::pre_evaluate_congestion_cost() {
             ++edge.history;
         }
 
-    } SPDLOG_TRACE(log_sp, "pre_evaluate_congestion_cost gridEdge \n{}", congestionMap2d.toString());
+    }SPDLOG_TRACE(log_sp, "pre_evaluate_congestion_cost gridEdge \n{}", congestionMap2d.toString());
 }
 
 //Check if the specified edge is not overflowed
@@ -161,13 +163,13 @@ int Congestion::find_overflow_max(int max_zz) const {
         if (edge.overUsage() > overflow_max) {
             overflow_max = edge.overUsage();
         }
-    } SPDLOG_TRACE(log_sp, "2D maximum overflow = {}", overflow_max);
+    }SPDLOG_TRACE(log_sp, "2D maximum overflow = {}", overflow_max);
 
     if (overflow_max % max_zz) {
         overflow_max = ((overflow_max / max_zz) * 2) + 2;
     } else {
         overflow_max = ((overflow_max / max_zz) * 2);
-    } SPDLOG_TRACE(log_sp, "overflow max = = {}", overflow_max);
+    }SPDLOG_TRACE(log_sp, "overflow max = = {}", overflow_max);
 
     return overflow_max;
 }
@@ -175,8 +177,8 @@ int Congestion::find_overflow_max(int max_zz) const {
 /*assign the estimated track# to each edge*/
 void Congestion::init_2d_map(RoutingRegion& rr_map) {
 #define IBM_CASE
-    #ifdef IBM_CASE
-    int divisor=2;
+#ifdef IBM_CASE
+    int divisor = 2;
 #else
     int divisor = 1;
 #endif
@@ -286,3 +288,5 @@ void Congestion::plotCongestionNet(int net_id) const {
     std::cout << "end congestion true" << std::endl;
     SPDLOG_TRACE(log_sp, "end true net_id={} in congestion ", net_id);
 }
+
+} // namespace NTHUR

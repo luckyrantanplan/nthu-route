@@ -1,8 +1,13 @@
 #ifndef INC_PARAMETER_H
 #define INC_PARAMETER_H
 
-#include<string>
-#include<unistd.h>
+#include <string>
+
+namespace NTHUR {
+class RoutingRegion;
+} /* namespace NTHUR */
+
+namespace NTHUR {
 
 enum {
     MIN_MAX_COST, MIN_TOTAL_COST
@@ -257,7 +262,7 @@ public:
     //return the input type: 0 for IBM test cases  and 1 for the others
     int caseType();
     RoutingParameters& routing_param();
-
+    void dataPreparation(RoutingRegion& builder);
 private:
     int argc;
     char** argv;
@@ -278,5 +283,7 @@ inline RoutingParameters&
 ParameterAnalyzer::routing_param() {
     return routingParam;
 }
+
+} // namespace NTHUR
 
 #endif //INC_PARAMETER_H

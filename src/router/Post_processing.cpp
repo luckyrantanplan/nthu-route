@@ -15,6 +15,9 @@
 //#define SPDLOG_TRACE_ON
 #include "../spdlog/spdlog.h"
 
+namespace NTHUR {
+
+
 bool COUNTER::operator <(const COUNTER& o) const {
     return std::tie(total_overflow, bsize) < std::tie(o.total_overflow, o.bsize);
 
@@ -110,3 +113,5 @@ void Post_processing::process(Route_2pinnets& route_2pinnets) {
     SPDLOG_TRACE(log_sp, "maze routing complete successfully");
 
 }
+
+} // namespace NTHUR

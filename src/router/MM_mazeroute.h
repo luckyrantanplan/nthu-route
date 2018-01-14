@@ -10,10 +10,13 @@
 
 #include "../misc/geometry.h"
 #include "DataDef.h"
-
 namespace spdlog {
 class logger;
 } /* namespace spdlog */
+
+namespace NTHUR {
+
+
 
 class Congestion;
 
@@ -149,5 +152,7 @@ private:
     int dst_counter;
     std::shared_ptr<spdlog::logger> log_sp;
 };
+
+} // namespace NTHUR
 
 #endif //INC_MM_MAZEROUTE_H

@@ -13,10 +13,13 @@
 #include "../grdb/EdgePlane3d.h"
 #include "../grdb/plane.h"
 #include "../misc/geometry.h"
-
 namespace spdlog {
 class logger;
 } /* namespace spdlog */
+
+namespace NTHUR {
+
+
 
 class RoutingRegion;
 
@@ -223,5 +226,7 @@ private:
     void plotNet(int net_id) const;
     void printEdge(const Coordinate_3d& c, const Coordinate_3d& c2) const;
 };
+
+} // namespace NTHUR
 
 #endif //INC_LAYER_ASSIGNMENT_H

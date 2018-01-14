@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-#include "../flute/flute4nthuroute.h"
+#include "flute4nthuroute.h"
 #include "../grdb/EdgePlane.h"
 #include "../misc/geometry.h"
 #include "DataDef.h"
@@ -15,16 +15,18 @@
 #include "Post_processing.h"
 #include "Range_router.h"
 
+namespace spdlog {
+class logger;
+} /* namespace spdlog */
+
+namespace NTHUR {
+
 class Monotonic_element;
 
 class Net;
 class ParameterSet;
 class RoutingParameters;
 class RoutingRegion;
-
-namespace spdlog {
-class logger;
-} /* namespace spdlog */
 
 class Vertex_flute {
 public:
@@ -124,5 +126,7 @@ private:
     void move_edge_ver(Vertex_flute& a, int best_pos, Vertex_flute& b, Vertex_flute_ptr& overlap_a, std::function<bool(const int& i, const int& j)> test);
 }
 ;
+
+} // namespace NTHUR
 
 #endif /* _CONSTRUCT_2D_TREE_H_ */

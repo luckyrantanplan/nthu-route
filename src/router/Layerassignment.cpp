@@ -21,6 +21,9 @@
 //#define SPDLOG_TRACE_ON
 #include "../spdlog/spdlog.h"
 
+namespace NTHUR {
+
+
 using namespace std;
 
 Edge_3d::Edge_3d() :
@@ -634,3 +637,5 @@ Layer_assignment::Layer_assignment(const Congestion& congestion, const RoutingRe
 
 }
 
+
+} // namespace NTHUR

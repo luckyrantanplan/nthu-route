@@ -14,7 +14,7 @@
 #include <fstream>
 
 #include "../flute/flute-function.h"
-#include "../flute/flute4nthuroute.h"
+#include "flute4nthuroute.h"
 #include "../grdb/RoutingComponent.h"
 #include "../grdb/RoutingRegion.h"
 //#define SPDLOG_TRACE_ON
@@ -24,6 +24,8 @@
 #include "../spdlog/spdlog.h"
 #include "Congestion.h"
 #include "Route_2pinnets.h"
+
+namespace NTHUR {
 
 bool Vertex_flute::comp_vertex_fl(const Vertex_flute& a, const Vertex_flute& b) {
     if (a.c.x < b.c.x)
@@ -670,8 +672,9 @@ void Construct_2d_tree::output_2_pin_list() {
  output 2-pin list to stage2
  return max_overflow;
  */
+}
 
-Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterSet& param, RoutingRegion& rr, Congestion& congestion) :
+NTHUR::Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterSet& param, RoutingRegion& rr, Congestion& congestion) :
 //
 //
         parameter_set { param }, //
@@ -683,7 +686,7 @@ Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterS
         rangeRouter { *this, congestion, true }, //
         post_processing { congestion, *this, rangeRouter }  //
 {
-    log_sp = spdlog::get("NTHUR");
+    log_sp =  spdlog::get("NTHUR");
     /***********************
      * Global Variable End
      * ********************/
@@ -766,7 +769,7 @@ Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterS
     post_processing.process(route_2pinnets);
 
 }
-
+namespace NTHUR {
 std::string Construct_2d_tree::printMemoryUsage() {
 
 //for print out memory usage
@@ -780,3 +783,5 @@ std::string Construct_2d_tree::printMemoryUsage() {
     }
     return memory;
 }
+
+} // namespace NTHUR

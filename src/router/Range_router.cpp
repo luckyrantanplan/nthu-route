@@ -1,24 +1,19 @@
 #include "Range_router.h"
 
+#include <boost/multi_array/multi_array_ref.hpp>
+#include <sys/types.h>
 #include <algorithm>
-#include <array>
-#include <initializer_list>
-#include <iterator>
 
 #include "../grdb/EdgePlane.h"
 #include "../grdb/RoutingRegion.h"
 #include "Congestion.h"
 #include "Construct_2d_tree.h"
 #include "MM_mazeroute.h"
-#include "MonotonicRouting.h"
-#include "parameter.h"
-#include "Post_processing.h"
+
 #define SPDLOG_TRACE_ON
 #include "../spdlog/spdlog.h"
 
-using namespace std;
-
-bool RangeRouter::double_equal(double a, double b) {
+bool NTHUR::RangeRouter::double_equal(double a, double b) {
     double diff = a - b;
     if (diff > 0.00001 || diff < -0.00001)
         return false;
@@ -27,7 +22,7 @@ bool RangeRouter::double_equal(double a, double b) {
 }
 
 /*sort grid_edge in decending order*/
-bool RangeRouter::comp_grid_edge(const Grid_edge_element& a, const Grid_edge_element& b) {
+bool NTHUR::RangeRouter::comp_grid_edge(const Grid_edge_element& a, const Grid_edge_element& b) {
     return congestion.congestionMap2d.edge(a.grid, a.c2).congestion() > congestion.congestionMap2d.edge(b.grid, b.c2).congestion();
 }
 
@@ -35,7 +30,7 @@ bool RangeRouter::comp_grid_edge(const Grid_edge_element& a, const Grid_edge_ele
  determine INTERVAL_NUM(10) intervals between min and max,
  and also compute average congestion value (sum of demand / sum of capacity)
  */
-void RangeRouter::define_interval() {
+void NTHUR::RangeRouter::define_interval() {
 
     Congestion::Statistic s = congestion.stat_congestion();
 
@@ -58,7 +53,7 @@ void RangeRouter::define_interval() {
 #endif
 }
 
-void RangeRouter::insert_to_interval(Coordinate_2d coor_2d, Coordinate_2d c2) {
+void NTHUR::RangeRouter::insert_to_interval(Coordinate_2d coor_2d, Coordinate_2d c2) {
     double cong_value = congestion.congestionMap2d.edge(coor_2d, c2).congestion();
     if (cong_value > 1) {
         for (int i = interval_list.size() - 1; i >= 0; --i) {
@@ -72,7 +67,7 @@ void RangeRouter::insert_to_interval(Coordinate_2d coor_2d, Coordinate_2d c2) {
     }
 }
 
-void RangeRouter::divide_grid_edge_into_interval() {
+void NTHUR::RangeRouter::divide_grid_edge_into_interval() {
 
     for (int i = 0; i < congestion.congestionMap2d.getXSize() - 1; ++i) {
         for (int j = 0; j < congestion.congestionMap2d.getYSize(); ++j) {
@@ -99,7 +94,7 @@ void RangeRouter::divide_grid_edge_into_interval() {
 #endif
 }
 
-void RangeRouter::walkFrame(const Rectangle& r, std::function<void(Coordinate_2d& i, Coordinate_2d& before)> accumulate) {
+void NTHUR::RangeRouter::walkFrame(const Rectangle& r, std::function<void(Coordinate_2d& i, Coordinate_2d& before)> accumulate) {
 
     const Coordinate_2d& upLeft = r.upLeft;
     const Coordinate_2d& downRight = r.downRight;
@@ -162,7 +157,7 @@ void RangeRouter::walkFrame(const Rectangle& r, std::function<void(Coordinate_2d
 
 }
 
-void RangeRouter::expand_range(Coordinate_2d c1, Coordinate_2d c2, int interval_index) {
+void NTHUR::RangeRouter::expand_range(Coordinate_2d c1, Coordinate_2d c2, int interval_index) {
 
     Rectangle r { c1, c2 };
     Rectangle bound { Coordinate_2d { 0, 0 }, congestion.congestionMap2d.getSize() + Coordinate_2d { -1, -1 } };
@@ -193,7 +188,7 @@ void RangeRouter::expand_range(Coordinate_2d c1, Coordinate_2d c2, int interval_
     range_vector.push_back(r);
 }
 
-std::string RangeRouter::printIfBound(const Rectangle& r, const Rectangle& bound, const int interval_index, const Coordinate_2d& c1, const Coordinate_2d& c2) const {
+std::string NTHUR::RangeRouter::printIfBound(const Rectangle& r, const Rectangle& bound, const int interval_index, const Coordinate_2d& c1, const Coordinate_2d& c2) const {
     std::string s;
     if (r.contains(bound)) {
         s += "for interval " + std::to_string(interval_index);
@@ -208,7 +203,7 @@ std::string RangeRouter::printIfBound(const Rectangle& r, const Rectangle& bound
 //routing or multi-source multi-sink routing.
 //If there is no overflowed path by using the two methods above, then remain 
 //the original path.
-void RangeRouter::range_router(Two_pin_element_2d& two_pin, int version) {
+void NTHUR::RangeRouter::range_router(Two_pin_element_2d& two_pin, int version) {
     if (!congestion.check_path_no_overflow(two_pin.path, two_pin.net_id, false)) {
         ++total_twopin;
 
@@ -251,7 +246,7 @@ void RangeRouter::range_router(Two_pin_element_2d& two_pin, int version) {
     }
 }
 
-void RangeRouter::query_range_2pin(const Rectangle& r, //
+void NTHUR::RangeRouter::query_range_2pin(const Rectangle& r, //
         std::vector<Two_pin_element_2d*>& twopin_list, boost::multi_array<Point_fc, 2>& gridCell) {
 
     static int done_counter = 0;	//only initialize once
@@ -280,7 +275,7 @@ void RangeRouter::query_range_2pin(const Rectangle& r, //
     ++done_counter;
 }
 
-void RangeRouter::specify_all_range(boost::multi_array<Point_fc, 2>& gridCell) {
+void NTHUR::RangeRouter::specify_all_range(boost::multi_array<Point_fc, 2>& gridCell) {
     std::vector<Two_pin_element_2d *> twopin_list;
     std::vector<int> twopin_range_index_list;
 
@@ -344,7 +339,7 @@ void RangeRouter::specify_all_range(boost::multi_array<Point_fc, 2>& gridCell) {
     construct_2d_tree.mazeroute_in_range.clear_net_tree();
 }
 
-RangeRouter::RangeRouter(Construct_2d_tree& construct2dTree, Congestion& congestion, bool monotonic_enable) :
+NTHUR::RangeRouter::RangeRouter(Construct_2d_tree& construct2dTree, Congestion& congestion, bool monotonic_enable) :
         total_twopin(0),	//
 
         construct_2d_tree { construct2dTree }, //
@@ -353,3 +348,4 @@ RangeRouter::RangeRouter(Construct_2d_tree& construct2dTree, Congestion& congest
     log_sp = spdlog::get("NTHUR");
 
 }
+

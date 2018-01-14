@@ -2,10 +2,13 @@
 #define _Post_processing_H_
 
 #include <memory>
-
 namespace spdlog {
 class logger;
 } /* namespace spdlog */
+
+namespace NTHUR {
+
+
 
 class Congestion;
 struct RangeRouter;
@@ -37,4 +40,6 @@ struct Post_processing {
     Post_processing(Congestion& congestion, Construct_2d_tree& construct_2d_tree, RangeRouter& rangeRouter);
     void process(Route_2pinnets& route_2pinnets);
 };
+} // namespace NTHUR
+
 #endif

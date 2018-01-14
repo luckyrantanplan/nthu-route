@@ -19,7 +19,7 @@
 namespace spdlog {
 class logger;
 } /* namespace spdlog */
-
+namespace NTHUR {
 class RoutingRegion;
 
 class Congestion {
@@ -48,7 +48,7 @@ public:
     int cal_max_overflow();
     void pre_evaluate_congestion_cost_all(Edge_2d& edge) const;
     void pre_evaluate_congestion_cost();
-    bool check_path_no_overflow(const std::vector<Coordinate_2d>&path, const int net_id,const int inc_flag) const;
+    bool check_path_no_overflow(const std::vector<Coordinate_2d>&path, const int net_id, const int inc_flag) const;
     int find_overflow_max(int max_zz) const;
     void init_2d_map(RoutingRegion& rr_map);
     int cal_total_wirelength();
@@ -58,5 +58,7 @@ public:
 
     void plotCongestionNet(int net_id) const;
 };
+
+} // namespace NTHUR
 
 #endif /* SRC_ROUTER_CONGESTION_H_ */

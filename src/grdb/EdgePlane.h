@@ -21,6 +21,9 @@
 
 #include "../misc/geometry.h"
 
+namespace NTHUR {
+
+
 ///@brief The data structure for presenting the routing edges in global routing area.
 ///@details User can specify the data structure of routing edges by their own, and
 ///         the default data structure of routing edges is a integer.
@@ -338,5 +341,7 @@ inline std::string EdgePlane<T>::toString() const {
     }
     return gridString;
 }
+
+} // namespace NTHUR
 
 #endif /* SRC_GRDB_EDGEPLANE_H_ */

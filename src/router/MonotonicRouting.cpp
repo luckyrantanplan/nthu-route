@@ -18,6 +18,9 @@
 #include "Congestion.h"
 #include "DataDef.h"
 
+namespace NTHUR {
+
+
 MonotonicRouting::MonotonicRouting(Congestion& congestion, bool enable) :
         congestion { congestion }, //
         cong_monotonic { boost::extents[congestion.congestionMap2d.getXSize()][congestion.congestionMap2d.getYSize()] }, //
@@ -317,3 +320,5 @@ bool MonotonicRouting::monotonicRoute(Two_pin_element_2d& two_pin, Bound& bound,
     }
     return find_path_flag;
 }
+
+} // namespace NTHUR

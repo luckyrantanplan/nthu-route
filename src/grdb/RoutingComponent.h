@@ -6,6 +6,9 @@
 
 #include "plane.h"
 
+namespace NTHUR {
+
+
 class Pin {
 public:
     //Constructor
@@ -183,5 +186,7 @@ inline
 int RoutingSpace::getZSize() const {
     return routingSpace_.size();
 }
+
+} // namespace NTHUR
 
 #endif /*INC_ROUTINGCOMPONENT_H*/

@@ -1,9 +1,15 @@
-#include <cstdio>
-#include <string>
-#include <iostream>
 #include "parameter.h"
-#include "Construct_2d_tree.h"
+
 #include <getopt.h>
+#include <cstdio>
+#include <cstdlib>
+#include <iostream>
+
+#include "../grdb/parser.h"
+#include "../misc/filehandler.h"
+#include "DataDef.h"
+
+namespace NTHUR {
 
 using namespace std;
 
@@ -346,6 +352,18 @@ int ParameterAnalyzer::caseType() {
     return this->type;
 }
 
+void ParameterAnalyzer::dataPreparation(RoutingRegion& builder) {
+
+    if (caseType() == 0) {
+        Parser98 parser = Parser98(input(), FileHandler::AutoFileType, builder);
+        parser.parse();
+    } else {
+        Parser07 parser(input(), FileHandler::AutoFileType, builder);
+        parser.parse();
+    }
+
+}
+
 RoutingParameters::RoutingParameters() {
     /* Presetting Parameter */
     /* Common Setting */
@@ -364,3 +382,5 @@ RoutingParameters::RoutingParameters() {
     box_size_inc_p3 = 15;
     BOXSIZE_INC = 10;
 }
+
+} // namespace NTHUR

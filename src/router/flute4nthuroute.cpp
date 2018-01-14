@@ -2,7 +2,8 @@
 
 #include <cassert>
 
-#include "flute-function.h"
+#include "../flute/flute-function.h"
+namespace NTHUR {
 
 Flute::Flute() {
     readLUT();      //Read in the binary lookup table - POWVFILE, POSTFILE
@@ -40,3 +41,4 @@ void Flute::plotTree(Tree& routingTree) {
 int Flute::treeWireLength(Tree& routingTree) {
     return static_cast<int>(wirelength(routingTree));
 }
+} // namespace NTHUR

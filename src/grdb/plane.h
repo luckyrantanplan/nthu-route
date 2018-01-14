@@ -14,6 +14,9 @@
 #include "../misc/geometry.h"
 #include "EdgePlane.h"
 
+namespace NTHUR {
+
+
 template<class VertexT, class EdgeT>
 class Plane {
 public:
@@ -158,5 +161,7 @@ inline std::string Plane<VertexT, EdgeT>::toString() const {
     }
     return s;
 }
+
+} // namespace NTHUR
 
 #endif //INC_PLANE_H

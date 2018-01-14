@@ -14,8 +14,6 @@
 #define SPDLOG_TRACE_ON
 #include "../spdlog/spdlog.h"
 
-void dataPreparation(ParameterAnalyzer& ap, RoutingRegion& builder);
-
 int main(int argc, char* argv[]) {
 
     auto console_sp = spdlog::stdout_logger_mt("NTHUR");
@@ -43,16 +41,16 @@ int main(int argc, char* argv[]) {
     log.info("=======================================================\n");
 
     clock_t t0 = clock();
-    ParameterAnalyzer ap(argc, argv);
+    NTHUR::ParameterAnalyzer ap(argc, argv);
 
-    RoutingRegion routingData;
+    NTHUR::RoutingRegion routingData;
 
-    dataPreparation(ap, routingData);
+    ap.dataPreparation(routingData);
 
-    Congestion congestion(routingData.get_gridx(), routingData.get_gridy());
+    NTHUR::Congestion congestion(routingData.get_gridx(), routingData.get_gridy());
 
     clock_t t1 = clock();
-    Construct_2d_tree tree(ap.routing_param(), ap.parameter(), routingData, congestion);
+    NTHUR::Construct_2d_tree tree(ap.routing_param(), ap.parameter(), routingData, congestion);
     clock_t t2 = clock();
     // now the post processing is handle by Construct_2d_tree
     clock_t t3 = clock();
@@ -62,7 +60,7 @@ int main(int argc, char* argv[]) {
         //IBM Cases
     } else {
         //ISPD'07 Cases
-        Layer_assignment(congestion, tree.rr_map, ap.output());
+        NTHUR::Layer_assignment(congestion, tree.rr_map, ap.output());
         clock_t t4 = clock();
         printf("time: %.2f %.2f\n", (double) (t4 - t3) / CLOCKS_PER_SEC, (double) (t4 - t0) / CLOCKS_PER_SEC);
     }
@@ -70,14 +68,3 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 
-void dataPreparation(ParameterAnalyzer& ap, RoutingRegion& builder) {
-
-    if (ap.caseType() == 0) {
-        Parser98 parser = Parser98(ap.input(), FileHandler::AutoFileType, builder);
-        parser.parse();
-    } else {
-        Parser07 parser(ap.input(), FileHandler::AutoFileType, builder);
-        parser.parse();
-    }
-
-}

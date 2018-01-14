@@ -11,6 +11,9 @@
 
 #include "../misc/filehandler.h"
 
+namespace NTHUR {
+
+
 class RoutingRegion;
 
 /** 
@@ -73,4 +76,6 @@ inline Parser07::Parser07(const std::string& fname, FileHandler::FileType ftype,
 inline Parser98::Parser98(const std::string& fname, FileHandler::FileType ftype, RoutingRegion& builder) :
         fname_(fname), delims_(" \t\n"), fh_(fname.data(), ftype), builder_ { builder } {
 }
+} // namespace NTHUR
+
 #endif //INC_PARSER_H

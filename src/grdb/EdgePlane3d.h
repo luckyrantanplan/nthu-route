@@ -23,7 +23,7 @@ namespace adaptors {
 struct sliced;
 } /* namespace adaptors */
 } /* namespace boost */
-
+namespace NTHUR {
 ///@brief The data structure for presenting the routing edges in global routing area.
 ///@details User can specify the data structure of routing edges by their own, and
 ///         the default data structure of routing edges is a integer.
@@ -269,4 +269,6 @@ template<class T>
 inline const T& EdgePlane3d<T>::get(const Coordinate_3d& c, const EdgeDir dir) const {
     return edgePlane_[c.x][c.y][c.z][dir];
 }
+} // namespace NTHUR
+
 #endif /* SRC_GRDB_EDGEPLANE3D_H_ */

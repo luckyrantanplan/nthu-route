@@ -12,6 +12,9 @@
 
 #include "../misc/geometry.h"
 
+namespace NTHUR {
+
+
 class Congestion;
 class Two_pin_element_2d;
 
@@ -56,5 +59,7 @@ private:
     bool smaller_than_lower_bound(const Monotonic_element& m, Bound& bound);
     bool direction_congestion(Coordinate_2d pre, int net_id, int distance, Coordinate_2d c, Monotonic_element& vertical_element, Bound& bound);
 };
+
+} // namespace NTHUR
 
 #endif /* SRC_ROUTER_MONOTONICROUTING_H_ */

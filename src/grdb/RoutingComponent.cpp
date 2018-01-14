@@ -3,6 +3,9 @@
 
 #include <climits>
 
+namespace NTHUR {
+
+
 /*******
  Pin
  ******/
@@ -132,3 +135,5 @@ void RoutingSpace::assignTileCoordinate() {
         }
     }
 }
+
+} // namespace NTHUR

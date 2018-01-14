@@ -10,6 +10,9 @@
  * ********************/
 #include "DataDef.h"
 
+namespace NTHUR {
+
+
 Edge_2d::Edge_2d() :
         cost(0.0), MMVisitFlag(-1), cur_cap(0.), max_cap(0.), history(1), used_net(128) {
 
@@ -28,3 +31,5 @@ bool Two_pin_element_2d::comp_2pin_net_from_path(Two_pin_element_2d&a, Two_pin_e
     int b_bbox_size = abs(b.pin1.x - b.pin2.x) + abs(b.pin1.y - b.pin2.y);
     return (a_bbox_size < b_bbox_size);
 }
+
+} // namespace NTHUR

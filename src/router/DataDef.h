@@ -22,6 +22,9 @@
 #define error_bound 0.00000000001
 #define neg_error_bound -0.00000000001
 
+namespace NTHUR {
+
+
 
 constexpr int debug_net_id=661;
 constexpr int debug_serial_id=1007;
@@ -125,5 +128,7 @@ public:
 
 typedef std::vector<Two_pin_element_2d> Two_pin_list_2d;
 
+
+} // namespace NTHUR
 
 #endif /* SRC_DATADEF_H_ */

@@ -5,7 +5,9 @@
 #include <vector>
 
 #include "../grdb/RoutingComponent.h"
-#include "flute-ds.h"           // flute data structure
+#include "../flute/flute-ds.h"           // flute data structure
+
+namespace NTHUR{
 
 struct TreeFlute {
     int deg;          // degree
@@ -53,5 +55,5 @@ private:
     std::array<DTYPE, MAXD> x_;             ///< temporal integer array used by flute
     std::array<DTYPE, MAXD> y_;             ///< temporal integer array used by flute
 };
-
+} // namespace NTHUR
 #endif //INC_FLUTE_4_NTHUROUTE_H

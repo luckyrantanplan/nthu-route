@@ -12,10 +12,13 @@
 #include "../misc/geometry.h"
 #include "DataDef.h"
 
-class Congestion;
 namespace spdlog {
 class logger;
 } /* namespace spdlog */
+
+namespace NTHUR {
+
+class Congestion;
 
 class Two_pin_element_2d;
 struct Construct_2d_tree;
@@ -128,5 +131,7 @@ private:
     void fillTree(int offset, int net_id);
 
 };
+
+} // namespace NTHUR
 
 #endif //INC_REOUTE_2PINNETS_H
