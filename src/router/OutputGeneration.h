@@ -31,8 +31,10 @@ namespace NTHUR {
 
 class Edge_3d {
 public:
-    Edge_3d();
+    Edge_3d() :
+            max_cap(0), cur_cap(0), used_net(5) {
 
+    }
 public:
     typedef std::unordered_map<int, int> LRoutedNetTable;
     bool isOverflow() const {

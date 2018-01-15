@@ -23,11 +23,6 @@
 
 namespace NTHUR {
 
-Edge_3d::Edge_3d() :
-        max_cap(0), cur_cap(0), used_net(5) {
-
-}
-
 void Layer_assignment::initial_overflow_map() {
 
     for (auto pair : boost::combine(congestion.congestionMap2d.all(), layerInfo_map.edges().all())) {
