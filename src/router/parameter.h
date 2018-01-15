@@ -264,7 +264,7 @@ public:
     //return the input type: 0 for IBM test cases  and 1 for the others
     int caseType();
     RoutingParameters& routing_param();
-    void dataPreparation(RoutingRegion& builder);
+    RoutingRegion dataPreparation();
 private:
     int argc;
     char** argv;
@@ -285,8 +285,6 @@ inline RoutingParameters&
 ParameterAnalyzer::routing_param() {
     return routingParam;
 }
-
-
 
 } // namespace NTHUR
 

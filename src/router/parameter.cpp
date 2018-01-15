@@ -3,9 +3,9 @@
 #include <getopt.h>
 #include <cstdlib>
 #include <iostream>
-#include <memory>
 
 #include "../grdb/parser.h"
+#include "../grdb/RoutingRegion.h"
 #include "../misc/filehandler.h"
 #include "../spdlog/details/logger_impl.h"
 #include "../spdlog/details/spdlog_impl.h"
@@ -376,15 +376,14 @@ int ParameterAnalyzer::caseType() {
     return this->type;
 }
 
-void ParameterAnalyzer::dataPreparation(RoutingRegion& builder) {
+RoutingRegion ParameterAnalyzer::dataPreparation() {
 
     if (caseType() == 0) {
-        Parser98 parser = Parser98(input(), FileHandler::AutoFileType, builder);
-        parser.parse();
-    } else {
-        Parser07 parser(input(), FileHandler::AutoFileType, builder);
-        parser.parse();
+        Parser98 parser = Parser98(input(), FileHandler::AutoFileType);
+        return parser.parse();
     }
+    Parser07 parser(input(), FileHandler::AutoFileType);
+    return parser.parse();
 
 }
 

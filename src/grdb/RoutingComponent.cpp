@@ -104,31 +104,4 @@ bool Net::comp_net(const Net& a, const Net& b) {
     }
 }
 
-/*************
- * RoutingSpace
- *************/
-RoutingSpace::RoutingSpace(int x, int y, int z) :
-        tileWidth(1), tileHeight(1), //
-        originX(0), originY(0), wireWidth(z), wireSpacing(z), viaSpacing(z), //
-        routingSpace_ { std::vector<Plane<Pin, int> >(z, Plane<Pin, int>(x, y)) }
-
-{
-
-    assignTileCoordinate();
-}
-
-void RoutingSpace::assignTileCoordinate() {
-    if (routingSpace_.size() > 0) {
-        for (int z = 0; z < getZSize(); ++z) {
-            for (int x = 0; x < getXSize(); ++x) {
-                for (int y = 0; y < getYSize(); ++y) {
-                    routingSpace_[z].vertex(x, y).x(x);
-                    routingSpace_[z].vertex(x, y).y(y);
-                    routingSpace_[z].vertex(x, y).z(z);
-                }
-            }
-        }
-    }
-}
-
 } // namespace NTHUR

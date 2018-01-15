@@ -6,7 +6,7 @@
  */
 
 #include "OutputGeneration.h"
-
+#include <boost/range/combine.hpp>
 #include <boost/range/iterator_range_core.hpp>
 #include <algorithm>
 #include <cstddef>
@@ -28,19 +28,11 @@ OutputGeneration::OutputGeneration(const RoutingRegion& rr) :
     for (Edge_3d& edge : cur_map_3d.all()) {
         edge.cur_cap = 0;
     }
-    for (int k = 0; k < rr.get_layerNumber(); ++k) {
 
-        const EdgePlane<int> edges = rr.getLayer(k).edges();
-        for (int x = 0; x < rr.get_gridx(); ++x) {
-            for (int y = 0; y < rr.get_gridy(); ++y) {
-                Coordinate_3d c = Coordinate_3d { x, y, k };
-                cur_map_3d.east(c).max_cap = edges.east(Coordinate_2d { x, y });
-                cur_map_3d.south(c).max_cap = edges.south(Coordinate_2d { x, y });
-                cur_map_3d.front(c).max_cap = std::numeric_limits<int>::max();
-            }
-
-        }
+    for (auto pair : boost::combine(rr.getRoutingSpace().all(), cur_map_3d.all())) {
+        pair.get<1>().max_cap = pair.get<0>();
     }
+
     log_sp = spdlog::get("NTHUR");
 }
 
@@ -153,7 +145,7 @@ void OutputGeneration::generate_output(int net_id, const std::vector<Segment3d>&
 
 // the beginning of a net of output file
 
-    output << rr_map.get_netName(net_id) << " " << rr_map.get_netSerialId(net_id) << " " << v.size() << "\n";
+    output << rr_map.get_net(net_id).get_name() << " " << rr_map.get_net(net_id).serialNumber << " " << v.size() << "\n";
 
     // have edge
     for (const Segment3d& seg : v) {
@@ -203,6 +195,5 @@ void OutputGeneration::print_max_overflow() const {
     log_sp->info("3D overflow edge number = {} ", lines);
 
 }
-
 
 } /* namespace NTHUR */

@@ -84,7 +84,7 @@ private:
 
 inline const std::vector<Pin>& OutputGeneration::get_nPin(int net_id) const {
     //get Pins by net
-    return rr_map.get_nPin(net_id);
+    return rr_map.get_net(net_id).get_pinList();
 }
 
 inline std::size_t OutputGeneration::get_netNumber() const {

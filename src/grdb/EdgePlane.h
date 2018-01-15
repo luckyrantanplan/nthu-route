@@ -10,19 +10,15 @@
 
 #include <boost/multi_array/base.hpp>
 #include <boost/multi_array.hpp>
-#include <boost/range/adaptor/argument_fwd.hpp>
-#include <boost/range/adaptor/strided.hpp>
 #include <boost/range/iterator_range_core.hpp>
 #include <array>
 #include <cstddef>
 #include <exception>
 #include <string>
-#include <boost/range/adaptor/sliced.hpp>
 
 #include "../misc/geometry.h"
 
 namespace NTHUR {
-
 
 ///@brief The data structure for presenting the routing edges in global routing area.
 ///@details User can specify the data structure of routing edges by their own, and
@@ -185,13 +181,14 @@ public:
     ///@brief Get the specified edge
     const T& east(const Coordinate_2d& c) const;
 
-     ///@brief Get the specified edge
+    ///@brief Get the specified edge
     const T& south(const Coordinate_2d& c) const;
 
-    auto allVertical();
+    ///@brief Get the specified edge
+    T& east(const Coordinate_2d& c);
 
-    auto allHorizontal();
-
+    ///@brief Get the specified edge
+    T& south(const Coordinate_2d& c);
     std::string toString() const;
 
 private:
@@ -247,6 +244,22 @@ boost::iterator_range<const T*> EdgePlane<T>::all() const {
 ///@details User can specify the data structure of routing edges by their own, and
 ///         the default data structure of routing edges is a integer.
 template<class T>
+inline T& EdgePlane<T>::east(const Coordinate_2d& c) {
+    return edgePlane_[c.x][c.y][EAST];
+}
+
+///@brief The data structure for presenting the routing edges in global routing area.
+///@details User can specify the data structure of routing edges by their own, and
+///         the default data structure of routing edges is a integer.
+template<class T>
+inline T& EdgePlane<T>::south(const Coordinate_2d& c) {
+    return edgePlane_[c.x][c.y][SOUTH];
+}
+
+///@brief The data structure for presenting the routing edges in global routing area.
+///@details User can specify the data structure of routing edges by their own, and
+///         the default data structure of routing edges is a integer.
+template<class T>
 inline const T& EdgePlane<T>::east(const Coordinate_2d& c) const {
     return edgePlane_[c.x][c.y][EAST];
 }
@@ -257,16 +270,6 @@ inline const T& EdgePlane<T>::east(const Coordinate_2d& c) const {
 template<class T>
 inline const T& EdgePlane<T>::south(const Coordinate_2d& c) const {
     return edgePlane_[c.x][c.y][SOUTH];
-}
-
-template<class T>
-auto EdgePlane<T>::allVertical() {
-    return all() | boost::adaptors::sliced(1, edgePlane_.num_elements()) | boost::adaptors::strided(2);
-}
-
-template<class T>
-auto EdgePlane<T>::allHorizontal() {
-    return all() | boost::adaptors::strided(2);
 }
 
 template<class T>

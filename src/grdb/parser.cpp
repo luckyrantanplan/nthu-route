@@ -16,7 +16,6 @@
 
 namespace NTHUR {
 
-
 #define MAX_STRING_BUFER_LENGTH 512
 #define MAX_PIN 1000
 
@@ -29,23 +28,21 @@ Parser07::~Parser07() {
 }
 
 // virtual
-void Parser07::parse() {
+RoutingRegion Parser07::parse() {
 
     // Begin to parse file
-    if (fh_.open(FileHandler::ReadAccessMode)) {
-        parseRoutingRegion();
-        parseNets();
-        adjustCapacity();
-    } else {
+    if (!fh_.open(FileHandler::ReadAccessMode)) {
         std::cerr << "Error opening test case." << std::endl;
         abort();
     }
-
-    builder_.endBuild();
+    RoutingRegion builder(parseRoutingRegion());
+    parseNets(builder);
+    adjustCapacity(builder);
+    return builder;
 }
 
 // virtual
-void Parser07::parseRoutingRegion() {
+RoutingRegion Parser07::parseRoutingRegion() {
     // buffer for strtok()
     std::array<char, MAX_STRING_BUFER_LENGTH> stringBuffer;
 
@@ -56,7 +53,7 @@ void Parser07::parseRoutingRegion() {
     int x = atoi(strtok(NULL, delims_.c_str()));
     int y = atoi(strtok(NULL, delims_.c_str()));
     int layerNumber = atoi(strtok(NULL, delims_.c_str()));
-    builder_.setGrid(x, y, layerNumber);
+    RoutingRegion builder_(x, y, layerNumber);
 
     // Set vertical capacity
     fh_.getline(stringBuffer.data(), MAX_STRING_BUFER_LENGTH);
@@ -116,9 +113,10 @@ void Parser07::parseRoutingRegion() {
     int tileHeight = atoi(strtok(NULL, delims_.c_str()));
     builder_.setTileTransformInformation(llx, lly, tileWidth, tileHeight);
 
+    return builder_;
 }
 
-void Parser07::parseNets() {
+void Parser07::parseNets(RoutingRegion& builder_) {
     // buffer for strtok()
     std::array<char, MAX_STRING_BUFER_LENGTH> stringBuffer;
 
@@ -134,12 +132,12 @@ void Parser07::parseNets() {
     builder_.setNetNumber(netNumber);
 
     for (int i = 0; i < netNumber; ++i) {
-        parseANet();
+        parseANet(builder_);
     }
 
 }
 
-void Parser07::parseANet() {
+void Parser07::parseANet(RoutingRegion& builder_) {
     // buffer for strtok()
     std::array<char, MAX_STRING_BUFER_LENGTH> stringBuffer;
 
@@ -170,7 +168,7 @@ void Parser07::parseANet() {
 
 }
 
-void Parser07::adjustCapacity() {
+void Parser07::adjustCapacity(RoutingRegion& builder_) {
     // buffer for strtok()
     std::array<char, MAX_STRING_BUFER_LENGTH> stringBuffer;
 
@@ -207,21 +205,20 @@ void Parser07::adjustCapacity() {
 Parser98::~Parser98() {
 }
 
-void Parser98::parse() {
+RoutingRegion Parser98::parse() {
 
     // Begin to parse file
-    if (fh_.open(FileHandler::ReadAccessMode)) {
-        parseRoutingRegion();
-        parseNets();
-    } else {
+    if (!fh_.open(FileHandler::ReadAccessMode)) {
         std::cerr << "Error opening test case." << std::endl;
         abort();
     }
+    RoutingRegion builder(parseRoutingRegion());
+    parseNets(builder);
+    return builder;
 
-    builder_.endBuild();
 }
 
-void Parser98::parseRoutingRegion() {
+RoutingRegion Parser98::parseRoutingRegion() {
     std::array<char, MAX_STRING_BUFER_LENGTH> stringBuffer; // buffer for strtok()
 
     // Get grid size and layer number
@@ -230,7 +227,7 @@ void Parser98::parseRoutingRegion() {
     strtok(stringBuffer.data(), delims_.c_str());        // "grid" string
     int x = atoi(strtok(NULL, delims_.c_str()));
     int y = atoi(strtok(NULL, delims_.c_str()));
-    builder_.setGrid(x, y, 1);                     // All test cases in ISPD'98 are single layer
+    RoutingRegion builder_(x, y, 1);                     // All test cases in ISPD'98 are single layer
 
     // Set vertical capacity
     fh_.getline(stringBuffer.data(), MAX_STRING_BUFER_LENGTH);
@@ -266,10 +263,10 @@ void Parser98::parseRoutingRegion() {
     int tileWidth = 1;
     int tileHeight = 1;
     builder_.setTileTransformInformation(llx, lly, tileWidth, tileHeight);
-
+    return builder_;
 }
 
-void Parser98::parseNets() {
+void Parser98::parseNets(RoutingRegion& builder_) {
     // buffer for strtok()
     std::array<char, MAX_STRING_BUFER_LENGTH> stringBuffer;
 
@@ -285,12 +282,12 @@ void Parser98::parseNets() {
     builder_.setNetNumber(netNumber);
 
     for (int i = 0; i < netNumber; ++i) {
-        parseANet();
+        parseANet(builder_);
     }
 
 }
 
-void Parser98::parseANet() {
+void Parser98::parseANet(RoutingRegion& builder_) {
     // buffer for strtok()
     std::array<char, MAX_STRING_BUFER_LENGTH> stringBuffer;
     // Get net information
@@ -316,7 +313,5 @@ void Parser98::parseANet() {
     }
 
 }
-
-//}}}
 
 } // namespace NTHUR

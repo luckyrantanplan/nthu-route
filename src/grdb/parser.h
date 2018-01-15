@@ -13,7 +13,6 @@
 
 namespace NTHUR {
 
-
 class RoutingRegion;
 
 /** 
@@ -23,24 +22,23 @@ class Parser07 {
     std::string fname_;      ///< File name
     std::string delims_;
     FileHandler fh_;    ///< File Handler
-    RoutingRegion& builder_;    ///< Data stucture builder
 public:
-    Parser07(const std::string& fname, FileHandler::FileType ftype, RoutingRegion& builder);
-    virtual ~Parser07();
-    virtual void parse();
+    Parser07(const std::string& fname, FileHandler::FileType ftype);
+    ~Parser07();
+    RoutingRegion parse();
 
 private:
     /// Parse information of routing layers, tiles
-    void parseRoutingRegion();
+    RoutingRegion parseRoutingRegion();
 
     /// Parse information of nets
-    void parseNets();
+    void parseNets(RoutingRegion& builder_);
 
     /// Parse information of one net
-    void parseANet();
+    void parseANet(RoutingRegion& builder_);
 
     /// Parse information of adjustmenting edge capacity
-    void adjustCapacity();
+    void adjustCapacity(RoutingRegion& builder_);
 };
 
 /**
@@ -50,31 +48,31 @@ class Parser98 {
     std::string fname_;      ///< File name
     std::string delims_;
     FileHandler fh_;    ///< File Handler
-    RoutingRegion& builder_;  ///< Data stucture builder
-public:
-    Parser98(const std::string& fname, FileHandler::FileType ftype, RoutingRegion& builder);
-    virtual ~Parser98();
 
-    virtual void parse();
+public:
+    Parser98(const std::string& fname, FileHandler::FileType ftype);
+    ~Parser98();
+
+    RoutingRegion parse();
 
 private:
     /// Parse the information of routing layers, tiles
-    void parseRoutingRegion();
+    RoutingRegion parseRoutingRegion();
 
     /// Parse the information of nets
-    void parseNets();
+    void parseNets(RoutingRegion& builder_);
 
     /// Parse information of one net
-    void parseANet();
+    void parseANet(RoutingRegion& builder_);
 };
 
 //======= Inline Functions =======
-inline Parser07::Parser07(const std::string& fname, FileHandler::FileType ftype, RoutingRegion& builder) :
-        fname_(fname), delims_(" \t\n"), fh_(fname.data(), ftype), builder_ { builder } {
+inline Parser07::Parser07(const std::string& fname, FileHandler::FileType ftype) :
+        fname_(fname), delims_(" \t\n"), fh_(fname.data(), ftype) {
 }
 
-inline Parser98::Parser98(const std::string& fname, FileHandler::FileType ftype, RoutingRegion& builder) :
-        fname_(fname), delims_(" \t\n"), fh_(fname.data(), ftype), builder_ { builder } {
+inline Parser98::Parser98(const std::string& fname, FileHandler::FileType ftype) :
+        fname_(fname), delims_(" \t\n"), fh_(fname.data(), ftype) {
 }
 } // namespace NTHUR
 

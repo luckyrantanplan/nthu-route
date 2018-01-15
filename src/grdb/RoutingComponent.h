@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "EdgePlane3d.h"
 #include "plane.h"
 
 namespace NTHUR {
@@ -96,95 +97,6 @@ private:
     int maxPinY;
     std::vector<Pin> pin_list;
 };
-
-class RoutingSpace {
-
-public:
-    int tileWidth;
-    int tileHeight;
-    int originX;
-    int originY;
-    std::vector<int> wireWidth;		//minimum wire width
-    std::vector<int> wireSpacing;	//minimum wire spacing
-    std::vector<int> viaSpacing;	//minimum via spacing
-
-public:
-    RoutingSpace(int x = 0, int y = 0, int z = 0);
-
-    void resize(int x, int y, int z);
-
-    ///Get the size of routing spacing in x-axis
-    int getXSize() const;
-
-    ///Get the size of routing spacing in y-axis
-    int getYSize() const;
-
-    ///Get the size of routing spacing in z-axis
-    int getZSize() const;
-
-    ///@brief Get the specified tile
-    Pin& tile(int x, int y, int z);
-
-    ///@brief Get the specified tile, and the tile is read-only.
-    const Pin& tile(int x, int y, int z) const;
-
-    ///@brief Get the specified edge
-    Plane<Pin, int>& layer(int z);
-
-    ///@brief Get the specified edge, and the edge is read-only.
-    const Plane<Pin, int>& layer(int z) const;
-
-private:
-    std::vector<Plane<Pin, int> > routingSpace_;
-    void assignTileCoordinate();
-};
-
-typedef std::vector<Net> NetList;
-
-//Inline Functions
-/*************
- * RoutingSpace
- *************/
-inline
-void RoutingSpace::resize(int x, int y, int z) {
-    //routingSpace_.resize(x, y , z);
-    routingSpace_.resize(z, Plane<Pin, int>(x, y));
-    wireWidth.resize(z);
-    wireSpacing.resize(z);
-    viaSpacing.resize(z);
-    assignTileCoordinate();
-}
-
-inline Pin& RoutingSpace::tile(int x, int y, int z) {
-    return routingSpace_[z].vertex(x, y);
-}
-
-inline const Pin& RoutingSpace::tile(int x, int y, int z) const {
-    return routingSpace_[z].vertex(x, y);
-}
-
-inline Plane<Pin, int>& RoutingSpace::layer(int z) {
-    return routingSpace_[z];
-}
-
-inline const Plane<Pin, int> & RoutingSpace::layer(int z) const {
-    return routingSpace_[z];
-}
-
-inline
-int RoutingSpace::getXSize() const {
-    return routingSpace_[0].getXSize();
-}
-
-inline
-int RoutingSpace::getYSize() const {
-    return routingSpace_[0].getYSize();
-}
-
-inline
-int RoutingSpace::getZSize() const {
-    return routingSpace_.size();
-}
 
 } // namespace NTHUR
 

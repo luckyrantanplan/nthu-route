@@ -46,9 +46,9 @@ int main(int argc, char* argv[]) {
     auto t0 = std::chrono::system_clock::now();
     NTHUR::ParameterAnalyzer ap(argc, argv);
 
-    NTHUR::RoutingRegion routingData;
+    NTHUR::RoutingRegion routingData(ap.dataPreparation());
 
-    ap.dataPreparation(routingData);
+    log.info(" Total nets to route= {}", routingData.get_netNumber());
 
     NTHUR::Congestion congestion(routingData.get_gridx(), routingData.get_gridy());
 

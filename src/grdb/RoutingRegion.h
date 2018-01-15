@@ -13,32 +13,49 @@ namespace NTHUR {
 class RoutingRegion {
 public:
 
-    //Get Functions
-    // Basic Information
-    int get_gridx() const;				//get x grids (tile)
-    int get_gridy() const;				//get y grids (tile)
-    int get_layerNumber() const;			//get layer number
-    int get_llx() const;							//get x-coordinate of lower left corner
-    int get_lly() const;					//get y-coordinate of lower left corner
-    int get_tileWidth() const;			//get tile width
-    int get_tileHeight() const;			//get tile height
-    std::size_t get_netNumber() const;                 //get net number
+    RoutingRegion(int x, int y, int z) :
+            routingSpace_ { Coordinate_3d { x, y, z } }, //
+            tileWidth(1), //
+            tileHeight(1), //
+            originX(0), //
+            originY(0), //
+            wireWidth { z }, //
+            wireSpacing { z }, //
+            viaSpacing { z } //
+    {
 
-    const std::string& get_netName(int netPos) const;	//get net name
-    const int& get_netSerialId(int netId) const;
-    int get_netPinNumber(int netPos) const;		//get pin number of the specified net
+        max_z = z;
+        max_x = x;
+        max_y = y;
 
-    NetList& get_netList();
+        for (int x = 0; x < max_x; ++x) {
+            for (int y = 0; y < max_y; ++y) {
+                for (int z = 0; z < max_z; ++z) {
+                    routingSpace_.front(Coordinate_3d { x, y, z }) = std::numeric_limits<int>::max();
+                }
+            }
+        }
+    }
 
-    // Pin list
-    const std::vector<Pin>& get_nPin(int net_id) const;	//get Pins by net
-    std::string nPinToString(int net_id) const;
+//Get Functions
+// Basic Information
+    int get_gridx() const;        //get x grids (tile)
+    int get_gridy() const;        //get y grids (tile)
+    int get_layerNumber() const;        //get layer number
+    int get_llx() const;        //get x-coordinate of lower left corner
+    int get_lly() const;        //get y-coordinate of lower left corner
+    int get_tileWidth() const;        //get tile width
+    int get_tileHeight() const;        //get tile height
+    std::size_t get_netNumber() const;        //get net number
 
-    Plane<Pin, int>& getLayer(int z);
-    const Plane<Pin, int>& getLayer(int z) const;
+    const Net& get_net(int netId) const;
+
+// Pin list
+
+    const EdgePlane3d<int>& getRoutingSpace() const;
 
 public:
-    void setGrid(unsigned int x, unsigned int y, unsigned int layerNumber);
+
     void setVerticalCapacity(unsigned int layerId, unsigned int capacity);
     void setHorizontalCapacity(unsigned int layerId, unsigned int capacity);
     void setNetNumber(unsigned int netNumber);
@@ -50,35 +67,46 @@ public:
     void beginAddANet(const char* netName, unsigned int netSerial, unsigned int pinNumber, unsigned int minWidth);
     void addPin(unsigned int x, unsigned int y, unsigned int layer);
     void endAddANet();
-    void endBuild();
 
 private:
-    NetList netList_;
-    RoutingSpace routingSpace_;
+    std::vector<Net> netList_;
+    EdgePlane3d<int> routingSpace_;
+    int tileWidth;
+    int tileHeight;
+    int originX;
+    int originY;
 
-    //First int is the net id given from input file,
-    //the second id is the net position in NetList
+    int max_z;
+    int max_x;
+    int max_y;
+
+    std::vector<int> wireWidth;        //minimum wire width
+    std::vector<int> wireSpacing;        //minimum wire spacing
+    std::vector<int> viaSpacing;        //minimum via spacing
+//First int is the net id given from input file,
+//the second id is the net position in NetList
     typedef std::unordered_map<int, int> NetIdLookupTable;
     NetIdLookupTable netSerial2NetId_;
 
     typedef std::set<std::pair<int, int> > PinTable;
     PinTable pinTable_;
-};
+}
+;
 
 //Inline Functions
 inline
 int RoutingRegion::get_gridx() const {
-    return routingSpace_.getXSize();
+    return max_x;
 }
 
 inline
 int RoutingRegion::get_gridy() const {
-    return routingSpace_.getYSize();
+    return max_y;
 }
 
 inline
 int RoutingRegion::get_layerNumber() const {
-    return routingSpace_.getZSize();
+    return max_z;
 }
 
 inline std::size_t RoutingRegion::get_netNumber() const {
@@ -87,72 +115,47 @@ inline std::size_t RoutingRegion::get_netNumber() const {
 
 inline
 int RoutingRegion::get_llx() const {
-    return routingSpace_.originX;
+    return originX;
 }
 
 inline
 int RoutingRegion::get_lly() const {
-    return routingSpace_.originY;
+    return originY;
 }
 
 inline
 int RoutingRegion::get_tileWidth() const {
-    return routingSpace_.tileWidth;
+    return tileWidth;
 }
 
 inline
 int RoutingRegion::get_tileHeight() const {
-    return routingSpace_.tileHeight;
+    return tileHeight;
 }
 
-inline const std::string& RoutingRegion::get_netName(int netId) const {
-    return netList_[netId].get_name();
-}
-
-inline const int& RoutingRegion::get_netSerialId(int netId) const {
-    return netList_[netId].serialNumber;
-}
-
-inline
-int RoutingRegion::get_netPinNumber(int netId) const {
-    return netList_[netId].get_pinList().size();
-}
-
-inline NetList& RoutingRegion::get_netList() {
-    return netList_;
-}
-
-inline const std::vector<Pin>& RoutingRegion::get_nPin(int netId) const {	//get Pins by net
-    return netList_[netId].get_pinList();
+inline const Net& RoutingRegion::get_net(int netId) const {
+    return netList_[netId];
 }
 
 inline
 void RoutingRegion::setLayerMinimumWidth(unsigned int layerId, unsigned int width) {
-    routingSpace_.wireWidth[layerId] = width;
+    wireWidth[layerId] = width;
 }
 
 inline
 void RoutingRegion::setLayerMinimumSpacing(unsigned int layerId, unsigned int spacing) {
-    routingSpace_.wireSpacing[layerId] = spacing;
+    wireSpacing[layerId] = spacing;
 }
 
 inline
-void RoutingRegion::setViaSpacing(unsigned int layerId, unsigned int viaSpacing) {
-    routingSpace_.viaSpacing[layerId] = viaSpacing;
+void RoutingRegion::setViaSpacing(unsigned int layerId, unsigned int value) {
+    viaSpacing[layerId] = value;
 }
 
-inline std::string RoutingRegion::nPinToString(int net_id) const {
-    return netList_[net_id].toString();
+inline const EdgePlane3d<int>& RoutingRegion::getRoutingSpace() const {
+    return routingSpace_;
 }
 
-inline const Plane<Pin, int>& RoutingRegion::getLayer(int z) const {
-    return routingSpace_.layer(z);
-}
-
-inline Plane<Pin, int>& RoutingRegion::getLayer(int z) {
-    return routingSpace_.layer(z);
-
-}
 } // namespace NTHUR
 
 #endif /*INC_ROUTINGREGION_H*/

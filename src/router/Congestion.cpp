@@ -179,18 +179,29 @@ void Congestion::init_2d_map(RoutingRegion& rr_map) {
 #else
     int divisor = 1;
 #endif
-    for (int layer = 0; layer < rr_map.get_layerNumber(); ++layer) {
-        for (auto pair : boost::combine(congestionMap2d.all(), rr_map.getLayer(layer).edges().all())) {
-            pair.get<0>().max_cap += pair.get<1>() / divisor;
+    const EdgePlane3d<int>& routingSpace = rr_map.getRoutingSpace();
+
+    for (int x = 0; x < routingSpace.getXSize(); ++x) {
+        for (int y = 0; y < routingSpace.getYSize(); ++y) {
+            NTHUR::Coordinate_2d c2 = Coordinate_2d { x, y };
+            for (int z = 0; z < routingSpace.getZSize(); ++z) {
+                congestionMap2d.east(c2).max_cap += routingSpace.east(Coordinate_3d { x, y, z });
+                congestionMap2d.south(c2).max_cap += routingSpace.south(Coordinate_3d { x, y, z });
+            }
         }
     }
+    for (Edge_2d& edge : congestionMap2d.all()) {
+        edge.max_cap /= divisor;
+
+    }
+
 }
 
 //Sum all demand value on every edge
 //So if demand value = wire length, this function can be used
-int Congestion::cal_total_wirelength() {
+int Congestion::cal_total_wirelength() const {
     int total_wl = 0;
-    for (Edge_2d& edge : congestionMap2d.all()) {
+    for (const Edge_2d& edge : congestionMap2d.all()) {
         total_wl += (int) edge.cur_cap;
 
     }

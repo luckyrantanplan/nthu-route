@@ -197,7 +197,7 @@ void Construct_2d_tree::gen_FR_congestion_map() {
 
 //call flute to gen steiner tree and put the result in flutetree[]
         TreeFlute& tree = flutetree[i];
-        netRoutingTreeRouter.routeNet(rr_map.get_nPin(i), tree);	//
+        netRoutingTreeRouter.routeNet(rr_map.get_net(i).get_pinList(), tree);	//
         SPDLOG_TRACE(log_sp, "rr_map.nPinList(i): {}", rr_map.nPinToString(i));
 //The total node # in a tree, those nodes include pin and steiner point
 //And it is defined as ((2 * degree of a tree) - 2) by the authors of flute
@@ -232,7 +232,7 @@ void Construct_2d_tree::gen_FR_congestion_map() {
 //sort net by their bounding box size, then by their pin number
     vector<const Net*> sort_net;
     for (uint32_t i = 0; i < rr_map.get_netNumber(); ++i) {
-        sort_net.push_back(&rr_map.get_netList()[i]);
+        sort_net.push_back(&rr_map.get_net(i));
     }
     sort(sort_net.begin(), sort_net.end(), [&]( const Net* a, const Net* b ) {return Net::comp_net(*a,*b);});
 

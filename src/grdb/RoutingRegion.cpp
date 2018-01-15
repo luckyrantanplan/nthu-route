@@ -4,24 +4,23 @@
 
 namespace NTHUR {
 
-
 /***************
  RoutingRegion
  **************/
 
-void RoutingRegion::setGrid(unsigned int x, unsigned int y, unsigned int layerNumber) {
-    routingSpace_.resize(x, y, layerNumber);
-}
-
 void RoutingRegion::setVerticalCapacity(unsigned int layerId, unsigned int capacity) {
-    for (auto& edge : routingSpace_.layer(layerId).edges().allVertical()) {
-        edge = capacity;
+    for (int x = 0; x < routingSpace_.getXSize(); ++x) {
+        for (int y = 0; y < routingSpace_.getYSize(); ++y) {
+            routingSpace_.south(Coordinate_3d { x, y, layerId }) = capacity;
+        }
     }
 }
 
 void RoutingRegion::setHorizontalCapacity(unsigned int layerId, unsigned int capacity) {
-    for (int& edge : routingSpace_.layer(layerId).edges().allHorizontal()) {
-        edge = capacity;
+    for (int x = 0; x < routingSpace_.getXSize(); ++x) {
+        for (int y = 0; y < routingSpace_.getYSize(); ++y) {
+            routingSpace_.east(Coordinate_3d { x, y, layerId }) = capacity;
+        }
     }
 }
 
@@ -32,18 +31,17 @@ void RoutingRegion::setNetNumber(unsigned int netNumber) {
 
 }
 
-void RoutingRegion::adjustEdgeCapacity(unsigned int x1, unsigned int y1, unsigned int z1, unsigned int x2, unsigned int y2, unsigned int,	//z2
-        unsigned int capacity) {
+void RoutingRegion::adjustEdgeCapacity(unsigned int x1, unsigned int y1, unsigned int z1, unsigned int x2, unsigned int y2, unsigned int z2, unsigned int capacity) {
 
-    routingSpace_.layer(z1).edges().edge(Coordinate_2d(x1, y1), Coordinate_2d(x2, y2)) = capacity;
+    routingSpace_.edge(Coordinate_3d(x1, y1, z1), Coordinate_3d(x2, y2, z2)) = capacity;
 
 }
 
 void RoutingRegion::setTileTransformInformation(unsigned int llx, unsigned int lly, unsigned int tWidth, unsigned int tHeight) {
-    routingSpace_.originX = llx;
-    routingSpace_.originY = lly;
-    routingSpace_.tileWidth = tWidth;
-    routingSpace_.tileHeight = tHeight;
+    originX = llx;
+    originY = lly;
+    tileWidth = tWidth;
+    tileHeight = tHeight;
 }
 
 void RoutingRegion::beginAddANet(const char* netName, unsigned int netSerial, unsigned int, //pinNumber,
@@ -61,7 +59,8 @@ void RoutingRegion::addPin(unsigned int x, unsigned int y, unsigned int layer) {
 
     if (pinTable_.find(std::pair<int, int>(tileX, tileY)) == pinTable_.end()) {
         pinTable_.insert(std::pair<int, int>(tileX, tileY));
-        netList_.back().add_pin(routingSpace_.tile(tileX, tileY, layer));
+
+        netList_.back().add_pin(Pin(tileX, tileY, layer));
     }
 }
 
@@ -70,10 +69,6 @@ void RoutingRegion::endAddANet() {
         netList_.pop_back();
     }
     pinTable_.clear();
-}
-
-void RoutingRegion::endBuild() {
-    std::cout << "Total nets to route= " << netList_.size() << std::endl;
 }
 
 } // namespace NTHUR

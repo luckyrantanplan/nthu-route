@@ -51,7 +51,7 @@ public:
     bool check_path_no_overflow(const std::vector<Coordinate_2d>&path, const int net_id, const int inc_flag) const;
     int find_overflow_max(int max_zz) const;
     void init_2d_map(RoutingRegion& rr_map);
-    int cal_total_wirelength();
+    int cal_total_wirelength() const;
     Statistic stat_congestion();
     void update_congestion_map_insert_two_pin_net(Two_pin_element_2d& element);
     void update_congestion_map_remove_two_pin_net(const std::vector<Coordinate_2d>& path, const int net_id);
