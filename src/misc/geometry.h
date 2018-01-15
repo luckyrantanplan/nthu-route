@@ -15,6 +15,7 @@
 #include <string>
 #include <unordered_map>
 
+namespace NTHUR {
 /**
  * @brief Defined the flags about position, i.e. Direction, Corner
  */
@@ -71,12 +72,12 @@ public:
     }
 
 };
-
+} // namespace NTHUR
 namespace std {
 
 template<>
-struct hash<Coordinate_2d> {
-    std::size_t operator()(const Coordinate_2d& c) const {
+struct hash<NTHUR::Coordinate_2d> {
+    std::size_t operator()(const NTHUR::Coordinate_2d& c) const {
         // Start with a hash value of 0    .
         std::size_t seed = 0;
 
@@ -92,7 +93,9 @@ struct hash<Coordinate_2d> {
     }
 };
 
-}
+}        // namespace std
+
+namespace NTHUR {
 
 class Coordinate_3d {
 public:
@@ -198,5 +201,5 @@ inline std::string Rectangle::toString() const {
     s += " downRight: " + downRight.toString();
     return s;
 }
-
+} // namespace NTHUR
 #endif //INC_GEOMETRY_H

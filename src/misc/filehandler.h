@@ -10,6 +10,7 @@
 #include <zlib.h>
 #include <string>
 
+namespace NTHUR {
 /**
  @brief Handle file basic operations.
  **/
@@ -155,5 +156,5 @@ int FileHandler::writeline(const char* buffer) {
     else
         return -1;
 }
-
+} // namespace NTHUR
 #endif //INC_FILEHANDLER_H

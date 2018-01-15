@@ -9,9 +9,11 @@
 #include <cassert>
 #include <cstdio>
 
+namespace NTHUR {
+
 //The string buffer length used for skipping a line
 //The value must >= 3
-#define MAX_BUFFER_LENGTH_FOR_SKIP_LINE 128
+constexpr int MAX_BUFFER_LENGTH_FOR_SKIP_LINE = 128;
 
 FileHandler::FileHandler(const char* fname, FileType ftype) :
         fname_(fname), isOpen_(false) {
@@ -120,4 +122,4 @@ void NormalFile::skipline() {
 int NormalFile::writeline(const char* buffer) {
     return fputs(buffer, fd_);
 }
-
+} // namespace NTHUR
