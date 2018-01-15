@@ -43,7 +43,7 @@ public:
     EdgePlane<Edge_2d> congestionMap2d;
     std::shared_ptr<spdlog::logger> log_sp;
     Congestion(int x, int y);
-    ~Congestion();
+
     double get_cost_2d(const Coordinate_2d& c1, const Coordinate_2d& c2, int net_id, int& distance);
     int cal_max_overflow();
     void pre_evaluate_congestion_cost_all(Edge_2d& edge) const;
@@ -55,7 +55,7 @@ public:
     Statistic stat_congestion();
     void update_congestion_map_insert_two_pin_net(Two_pin_element_2d& element);
     void update_congestion_map_remove_two_pin_net(const std::vector<Coordinate_2d>& path, const int net_id);
-
+    void calculate_cap() const;
     std::string plotCongestionNet(int net_id) const;
 };
 

@@ -2,30 +2,25 @@
 #define INC_LAYER_ASSIGNMENT_H
 
 #include <algorithm>
-#include <iostream>
 #include <limits>
 #include <memory>
 #include <string>
 #include <tuple>
-#include <unordered_map>
 #include <vector>
 
-#include "../grdb/EdgePlane3d.h"
 #include "../grdb/plane.h"
 #include "../misc/geometry.h"
+#include "OutputGeneration.h"
+
 namespace spdlog {
 class logger;
 } /* namespace spdlog */
 
 namespace NTHUR {
 
-
-
 class RoutingRegion;
 
 class Congestion;
-
-typedef std::unordered_map<int, int> LRoutedNetTable;
 
 struct KLAT_NODE {
     int val;
@@ -40,31 +35,6 @@ struct KLAT_NODE {
         s += " pi_z: " + std::to_string(pi_z);
         return s;
     }
-};
-
-class Edge_3d {
-public:
-    Edge_3d();
-
-public:
-
-    bool isOverflow() const {
-        return (cur_cap > max_cap);
-    }
-    int overUsage() const {
-        return (cur_cap - max_cap);
-    }
-    int max_cap;
-    int cur_cap;
-    LRoutedNetTable used_net;
-
-    std::string toString() const {
-        std::string s = "max_cap: " + std::to_string(max_cap);
-        s += " cur_cap: " + std::to_string(cur_cap);
-        s += " used_net: " + std::to_string(used_net.size());
-        return s;
-    }
-
 };
 
 struct AVERAGE_NODE {
@@ -135,11 +105,6 @@ struct Layer_assignment {
         }
     };
 
-    struct Segment3d {
-        Coordinate_3d first;
-        Coordinate_3d last;
-    };
-
     struct Interval {
         int min;
         int max;
@@ -180,10 +145,9 @@ struct Layer_assignment {
         }
     };
     const Congestion& congestion;
-    const RoutingRegion& rr_map;
+    OutputGeneration& output;
     std::vector<AVERAGE_NODE> average_order;
     Plane<LayerInfo, EdgeInfo> layerInfo_map; //edge are overflow
-    EdgePlane3d<Edge_3d> cur_map_3d;
 
     int max_xx;
     int max_yy;
@@ -195,10 +159,8 @@ struct Layer_assignment {
 
     std::shared_ptr<spdlog::logger> log_sp;
 
-    void print_max_overflow();
-
     void initial_overflow_map();
-    void initLayerInfo(const RoutingRegion& rr);
+    void initLayerInfo(const int max_z);
     void update_cur_map_for_klat_xy(int cur_idx, const Coordinate_2d& start, const Coordinate_2d& end, int net_id);
     void update_cur_map_for_klat_z(int min, int max, const Coordinate_2d& start, int net_id);
     void update_path_for_klat(const Coordinate_2d& start);
@@ -207,24 +169,19 @@ struct Layer_assignment {
     std::vector<Coordinate_3d> rec_count(const Coordinate_3d& o, KLAT_NODE& klatNode);
     void DP(const Coordinate_3d& c, const Coordinate_3d& parent);
 
-    void generate_output(int net_id, const std::vector<Segment3d>& v, std::ostream & output);
     int klat(int net_id);
     bool comp_temp_net_order(int p, int q);
 
     void find_group(int max);
 
-    void calculate_wirelength();
-    void calculate_cap();
     void sort_net_order();
-    void generate_all_output(std::ostream & output);
-    Layer_assignment(const Congestion& congestion, const RoutingRegion& rr_map, const std::string& outputFileNamePtr);
+
+    Layer_assignment(const Congestion& congestion, OutputGeneration& output);
 
 private:
     bool test(const Coordinate_2d& c1, const Coordinate_2d& c2);
     void init_union(const Coordinate_2d& c1, const Coordinate_2d& c2);
-    void collectComb(Coordinate_3d c2, Coordinate_3d& c, std::vector<std::vector<Segment3d> >& comb);
-    void plotNet(int net_id) const;
-    void printEdge(const Coordinate_3d& c, const Coordinate_3d& c2) const;
+
 };
 
 } // namespace NTHUR

@@ -64,6 +64,8 @@ public:
      */
     boost::iterator_range<T*> all();
 
+    boost::iterator_range<const T*> all() const;
+
     ///@brief Get the specified edge between 2 vertices
     T& edge(const Coordinate_3d& c1, const Coordinate_3d& c2);
 
@@ -149,13 +151,11 @@ boost::iterator_range<T*> EdgePlane3d<T>::all() {
     return boost::iterator_range<T*>(edgePlane_.data(), &edgePlane_.data()[edgePlane_.num_elements()]);
 }
 
-/*
- *
- template<class T>
- typename EdgePlane3d<T>::RangeExpression EdgePlane3d<T>::neighbors(const Coordinate_3d& c) {
- return RangeExpression(c, edgePlane_);
- }
- */
+template<class T>
+boost::iterator_range<const T*> EdgePlane3d<T>::all() const {
+    return boost::iterator_range<const T*>(edgePlane_.data(), &edgePlane_.data()[edgePlane_.num_elements()]);
+}
+
 template<class T>
 T& EdgePlane3d<T>::edge(const Coordinate_3d& c1, const Coordinate_3d& c2) {
     if (c1.x < c2.x) {

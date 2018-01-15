@@ -239,7 +239,7 @@ void Route_2pinnets::reallocate_two_pin_list() {
         return construct_2d_tree.NetDirtyBit[pin.net_id];
     }), v.end());
 
-    for (int netId = 0; netId < rr_map.get_netNumber(); ++netId) {
+    for (uint32_t netId = 0; netId < rr_map.get_netNumber(); ++netId) {
         if (construct_2d_tree.NetDirtyBit[netId]) {
             put_terminal_color_on_colormap(netId);
 

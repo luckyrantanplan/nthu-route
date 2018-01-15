@@ -192,7 +192,7 @@ void Construct_2d_tree::gen_FR_congestion_map() {
 
 //Get every net's possible RSMT by flute, then use it to calculate the possible congestion
 //In this section, we won't get a real routing result, but a possible congestion information.
-    for (int i = 0; i < rr_map.get_netNumber(); ++i) {	//i:net id
+    for (uint32_t i = 0; i < rr_map.get_netNumber(); ++i) {	//i:net id
         SPDLOG_TRACE(log_sp, "bbox route net {} start...pin_num={}", i, rr_map.get_netPinNumber(i));
 
 //call flute to gen steiner tree and put the result in flutetree[]
@@ -231,7 +231,7 @@ void Construct_2d_tree::gen_FR_congestion_map() {
 
 //sort net by their bounding box size, then by their pin number
     vector<const Net*> sort_net;
-    for (int i = 0; i < rr_map.get_netNumber(); ++i) {
+    for (uint32_t i = 0; i < rr_map.get_netNumber(); ++i) {
         sort_net.push_back(&rr_map.get_netList()[i]);
     }
     sort(sort_net.begin(), sort_net.end(), [&]( const Net* a, const Net* b ) {return Net::comp_net(*a,*b);});

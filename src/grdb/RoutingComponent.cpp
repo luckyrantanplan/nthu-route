@@ -5,7 +5,6 @@
 
 namespace NTHUR {
 
-
 /*******
  Pin
  ******/
@@ -86,12 +85,8 @@ const std::string& Net::get_name() const {
     return name;
 }
 
-int Net::get_pinNumber() const {
-    return pin_list.size();
-}
-
 int Net::get_bboxSize() const {
-    if (get_pinNumber() > 0) {
+    if (!pin_list.empty()) {
         return (maxPinX - minPinX) + (maxPinY - minPinY);
     }
 
@@ -105,7 +100,7 @@ bool Net::comp_net(const Net& a, const Net& b) {
     } else if (a.get_bboxSize() < b.get_bboxSize()) {
         return false;
     } else {
-        return (a.get_pinNumber() < b.get_pinNumber());
+        return (a.pin_list.size() < b.pin_list.size());
     }
 }
 

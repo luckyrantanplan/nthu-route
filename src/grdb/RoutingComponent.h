@@ -8,7 +8,6 @@
 
 namespace NTHUR {
 
-
 class Pin {
 public:
     //Constructor
@@ -77,7 +76,7 @@ public:
     void add_pin(const Pin& pin_ptr); //add pin pointer that point to pin
     const std::vector<Pin>& get_pinList() const; //get the pin pointer list of this net
     const std::string& get_name() const;	//get net name
-    int get_pinNumber() const;		//get pin number in this net
+
     int get_bboxSize() const;      //get the bounding box size
 
     static bool comp_net(const Net& a, const Net& b);

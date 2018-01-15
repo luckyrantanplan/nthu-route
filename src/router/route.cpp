@@ -1,15 +1,18 @@
-#include <sys/time.h>
-#include <cstdio>
-#include <ctime>
+#include <chrono>
 #include <iostream>
+#include <fstream>
+#include <memory>
 
-#include "../grdb/parser.h"
 #include "../grdb/RoutingRegion.h"
-#include "../misc/filehandler.h"
+#include "../spdlog/common.h"
+#include "../spdlog/details/logger_impl.h"
+#include "../spdlog/details/spdlog_impl.h"
+#include "../spdlog/logger.h"
 #include "Congestion.h"
 #include "Construct_2d_tree.h"
 #include "Layerassignment.h"
 #include "parameter.h"
+#include "OutputGeneration.h"
 
 #define SPDLOG_TRACE_ON
 #include "../spdlog/spdlog.h"
@@ -62,7 +65,16 @@ int main(int argc, char* argv[]) {
         //IBM Cases
     } else {
         //ISPD'07 Cases
-        NTHUR::Layer_assignment(congestion, tree.rr_map, ap.output());
+        NTHUR::OutputGeneration output(tree.rr_map);
+        NTHUR::Layer_assignment layerAssignement(congestion, output);
+
+        log.info("Layer assignment complete.");
+        log.info("Outputting result file to {}", ap.output());
+
+        std::ofstream ofs(ap.output(), std::ofstream::out | std::ofstream::trunc);
+
+        output.generate_all_output(ofs);
+        ofs << std::flush;
         auto t4 = std::chrono::system_clock::now();
         std::chrono::duration<double> duration42 = t4 - t2;
         std::chrono::duration<double> duration40 = t4 - t0;

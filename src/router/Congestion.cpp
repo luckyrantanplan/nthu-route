@@ -43,9 +43,6 @@ NTHUR::Congestion::Congestion(int x, int y) :
     log_sp = spdlog::get("NTHUR");
 }
 namespace NTHUR {
-Congestion::~Congestion() {
-    // TODO Auto-generated destructor stub
-}
 
 //get edge cost on a 2D layer
 double Congestion::get_cost_2d(const Coordinate_2d& c1, const Coordinate_2d& c2, int net_id, int& distance) {
@@ -287,6 +284,21 @@ std::string Congestion::plotCongestionNet(int net_id) const {
     } //
     s += "end congestion for net_id" + std::to_string(net_id) + "true\n";
     return s;
+}
+
+void Congestion::calculate_cap() const {
+
+    int overflow = 0;
+    int max = 0;
+    for (const Edge_2d& edge : congestionMap2d.all()) {
+        if (edge.isOverflow()) {
+            overflow += (edge.overUsage() * 2);
+            if (max < edge.overUsage() * 2)
+                max = edge.overUsage() * 2;
+        }
+    }
+    log_sp->info("2D sum overflow = {}", overflow); //
+    log_sp->info("2D max overflow = {}", max);
 }
 
 } // namespace NTHUR

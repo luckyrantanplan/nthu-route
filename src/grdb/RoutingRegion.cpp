@@ -66,7 +66,7 @@ void RoutingRegion::addPin(unsigned int x, unsigned int y, unsigned int layer) {
 }
 
 void RoutingRegion::endAddANet() {
-    if (netList_.back().get_pinNumber() <= 1) {
+    if (netList_.back().get_pinList().size() <= 1) {
         netList_.pop_back();
     }
     pinTable_.clear();

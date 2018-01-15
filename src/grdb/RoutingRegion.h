@@ -10,7 +10,6 @@
 
 namespace NTHUR {
 
-
 class RoutingRegion {
 public:
 
@@ -23,7 +22,7 @@ public:
     int get_lly() const;					//get y-coordinate of lower left corner
     int get_tileWidth() const;			//get tile width
     int get_tileHeight() const;			//get tile height
-    int get_netNumber() const;                 //get net number
+    std::size_t get_netNumber() const;                 //get net number
 
     const std::string& get_netName(int netPos) const;	//get net name
     const int& get_netSerialId(int netId) const;
@@ -81,8 +80,8 @@ inline
 int RoutingRegion::get_layerNumber() const {
     return routingSpace_.getZSize();
 }
-inline
-int RoutingRegion::get_netNumber() const {
+
+inline std::size_t RoutingRegion::get_netNumber() const {
     return netList_.size();
 }
 
@@ -116,7 +115,7 @@ inline const int& RoutingRegion::get_netSerialId(int netId) const {
 
 inline
 int RoutingRegion::get_netPinNumber(int netId) const {
-    return netList_[netId].get_pinNumber();
+    return netList_[netId].get_pinList().size();
 }
 
 inline NetList& RoutingRegion::get_netList() {
