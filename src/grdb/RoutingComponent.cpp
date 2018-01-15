@@ -5,30 +5,6 @@
 
 namespace NTHUR {
 
-/*******
- Pin
- ******/
-Pin::Pin(int x, int y, int z) :
-        x_ { x }, y_ { y }, z_ { z } {
-}
-//Pin::Pin() :
-//        Coordinate { 0, 0, 0 } {
-//}
-int Pin::get_tileX() const {
-    return x_;
-}
-
-int Pin::get_tileY() const {
-    return y_;
-}
-
-int Pin::get_layerId() const {
-    return z_;
-}
-
-Coordinate_2d Pin::get_tileXY() const {
-    return Coordinate_2d { x(), y() };
-}
 /******
  Net
  *****/
@@ -59,25 +35,25 @@ std::string Net::toString() const {
 
 void Net::add_pin(const Pin& pin) {
     //Update boundy box information
-    if (pin.x() < minPinX) {
-        minPinX = pin.x();
+    if (pin.x < minPinX) {
+        minPinX = pin.x;
     }
-    if (pin.x() > maxPinX) {
-        maxPinX = pin.x();
+    if (pin.x > maxPinX) {
+        maxPinX = pin.x;
     }
 
-    if (pin.y() < minPinY) {
-        minPinY = pin.y();
+    if (pin.y < minPinY) {
+        minPinY = pin.y;
     }
-    if (pin.y() > maxPinY) {
-        maxPinY = pin.y();
+    if (pin.y > maxPinY) {
+        maxPinY = pin.y;
     }
 
     //push the new pin to pin list
     pin_list.push_back(pin);
 }
 
-const std::vector<Pin>& Net::get_pinList() const {
+const std::vector<Net::Pin>& Net::get_pinList() const {
     return pin_list;
 }
 

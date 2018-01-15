@@ -1,12 +1,15 @@
 #ifndef INC_ROUTINGREGION_H
 #define INC_ROUTINGREGION_H
 
-#include "RoutingComponent.h"
-
-#include <list>
-#include <vector>
-#include <set>
+#include <cstddef>
+#include <limits>
 #include <unordered_map>
+#include <unordered_set>
+#include <utility>
+#include <vector>
+
+#include "EdgePlane3d.h"
+#include "RoutingComponent.h"
 
 namespace NTHUR {
 
@@ -56,10 +59,10 @@ public:
 
 public:
 
-    void setVerticalCapacity(unsigned int layerId, unsigned int capacity);
-    void setHorizontalCapacity(unsigned int layerId, unsigned int capacity);
+    void setVerticalCapacity(int layerId, int capacity);
+    void setHorizontalCapacity(int layerId, int capacity);
     void setNetNumber(unsigned int netNumber);
-    void adjustEdgeCapacity(unsigned int x1, unsigned int y1, unsigned int z1, unsigned int x2, unsigned int y2, unsigned int z2, unsigned int capacity);
+    void adjustEdgeCapacity(int x1, int y1, int z1, int x2, int y2, int z2, int capacity);
     void setLayerMinimumWidth(unsigned int layerId, unsigned int width);
     void setLayerMinimumSpacing(unsigned int layerId, unsigned int spacing);
     void setViaSpacing(unsigned int layerId, unsigned int viaSpacing);
@@ -88,7 +91,7 @@ private:
     typedef std::unordered_map<int, int> NetIdLookupTable;
     NetIdLookupTable netSerial2NetId_;
 
-    typedef std::set<std::pair<int, int> > PinTable;
+    typedef std::unordered_set<Coordinate_2d> PinTable;
     PinTable pinTable_;
 }
 ;

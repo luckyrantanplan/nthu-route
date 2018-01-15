@@ -56,7 +56,7 @@ class Flute {
 public:
     Flute();
 
-    void routeNet(const std::vector<Pin>& pinList, TreeFlute& result);
+    void routeNet(const std::vector<Net::Pin>& pinList, TreeFlute& result);
 
     void printTree(Tree& routingTree);
     void plotTree(Tree& routingTree);

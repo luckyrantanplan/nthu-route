@@ -10,7 +10,7 @@ Flute::Flute() {
 
 }
 
-void Flute::routeNet(const std::vector<Pin>& pinList, TreeFlute& result) {
+void Flute::routeNet(const std::vector<Net::Pin>& pinList, TreeFlute& result) {
     int pinNumber = pinList.size();
 
     //The pin number must <= MAXD, or the flute will crash
@@ -18,8 +18,8 @@ void Flute::routeNet(const std::vector<Pin>& pinList, TreeFlute& result) {
 
     // insert 2D-coordinate of pins of a net into x_ and y_
     for (int pinId = 0; pinId < pinNumber; ++pinId) {
-        x_[pinId] = pinList[pinId].x();
-        y_[pinId] = pinList[pinId].y();
+        x_[pinId] = pinList[pinId].x ;
+        y_[pinId] = pinList[pinId].y ;
     }
 
     // obtain the routing tree by FLUTE

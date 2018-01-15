@@ -129,13 +129,13 @@ void Layer_assignment::cycle_reduction(const Coordinate_2d& c, const Coordinate_
 
 void Layer_assignment::preprocess(int net_id) {
 
-    const std::vector<Pin>& pin_list = output.get_nPin(net_id);
+    const std::vector<Net::Pin>& pin_list = output.get_nPin(net_id);
 
-    for (const Pin& pin : pin_list) {
-        layerInfo_map.vertex(pin.get_tileXY()).path = -2;	// pin
+    for (const Net::Pin& pin : pin_list) {
+        layerInfo_map.vertex(pin.xy()).path = -2;	// pin
     }
 // BFS speed up
-    Coordinate_2d c = pin_list[0].get_tileXY();
+    Coordinate_2d c = pin_list[0].xy();
     layerInfo_map.vertex(c).path = 2;	// visited
 
     for (KLAT_NODE& k : layerInfo_map.vertex(c).klat) {
@@ -297,9 +297,9 @@ void Layer_assignment::DP(const Coordinate_3d& c, const Coordinate_3d& parent) {
 
 int Layer_assignment::klat(int net_id) { //SOLAC + APEC
 
-    const std::vector<Pin>& pin_list = output.get_nPin(net_id);
+    const std::vector<Net::Pin>& pin_list = output.get_nPin(net_id);
 
-    Coordinate_2d start = pin_list[0].get_tileXY();
+    Coordinate_2d start = pin_list[0].xy();
     global_net_id = net_id; // LAZY global variable
     global_pin_num = pin_list.size();
     preprocess(net_id);

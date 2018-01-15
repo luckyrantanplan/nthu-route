@@ -8,7 +8,7 @@ namespace NTHUR {
  RoutingRegion
  **************/
 
-void RoutingRegion::setVerticalCapacity(unsigned int layerId, unsigned int capacity) {
+void RoutingRegion::setVerticalCapacity(int layerId, int capacity) {
     for (int x = 0; x < routingSpace_.getXSize(); ++x) {
         for (int y = 0; y < routingSpace_.getYSize(); ++y) {
             routingSpace_.south(Coordinate_3d { x, y, layerId }) = capacity;
@@ -16,7 +16,7 @@ void RoutingRegion::setVerticalCapacity(unsigned int layerId, unsigned int capac
     }
 }
 
-void RoutingRegion::setHorizontalCapacity(unsigned int layerId, unsigned int capacity) {
+void RoutingRegion::setHorizontalCapacity(int layerId, int capacity) {
     for (int x = 0; x < routingSpace_.getXSize(); ++x) {
         for (int y = 0; y < routingSpace_.getYSize(); ++y) {
             routingSpace_.east(Coordinate_3d { x, y, layerId }) = capacity;
@@ -31,7 +31,7 @@ void RoutingRegion::setNetNumber(unsigned int netNumber) {
 
 }
 
-void RoutingRegion::adjustEdgeCapacity(unsigned int x1, unsigned int y1, unsigned int z1, unsigned int x2, unsigned int y2, unsigned int z2, unsigned int capacity) {
+void RoutingRegion::adjustEdgeCapacity(int x1, int y1, int z1, int x2, int y2, int z2, int capacity) {
 
     routingSpace_.edge(Coordinate_3d(x1, y1, z1), Coordinate_3d(x2, y2, z2)) = capacity;
 
@@ -57,11 +57,11 @@ void RoutingRegion::addPin(unsigned int x, unsigned int y, unsigned int layer) {
     int tileX = ((x - get_llx()) / get_tileWidth());
     int tileY = ((y - get_lly()) / get_tileHeight());
 
-    if (pinTable_.find(std::pair<int, int>(tileX, tileY)) == pinTable_.end()) {
-        pinTable_.insert(std::pair<int, int>(tileX, tileY));
-
-        netList_.back().add_pin(Pin(tileX, tileY, layer));
+    std::pair<PinTable::const_iterator, bool> pair = pinTable_.emplace(tileX, tileY);
+    if (pair.second) {
+        netList_.back().add_pin(Net::Pin(tileX, tileY, layer));
     }
+
 }
 
 void RoutingRegion::endAddANet() {
