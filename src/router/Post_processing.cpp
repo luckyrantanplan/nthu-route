@@ -63,19 +63,24 @@ void Post_processing::initial_for_post_processing() {
 
 }
 
-Post_processing::Post_processing(Congestion& congestion, Construct_2d_tree& construct_2d_tree, RangeRouter& rangeRouter) :
+Post_processing::Post_processing(RoutingParameters& routingparam, Congestion& congestion, Construct_2d_tree& construct_2d_tree, RangeRouter& rangeRouter) :
+        routing_parameter { routingparam },	//
         congestion { congestion },	//
         total_no_overflow { false },	//
         construct_2d_tree { construct_2d_tree }, //
         rangeRouter { rangeRouter } {
-    Post_processing_iteration = construct_2d_tree.routing_parameter.get_iteration_p3();
+
     log_sp = spdlog::get("NTHUR");
 }
 
 void Post_processing::process(Route_2pinnets& route_2pinnets) {
 
     //Fetch from routing_parameter 
-    RoutingParameters& routing_parameter = construct_2d_tree.routing_parameter;
+    log_sp->info("================================================================");    //
+    log_sp->info("===                   Enter Post Processing                  ==="); //
+    log_sp->info("================================================================");
+
+    int Post_processing_iteration = routing_parameter.get_iteration_p3();
 
     routing_parameter.BOXSIZE_INC = routing_parameter.get_init_box_size_p3();
     int inc_num = routing_parameter.get_box_size_inc_p3();

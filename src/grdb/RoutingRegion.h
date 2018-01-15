@@ -2,12 +2,11 @@
 #define INC_ROUTINGREGION_H
 
 #include <cstddef>
-#include <limits>
 #include <unordered_map>
 #include <unordered_set>
-#include <utility>
 #include <vector>
 
+#include "../misc/geometry.h"
 #include "EdgePlane3d.h"
 #include "RoutingComponent.h"
 
@@ -16,29 +15,7 @@ namespace NTHUR {
 class RoutingRegion {
 public:
 
-    RoutingRegion(int x, int y, int z) :
-            routingSpace_ { Coordinate_3d { x, y, z } }, //
-            tileWidth(1), //
-            tileHeight(1), //
-            originX(0), //
-            originY(0), //
-            wireWidth { z }, //
-            wireSpacing { z }, //
-            viaSpacing { z } //
-    {
-
-        max_z = z;
-        max_x = x;
-        max_y = y;
-
-        for (int x = 0; x < max_x; ++x) {
-            for (int y = 0; y < max_y; ++y) {
-                for (int z = 0; z < max_z; ++z) {
-                    routingSpace_.front(Coordinate_3d { x, y, z }) = std::numeric_limits<int>::max();
-                }
-            }
-        }
-    }
+    RoutingRegion(int x, int y, int z);
 
 //Get Functions
 // Basic Information
@@ -55,7 +32,7 @@ public:
 
 // Pin list
 
-    const EdgePlane3d<int>& getRoutingSpace() const;
+    const EdgePlane3d<int>& getMaxCapacity() const;
 
 public:
 
@@ -73,7 +50,7 @@ public:
 
 private:
     std::vector<Net> netList_;
-    EdgePlane3d<int> routingSpace_;
+    EdgePlane3d<int> max_capacity;
     int tileWidth;
     int tileHeight;
     int originX;
@@ -95,6 +72,7 @@ private:
     PinTable pinTable_;
 }
 ;
+
 
 //Inline Functions
 inline
@@ -155,8 +133,8 @@ void RoutingRegion::setViaSpacing(unsigned int layerId, unsigned int value) {
     viaSpacing[layerId] = value;
 }
 
-inline const EdgePlane3d<int>& RoutingRegion::getRoutingSpace() const {
-    return routingSpace_;
+inline const EdgePlane3d<int>& RoutingRegion::getMaxCapacity() const {
+    return max_capacity;
 }
 
 } // namespace NTHUR

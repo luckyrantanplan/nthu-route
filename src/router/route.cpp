@@ -53,7 +53,7 @@ int main(int argc, char* argv[]) {
     NTHUR::Congestion congestion(routingData.get_gridx(), routingData.get_gridy());
 
     auto t1 = std::chrono::system_clock::now();
-    NTHUR::Construct_2d_tree tree(ap.routing_param(), ap.parameter(), routingData, congestion);
+    NTHUR::Construct_2d_tree tree(ap.routing_param(), routingData, congestion);
     auto t2 = std::chrono::system_clock::now();
     // now the post processing is handle by Construct_2d_tree
 
@@ -65,7 +65,7 @@ int main(int argc, char* argv[]) {
         //IBM Cases
     } else {
         //ISPD'07 Cases
-        NTHUR::OutputGeneration output(tree.rr_map);
+        NTHUR::OutputGeneration output(routingData);
         NTHUR::Layer_assignment layerAssignement(congestion, output);
 
         log.info("Layer assignment complete.");

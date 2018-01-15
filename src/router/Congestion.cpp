@@ -179,7 +179,7 @@ void Congestion::init_2d_map(RoutingRegion& rr_map) {
 #else
     int divisor = 1;
 #endif
-    const EdgePlane3d<int>& routingSpace = rr_map.getRoutingSpace();
+    const EdgePlane3d<int>& routingSpace = rr_map.getMaxCapacity();
 
     for (int x = 0; x < routingSpace.getXSize(); ++x) {
         for (int y = 0; y < routingSpace.getYSize(); ++y) {

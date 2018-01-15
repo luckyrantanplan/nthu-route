@@ -29,7 +29,7 @@ OutputGeneration::OutputGeneration(const RoutingRegion& rr) :
         edge.cur_cap = 0;
     }
 
-    for (auto pair : boost::combine(rr.getRoutingSpace().all(), cur_map_3d.all())) {
+    for (auto pair : boost::combine(rr.getMaxCapacity().all(), cur_map_3d.all())) {
         pair.get<1>().max_cap = pair.get<0>();
     }
 

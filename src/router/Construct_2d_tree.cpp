@@ -673,17 +673,14 @@ void Construct_2d_tree::output_2_pin_list() {
  return max_overflow;
  */
 
-Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterSet& param, RoutingRegion& rr, Congestion& congestion) :
-//
-//
-        parameter_set { param }, //
-        routing_parameter { routingparam }, //
+Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, RoutingRegion& rr, Congestion& congestion) :
+
         bboxRouteStateMap { rr.get_gridx(), rr.get_gridy() }, //
         rr_map { rr }, //
         congestion { congestion }, //
         mazeroute_in_range { *this, congestion }, //
         rangeRouter { *this, congestion, true }, //
-        post_processing { congestion, *this, rangeRouter }  //
+        post_processing { routingparam, congestion, *this, rangeRouter }  //
 {
     log_sp = spdlog::get("NTHUR");
     /***********************
@@ -696,7 +693,7 @@ Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterS
     NetDirtyBit = vector<bool>(rr_map.get_netNumber(), true);
     /* TroyLee: End */
 
-    if (routing_parameter.get_monotonic_en()) {
+    if (routingparam.get_monotonic_en()) {
         //allocate_monotonic();           // Allocate the memory for storing the data while searching monotonic path
 // 1. A 2D array that stores max congestion
 // 2. A 2D array that stores parent (x,y) during finding monotonic path
@@ -722,9 +719,9 @@ Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterS
     route_2pinnets.reallocate_two_pin_list();
 
     congestion.used_cost_flag = HISTORY_COST;
-    BOXSIZE_INC = routing_parameter.get_init_box_size_p2();
+    BOXSIZE_INC = routingparam.get_init_box_size_p2();
 
-    for (congestion.cur_iter = 1, done_iter = congestion.cur_iter; congestion.cur_iter <= routing_parameter.get_iteration_p2(); ++congestion.cur_iter, done_iter = congestion.cur_iter) //do n-1 times
+    for (congestion.cur_iter = 1, done_iter = congestion.cur_iter; congestion.cur_iter <= routingparam.get_iteration_p2(); ++congestion.cur_iter, done_iter = congestion.cur_iter) //do n-1 times
             {
 
         log_sp->info("Iteration: {} ", congestion.cur_iter);
@@ -751,18 +748,15 @@ Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, ParameterS
 
         route_2pinnets.reallocate_two_pin_list();
 
-        if (cur_overflow <= routing_parameter.get_overflow_threshold()) {
-            log_sp->info("cur overflow {} <= overflow_threshold {} ", cur_overflow, routing_parameter.get_overflow_threshold());
+        if (cur_overflow <= routingparam.get_overflow_threshold()) {
+            log_sp->info("cur overflow {} <= overflow_threshold {} ", cur_overflow, routingparam.get_overflow_threshold());
             break;
         }
-        BOXSIZE_INC += routing_parameter.get_box_size_inc_p2();
+        BOXSIZE_INC += routingparam.get_box_size_inc_p2();
     }
 
     output_2_pin_list();    //order:bbox
 
-    log_sp->info("================================================================");    //
-    log_sp->info("===                   Enter Post Processing                  ==="); //
-    log_sp->info("================================================================");
 
     post_processing.process(route_2pinnets);
 

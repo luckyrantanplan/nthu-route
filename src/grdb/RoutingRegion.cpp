@@ -7,19 +7,40 @@ namespace NTHUR {
 /***************
  RoutingRegion
  **************/
+RoutingRegion::RoutingRegion(int x, int y, int z) :
+        max_capacity { Coordinate_3d { x, y, z } }, //
+        tileWidth(1), //
+        tileHeight(1), //
+        originX(0), //
+        originY(0), //
+        wireWidth { z }, //
+        wireSpacing { z }, //
+        viaSpacing { z } //
+{
+    max_z = z;
+    max_x = x;
+    max_y = y;
+    for (int x = 0; x < max_x; ++x) {
+        for (int y = 0; y < max_y; ++y) {
+            for (int z = 0; z < max_z; ++z) {
+                max_capacity.front(Coordinate_3d { x, y, z }) = std::numeric_limits<int>::max();
+            }
+        }
+    }
+}
 
 void RoutingRegion::setVerticalCapacity(int layerId, int capacity) {
-    for (int x = 0; x < routingSpace_.getXSize(); ++x) {
-        for (int y = 0; y < routingSpace_.getYSize(); ++y) {
-            routingSpace_.south(Coordinate_3d { x, y, layerId }) = capacity;
+    for (int x = 0; x < max_capacity.getXSize(); ++x) {
+        for (int y = 0; y < max_capacity.getYSize(); ++y) {
+            max_capacity.south(Coordinate_3d { x, y, layerId }) = capacity;
         }
     }
 }
 
 void RoutingRegion::setHorizontalCapacity(int layerId, int capacity) {
-    for (int x = 0; x < routingSpace_.getXSize(); ++x) {
-        for (int y = 0; y < routingSpace_.getYSize(); ++y) {
-            routingSpace_.east(Coordinate_3d { x, y, layerId }) = capacity;
+    for (int x = 0; x < max_capacity.getXSize(); ++x) {
+        for (int y = 0; y < max_capacity.getYSize(); ++y) {
+            max_capacity.east(Coordinate_3d { x, y, layerId }) = capacity;
         }
     }
 }
@@ -33,7 +54,7 @@ void RoutingRegion::setNetNumber(unsigned int netNumber) {
 
 void RoutingRegion::adjustEdgeCapacity(int x1, int y1, int z1, int x2, int y2, int z2, int capacity) {
 
-    routingSpace_.edge(Coordinate_3d(x1, y1, z1), Coordinate_3d(x2, y2, z2)) = capacity;
+    max_capacity.edge(Coordinate_3d(x1, y1, z1), Coordinate_3d(x2, y2, z2)) = capacity;
 
 }
 
