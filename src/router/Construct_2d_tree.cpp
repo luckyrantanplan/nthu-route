@@ -687,17 +687,10 @@ Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, RoutingReg
      * Global Variable End
      * ********************/
 
-    readLUT();                  // Function in flute, function: unknown
-
     /* TroyLee: NetDirtyBit Counter */
     NetDirtyBit = vector<bool>(rr_map.get_netNumber(), true);
     /* TroyLee: End */
 
-    if (routingparam.get_monotonic_en()) {
-        //allocate_monotonic();           // Allocate the memory for storing the data while searching monotonic path
-// 1. A 2D array that stores max congestion
-// 2. A 2D array that stores parent (x,y) during finding monotonic path
-    }
     log_sp->info("gen_FR_congestion_map ");
     gen_FR_congestion_map();        // Generate congestion map by flute, then route all nets by L-shap pattern routing with
 // congestion information from this map. After that, apply edge shifting to the result
@@ -756,7 +749,6 @@ Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, RoutingReg
     }
 
     output_2_pin_list();    //order:bbox
-
 
     post_processing.process(route_2pinnets);
 

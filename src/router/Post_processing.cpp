@@ -82,9 +82,9 @@ void Post_processing::process(Route_2pinnets& route_2pinnets) {
 
     int Post_processing_iteration = routing_parameter.get_iteration_p3();
 
-    routing_parameter.BOXSIZE_INC = routing_parameter.get_init_box_size_p3();
+    construct_2d_tree.BOXSIZE_INC = routing_parameter.get_init_box_size_p3();
     int inc_num = routing_parameter.get_box_size_inc_p3();
-    SPDLOG_TRACE(log_sp, "size: ({} {}) ", routing_parameter.BOXSIZE_INC, inc_num);
+    SPDLOG_TRACE(log_sp, "size: ({} {}) ", construct_2d_tree.BOXSIZE_INC, inc_num);
 
     construct_2d_tree.done_iter++;
     congestion.used_cost_flag = MADEOF_COST;

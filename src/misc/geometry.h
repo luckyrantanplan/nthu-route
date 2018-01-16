@@ -134,6 +134,11 @@ public:
         return "(" + std::to_string(x) + "," + std::to_string(y) + "," + std::to_string(z) + ")";
     }
 };
+
+struct Segment3d {
+    Coordinate_3d first;
+    Coordinate_3d last;
+};
 class Rectangle {
 public:
     Coordinate_2d upLeft;

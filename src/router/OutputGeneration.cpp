@@ -21,8 +21,8 @@
 namespace NTHUR {
 
 OutputGeneration::OutputGeneration(const RoutingRegion& rr) :
-        rr_map { rr }, //
-        cur_map_3d { Coordinate_3d { rr.get_gridx(), rr.get_gridy(), rr.get_layerNumber() } }    //
+        cur_map_3d { Coordinate_3d { rr.get_gridx(), rr.get_gridy(), rr.get_layerNumber() } },   //
+        rr_map { rr }  //
 {
     // TODO Auto-generated constructor stub
     for (Edge_3d& edge : cur_map_3d.all()) {
@@ -36,9 +36,8 @@ OutputGeneration::OutputGeneration(const RoutingRegion& rr) :
     log_sp = spdlog::get("NTHUR");
 }
 
-void OutputGeneration::generate_all_output(std::ostream & output) const {
-
-    std::vector<std::vector<Segment3d> > comb { static_cast<std::size_t>(rr_map.get_netNumber()) };
+OutputGeneration::Comb OutputGeneration::combAllNet() const {
+    std::vector<std::vector<Segment3d> > comb { get_netNumber() };
     Coordinate_3d c2;
     for (Coordinate_3d c { 0, 0, 0 }; c.x < cur_map_3d.getXSize(); ++c.x) {
         c2.x = c.x;
@@ -67,8 +66,14 @@ void OutputGeneration::generate_all_output(std::ostream & output) const {
             }
         }
     }
+    scale(comb);
+    return comb;
+}
 
-    for (uint32_t i = 0; i < rr_map.get_netNumber(); ++i) {
+void OutputGeneration::generate_all_output(std::ostream & output) const {
+
+    const Comb comb = combAllNet();
+    for (uint32_t i = 0; i < comb.size(); ++i) {
         generate_output(i, comb[i], output);
     }
 
@@ -81,7 +86,7 @@ void OutputGeneration::printEdge(const Coordinate_3d& c, const Coordinate_3d& c2
 
 void OutputGeneration::plotNet(int net_id) const {
 
-    std::vector<std::vector<Segment3d> > comb { static_cast<std::size_t>(rr_map.get_netNumber()) };
+    Comb comb { static_cast<std::size_t>(rr_map.get_netNumber()) };
     Coordinate_3d c2;
     for (Coordinate_3d c { 0, 0, 0 }; c.x < cur_map_3d.getXSize(); ++c.x) {
         c2.x = c.x;
@@ -138,10 +143,28 @@ void OutputGeneration::calculate_wirelength(const int global_via_cost) const {
     log_sp->info("total wire length = {} + {} = {}", xy, z, (xy + z));
 }
 
-void OutputGeneration::generate_output(int net_id, const std::vector<Segment3d>& v, std::ostream & output) const {
+void OutputGeneration::scale(Comb& comb) const {
 
     int xDetailShift = rr_map.get_llx() + (rr_map.get_tileWidth() / 2);
     int yDetailShift = rr_map.get_lly() + (rr_map.get_tileHeight() / 2);
+
+    // have edge
+    for (std::vector<Segment3d>& v : comb) {
+        for (Segment3d& seg : v) {
+            Coordinate_3d& o = seg.first;
+            Coordinate_3d& d = seg.last;
+            o.x = o.x * rr_map.get_tileWidth() + xDetailShift;
+            o.y = o.y * rr_map.get_tileHeight() + yDetailShift;
+            ++o.z;
+            d.x = d.x * rr_map.get_tileWidth() + xDetailShift;
+            d.y = d.y * rr_map.get_tileHeight() + yDetailShift;
+            ++d.z;
+        }
+    }
+
+}
+
+void OutputGeneration::generate_output(const int net_id, const std::vector<Segment3d>& v, std::ostream & output) const {
 
 // the beginning of a net of output file
 
@@ -149,21 +172,16 @@ void OutputGeneration::generate_output(int net_id, const std::vector<Segment3d>&
 
     // have edge
     for (const Segment3d& seg : v) {
-        Coordinate_3d o = seg.first;
-        Coordinate_3d d = seg.last;
-        o.x = o.x * rr_map.get_tileWidth() + xDetailShift;
-        o.y = o.y * rr_map.get_tileHeight() + yDetailShift;
-        ++o.z;
-        d.x = d.x * rr_map.get_tileWidth() + xDetailShift;
-        d.y = d.y * rr_map.get_tileHeight() + yDetailShift;
-        ++d.z;
+        const Coordinate_3d& o = seg.first;
+        const Coordinate_3d& d = seg.last;
+
         output << "(" << o.x << "," << o.y << "," << o.z << ")-(" << d.x << "," << d.y << "," << d.z << ")\n";
     }
 
 // the end of a net of output file
     output << "!\n";
 }
-void OutputGeneration::collectComb(Coordinate_3d c2, Coordinate_3d& c, std::vector<std::vector<Segment3d> >& comb) const {
+void OutputGeneration::collectComb(Coordinate_3d c2, Coordinate_3d& c, Comb& comb) const {
     for (const std::pair<const int, int>& net : cur_map_3d.edge(c, c2).used_net) {
         std::vector<Segment3d>& v = comb[net.first];
         if (v.empty()) {

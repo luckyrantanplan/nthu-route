@@ -57,16 +57,14 @@ public:
 };
 
 class OutputGeneration {
-    struct Segment3d {
-        Coordinate_3d first;
-        Coordinate_3d last;
-    };
 
 public:
+    typedef std::vector<std::vector<Segment3d> > Comb;
+
     OutputGeneration(const RoutingRegion& rr);
 
-    void generate_output(int net_id, const std::vector<Segment3d>& v, std::ostream & output) const;
-    void collectComb(Coordinate_3d c2, Coordinate_3d& c, std::vector<std::vector<Segment3d> >& comb) const;
+    void generate_output(const int net_id, const std::vector<Segment3d>& v, std::ostream & output) const;
+    void collectComb(Coordinate_3d c2, Coordinate_3d& c, Comb& comb) const;
     void plotNet(int net_id) const;
     void printEdge(const Coordinate_3d& c, const Coordinate_3d& c2) const;
     void generate_all_output(std::ostream & output) const;
@@ -75,12 +73,16 @@ public:
 
     const std::vector<Net::Pin>& get_nPin(int net_id) const;
     std::size_t get_netNumber() const;
-    const RoutingRegion& rr_map;
-    EdgePlane3d<Edge_3d> cur_map_3d;
 
+    EdgePlane3d<Edge_3d> cur_map_3d;
+    Comb combAllNet() const;
 private:
+    void scale(Comb& comb) const;
+    const RoutingRegion& rr_map;
     std::shared_ptr<spdlog::logger> log_sp;
-};
+
+}
+;
 
 inline const std::vector<Net::Pin>& OutputGeneration::get_nPin(int net_id) const {
     //get Pins by net
