@@ -98,8 +98,6 @@ class RoutingParameters {
 public:
     /* Init Parameters */
     RoutingParameters();
-    ~RoutingParameters() {
-    }
 
     void operator=(const struct PresettingParameters &preset);
 
@@ -116,16 +114,16 @@ public:
     void set_box_size_inc_p3(int inc);
 
     /* Fetching Parameter */
-    bool get_monotonic_en();
-    bool get_simple_mode_en();
-    int get_iteration_p2();
-    int get_init_box_size_p2();
-    int get_box_size_inc_p2();
-    int get_overflow_threshold();
+    bool get_monotonic_en() const;
+    bool get_simple_mode_en() const;
+    int get_iteration_p2() const;
+    int get_init_box_size_p2() const;
+    int get_box_size_inc_p2() const;
+    int get_overflow_threshold() const;
 
-    int get_iteration_p3();
-    int get_init_box_size_p3();
-    int get_box_size_inc_p3();
+    int get_iteration_p3() const;
+    int get_init_box_size_p3() const;
+    int get_box_size_inc_p3() const;
 
 private:
     /* Common Setting */
@@ -206,47 +204,47 @@ void RoutingParameters::set_box_size_inc_p3(int inc) {
 
 /* Fetching Parameter */
 inline
-bool RoutingParameters::get_monotonic_en() {
+bool RoutingParameters::get_monotonic_en() const {
     return this->monotonic_routing_en;
 }
 
 inline
-bool RoutingParameters::get_simple_mode_en() {
+bool RoutingParameters::get_simple_mode_en() const {
     return this->simple_mode_en;
 }
 
 inline
-int RoutingParameters::get_iteration_p2() {
+int RoutingParameters::get_iteration_p2() const {
     return this->iteration_p2;
 }
 
 inline
-int RoutingParameters::get_init_box_size_p2() {
+int RoutingParameters::get_init_box_size_p2() const {
     return this->init_box_size_p2;
 }
 
 inline
-int RoutingParameters::get_box_size_inc_p2() {
+int RoutingParameters::get_box_size_inc_p2() const {
     return this->box_size_inc_p2;
 }
 
 inline
-int RoutingParameters::get_overflow_threshold() {
+int RoutingParameters::get_overflow_threshold() const {
     return this->overflow_threshold;
 }
 
 inline
-int RoutingParameters::get_iteration_p3() {
+int RoutingParameters::get_iteration_p3() const {
     return this->iteration_p3;
 }
 
 inline
-int RoutingParameters::get_init_box_size_p3() {
+int RoutingParameters::get_init_box_size_p3() const {
     return this->init_box_size_p3;
 }
 
 inline
-int RoutingParameters::get_box_size_inc_p3() {
+int RoutingParameters::get_box_size_inc_p3() const {
     return this->box_size_inc_p3;
 }
 //}}}

@@ -65,7 +65,7 @@ void RoutingRegion::setTileTransformInformation(unsigned int llx, unsigned int l
     tileHeight = tHeight;
 }
 
-void RoutingRegion::beginAddANet(const char* netName, unsigned int netSerial, unsigned int, //pinNumber,
+void RoutingRegion::beginAddANet(const std::string& netName, unsigned int netSerial, unsigned int, //pinNumber,
         unsigned int minWidth) {
     int netId = netList_.size();
     netSerial2NetId_[netSerial] = netId;

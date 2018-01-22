@@ -100,7 +100,7 @@ struct Route_2pinnets {
         oneDegreeTerminal, severalDegreeTerminal, oneDegreeNonterminal, steinerPoint, twoDegree
     };
 
-    RoutingRegion& rr_map;
+    const RoutingRegion& rr_map;
     boost::multi_array<Point_fc, 2> gridcell; //This is some kind of color map, for recording
     //which 2-pin net passed which gCell
 

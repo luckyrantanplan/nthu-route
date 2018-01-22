@@ -63,7 +63,7 @@ void Post_processing::initial_for_post_processing() {
 
 }
 
-Post_processing::Post_processing(RoutingParameters& routingparam, Congestion& congestion, Construct_2d_tree& construct_2d_tree, RangeRouter& rangeRouter) :
+Post_processing::Post_processing(const RoutingParameters& routingparam, Congestion& congestion, Construct_2d_tree& construct_2d_tree, RangeRouter& rangeRouter) :
         routing_parameter { routingparam },	//
         congestion { congestion },	//
         total_no_overflow { false },	//

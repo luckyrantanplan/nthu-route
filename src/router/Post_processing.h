@@ -26,7 +26,7 @@ class Construct_2d_tree;
 class Two_pin_element_2d;
 
 struct Post_processing {
-    RoutingParameters& routing_parameter;
+    const RoutingParameters& routing_parameter;
     Congestion& congestion;
 
     bool total_no_overflow;
@@ -35,7 +35,7 @@ struct Post_processing {
     RangeRouter& rangeRouter;
     std::shared_ptr<spdlog::logger> log_sp;
     void initial_for_post_processing();
-    Post_processing(RoutingParameters& routingparam, Congestion& congestion, Construct_2d_tree& construct_2d_tree, RangeRouter& rangeRouter);
+    Post_processing(const RoutingParameters& routingparam, Congestion& congestion, Construct_2d_tree& construct_2d_tree, RangeRouter& rangeRouter);
     void process(Route_2pinnets& route_2pinnets);
 };
 } // namespace NTHUR

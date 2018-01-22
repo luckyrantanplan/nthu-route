@@ -73,7 +73,7 @@ struct Construct_2d_tree {
     std::vector<Two_pin_element_2d> two_pin_list;
 
     EdgePlane<int> bboxRouteStateMap;
-    RoutingRegion& rr_map;
+    const RoutingRegion& rr_map;
 
     int done_iter;
 
@@ -111,7 +111,7 @@ struct Construct_2d_tree {
     void dfs_output_tree(Vertex_flute& node, int parent, TreeFlute& t);
     void edge_shifting(TreeFlute& t, int i);
     void output_2_pin_list();
-    Construct_2d_tree(RoutingParameters & routingparam, RoutingRegion & rr, Congestion& congestion);
+    Construct_2d_tree(const RoutingParameters & routingparam, const RoutingRegion & rr, Congestion& congestion);
     void walkL(const Coordinate_2d& a, const Coordinate_2d& b, std::function<void(const Coordinate_2d& e1, const Coordinate_2d& e2)> f);
 
 private:

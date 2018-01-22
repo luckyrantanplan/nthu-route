@@ -673,7 +673,7 @@ void Construct_2d_tree::output_2_pin_list() {
  return max_overflow;
  */
 
-Construct_2d_tree::Construct_2d_tree(RoutingParameters& routingparam, RoutingRegion& rr, Congestion& congestion) :
+Construct_2d_tree::Construct_2d_tree(const RoutingParameters& routingparam,const RoutingRegion& rr, Congestion& congestion) :
 
         bboxRouteStateMap { rr.get_gridx(), rr.get_gridy() }, //
         rr_map { rr }, //

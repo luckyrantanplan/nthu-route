@@ -44,7 +44,7 @@ public:
     void setLayerMinimumSpacing(unsigned int layerId, unsigned int spacing);
     void setViaSpacing(unsigned int layerId, unsigned int viaSpacing);
     void setTileTransformInformation(unsigned int llx, unsigned int lly, unsigned int tWidth, unsigned int tHeight);
-    void beginAddANet(const char* netName, unsigned int netSerial, unsigned int pinNumber, unsigned int minWidth);
+    void beginAddANet(const std::string& netName, unsigned int netSerial, unsigned int pinNumber, unsigned int minWidth);
     void addPin(unsigned int x, unsigned int y, unsigned int layer);
     void endAddANet();
 
