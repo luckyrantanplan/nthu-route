@@ -80,6 +80,22 @@ cd build && ctest --output-on-failure
 sudo cmake --install build
 ```
 
+### Docker
+
+Build and run inside a container (no local dependencies required):
+
+```bash
+# Build the image
+docker build -t nthu-route .
+
+# Show help
+docker run --rm nthu-route
+
+# Route a benchmark (mount the input file into the container)
+docker run --rm -v "$(pwd)":/data -w /data nthu-route \
+  --input=adaptec1.capo70.3d.35.50.90.gr --output=output.txt
+```
+
 ## Usage
 
 ### Command-line application
