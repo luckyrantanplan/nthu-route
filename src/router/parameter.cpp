@@ -115,6 +115,38 @@ ParameterAnalyzer::ParameterAnalyzer(int argc, char* argv[]) :
     cout << "Input file: \"" << inputFileName << "\"" << endl;
     cout << "Output file: \"" << outputFileName << "\"" << endl;
 }
+static void print_usage(const char* program_name) {
+    cout << "Usage: " << program_name << " --input=FILE --output=FILE [options]\n"
+         << "\n"
+         << "NTHU-Route 2.0 - VLSI Global Router (ISPD 2008 Contest Winner)\n"
+         << "\n"
+         << "Required arguments:\n"
+         << "  -i, --input=FILE              Input testcase file\n"
+         << "  -o, --output=FILE             Output result file\n"
+         << "\n"
+         << "Routing options:\n"
+         << "  --p2-max-iteration=N          Maximum iterations in main stage (default: 150)\n"
+         << "  --p2-init-box-size=N          Initial bounding-box size in main stage (default: 10)\n"
+         << "  --p2-box-expand-size=N        Bounding-box expanding size in main stage (default: 10)\n"
+         << "  --overflow-threshold=N        Overflow threshold in main stage (default: 200)\n"
+         << "  --p3-max-iteration=N          Maximum iterations in refinement stage (default: 20)\n"
+         << "  --p3-init-box-size=N          Initial bounding-box size in refinement stage (default: 10)\n"
+         << "  --p3-box-expand-size=N        Bounding-box expanding size in refinement stage (default: 15)\n"
+         << "  --monotonic-routing={0,1}     Enable (1) or disable (0) monotonic routing (default: 0)\n"
+         << "  --simple                      Enable simple mode with auto parameter fitting\n"
+         << "\n"
+         << "Other options:\n"
+         << "  -h, --help                    Show this help message and exit\n"
+         << "  -v, --version                 Show version information and exit\n";
+}
+
+static void print_version() {
+    cout << "NTHU-Route 2.0 (Version 3.0)\n"
+         << "Developed by Yen-Jung Chang, Yu-Ting Lee, Tsung-Hsien Lee,\n"
+         << "Jhih-Rong Gao, Pei-Ci Wu, Florian Prud'homme\n"
+         << "Adviser: Ting-Chi Wang (tcwang@cs.nthu.edu.tw)\n";
+}
+
 void ParameterAnalyzer::analyze2() {
     char cmd;
     bool defineOutput = false;
@@ -123,11 +155,11 @@ void ParameterAnalyzer::analyze2() {
     int long_option_index = 0;
     struct option long_option[] = { { "p2-max-iteration", 1, 0, 1 }, { "p3-max-iteration", 1, 0, 2 }, { "overflow-threshold", 1, 0, 3 }, { "p3-init-box-size", 1, 0, 4 }, { "p3-box-expand-size", 1, 0,
             5 }, { "p2-boxsize-inc", 1, 0, 6 }, { "p2-box-expand-size", 1, 0, 7 }, { "monotonic-routing", 1, 0, 8 }, { "simple", 0, 0, 9 }, { "input", 1, 0, 'i' }, { "output", 1, 0, 'o' }, {
-            "p2-init-box-size", 1, 0, 6 }, { 0, 0, 0, 0 } };
-    while ((cmd = getopt_long(argc, argv, "i:I:o:p:", long_option, &long_option_index)) != -1) {
+            "p2-init-box-size", 1, 0, 6 }, { "help", 0, 0, 'h' }, { "version", 0, 0, 'v' }, { 0, 0, 0, 0 } };
+    while ((cmd = getopt_long(argc, argv, "hi:I:o:p:v", long_option, &long_option_index)) != -1) {
         string parameter;
         bool enable;
-        if (long_option[long_option_index].has_arg != 0) {
+        if (optarg != nullptr) {
             parameter = optarg;
         }
         switch (cmd) {
@@ -199,7 +231,15 @@ void ParameterAnalyzer::analyze2() {
             defineOutput = true;
             break;
         case '?':
-            cout << "Unknown parameter!" << endl;
+            cout << "Unknown parameter! Use --help for usage information." << endl;
+            break;
+        case 'h':
+            print_usage(argv[0]);
+            exit(0);
+            break;
+        case 'v':
+            print_version();
+            exit(0);
             break;
         }
     }
