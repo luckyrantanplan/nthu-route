@@ -5,6 +5,7 @@
 // $Revision: 13 $
 
 #include "parser.h"
+#include <stdlib.h>
 
 #include <array>
 #include <cctype>
@@ -24,8 +25,7 @@ namespace NTHUR {
 //====== Parser07 =========
 //{{{
 // virtual
-Parser07::~Parser07() {
-}
+Parser07::~Parser07() = default;
 
 // virtual
 RoutingRegion Parser07::parse() {
@@ -50,67 +50,67 @@ RoutingRegion Parser07::parseRoutingRegion() {
     fh_.getline(stringBuffer.data(), MAX_STRING_BUFER_LENGTH);
     // get grid size
     strtok(stringBuffer.data(), delims_.c_str());  // "grid" string
-    int x = atoi(strtok(NULL, delims_.c_str()));
-    int y = atoi(strtok(NULL, delims_.c_str()));
-    int layerNumber = atoi(strtok(NULL, delims_.c_str()));
+    int x = atoi(strtok(nullptr, delims_.c_str()));
+    int y = atoi(strtok(nullptr, delims_.c_str()));
+    int layerNumber = atoi(strtok(nullptr, delims_.c_str()));
     RoutingRegion builder_(x, y, layerNumber);
 
     // Set vertical capacity
     fh_.getline(stringBuffer.data(), MAX_STRING_BUFER_LENGTH);
     strtok(stringBuffer.data(), delims_.c_str());      // "vertical"
-    strtok(NULL, delims_.c_str());              // "capacity"
+    strtok(nullptr, delims_.c_str());              // "capacity"
     // for each layer, set the vertical capacity
     for (int i = 0; i < layerNumber; ++i) {
-        int capacity = atoi(strtok(NULL, delims_.c_str()));
+        int capacity = atoi(strtok(nullptr, delims_.c_str()));
         builder_.setVerticalCapacity(i, capacity);
     }
 
     // Set horizontal capacity
     fh_.getline(stringBuffer.data(), MAX_STRING_BUFER_LENGTH);
     strtok(stringBuffer.data(), delims_.c_str());      // "horizontal"
-    strtok(NULL, delims_.c_str());              // "capacity"
+    strtok(nullptr, delims_.c_str());              // "capacity"
     // for each layer, set the horizontal capacity
     for (int i = 0; i < layerNumber; ++i) {
-        int capacity = atoi(strtok(NULL, delims_.c_str()));
+        int capacity = atoi(strtok(nullptr, delims_.c_str()));
         builder_.setHorizontalCapacity(i, capacity);
     }
 
     // Set minimum width
     fh_.getline(stringBuffer.data(), MAX_STRING_BUFER_LENGTH);
     strtok(stringBuffer.data(), delims_.c_str());      // "minimum"
-    strtok(NULL, delims_.c_str());              // "width"
+    strtok(nullptr, delims_.c_str());              // "width"
     // for each layer, set the minimum width
     for (int i = 0; i < layerNumber; ++i) {
-        int width = atoi(strtok(NULL, delims_.c_str()));
+        int width = atoi(strtok(nullptr, delims_.c_str()));
         builder_.setLayerMinimumWidth(i, width);
     }
 
     // Set minimum spacing
     fh_.getline(stringBuffer.data(), MAX_STRING_BUFER_LENGTH);
     strtok(stringBuffer.data(), delims_.c_str());        // "minimum"
-    strtok(NULL, delims_.c_str());              // "spacing"
+    strtok(nullptr, delims_.c_str());              // "spacing"
     // for each layer, set the minimum spacing
     for (int i = 0; i < layerNumber; ++i) {
-        int spacing = atoi(strtok(NULL, delims_.c_str()));
+        int spacing = atoi(strtok(nullptr, delims_.c_str()));
         builder_.setLayerMinimumSpacing(i, spacing);
     }
 
     // Set via spacing
     fh_.getline(stringBuffer.data(), MAX_STRING_BUFER_LENGTH);
     strtok(stringBuffer.data(), delims_.c_str());        // "via"
-    strtok(NULL, delims_.c_str());              // "spacing"
+    strtok(nullptr, delims_.c_str());              // "spacing"
     // for each layer, set the via spacing
     for (int i = 0; i < layerNumber; ++i) {
-        int spacing = atoi(strtok(NULL, delims_.c_str()));
+        int spacing = atoi(strtok(nullptr, delims_.c_str()));
         builder_.setViaSpacing(i, spacing);
     }
 
     // Set tile transformation information
     fh_.getline(stringBuffer.data(), MAX_STRING_BUFER_LENGTH);
     int llx = atoi(strtok(stringBuffer.data(), delims_.c_str()));
-    int lly = atoi(strtok(NULL, delims_.c_str()));
-    int tileWidth = atoi(strtok(NULL, delims_.c_str()));
-    int tileHeight = atoi(strtok(NULL, delims_.c_str()));
+    int lly = atoi(strtok(nullptr, delims_.c_str()));
+    int tileWidth = atoi(strtok(nullptr, delims_.c_str()));
+    int tileHeight = atoi(strtok(nullptr, delims_.c_str()));
     builder_.setTileTransformInformation(llx, lly, tileWidth, tileHeight);
 
     return builder_;
@@ -127,8 +127,8 @@ void Parser07::parseNets(RoutingRegion& builder_) {
     } while (!isalnum(stringBuffer[0]));
     // Get total net number
     strtok(stringBuffer.data(), delims_.c_str());      // "num"
-    strtok(NULL, delims_.c_str());              // "net"
-    int netNumber = atoi(strtok(NULL, delims_.c_str()));    // read total net number
+    strtok(nullptr, delims_.c_str());              // "net"
+    int netNumber = atoi(strtok(nullptr, delims_.c_str()));    // read total net number
     builder_.setNetNumber(netNumber);
 
     for (int i = 0; i < netNumber; ++i) {
@@ -144,9 +144,9 @@ void Parser07::parseANet(RoutingRegion& builder_) {
     // Get net information
     fh_.getline(stringBuffer.data(), MAX_STRING_BUFER_LENGTH);
     std::string netName = strtok(stringBuffer.data(), delims_.c_str());
-    int netSerial = atoi(strtok(NULL, delims_.c_str()));    // read net serial number
-    int pinNumber = atoi(strtok(NULL, delims_.c_str()));    // read pin number
-    int minWidth = atoi(strtok(NULL, delims_.c_str())); // read net minmum width
+    int netSerial = atoi(strtok(nullptr, delims_.c_str()));    // read net serial number
+    int pinNumber = atoi(strtok(nullptr, delims_.c_str()));    // read pin number
+    int minWidth = atoi(strtok(nullptr, delims_.c_str())); // read net minmum width
 
     if (pinNumber <= MAX_PIN) {   // pin# > 1000 is a special net, we can skip it
         builder_.beginAddANet(netName.c_str(), netSerial, pinNumber, minWidth);  // Add a net to DB
@@ -154,8 +154,8 @@ void Parser07::parseANet(RoutingRegion& builder_) {
         for (int j = 0; j < pinNumber; ++j) {
             fh_.getline(stringBuffer.data(), MAX_STRING_BUFER_LENGTH);
             int x = atoi(strtok(stringBuffer.data(), delims_.c_str()));  // x of pin
-            int y = atoi(strtok(NULL, delims_.c_str()));        // y of pin
-            int layer = atoi(strtok(NULL, delims_.c_str()));    // layer of pin
+            int y = atoi(strtok(nullptr, delims_.c_str()));        // y of pin
+            int layer = atoi(strtok(nullptr, delims_.c_str()));    // layer of pin
             builder_.addPin(x, y, layer - 1);  //Add pin to a net
         }
         builder_.endAddANet();                             // end of reading a net
@@ -186,14 +186,14 @@ void Parser07::adjustCapacity(RoutingRegion& builder_) {
         fh_.getline(stringBuffer.data(), MAX_STRING_BUFER_LENGTH);
         // reading source gCell
         int x1 = atoi(strtok(stringBuffer.data(), delims_.c_str()));
-        int y1 = atoi(strtok(NULL, delims_.c_str()));
-        int z1 = atoi(strtok(NULL, delims_.c_str()));
+        int y1 = atoi(strtok(nullptr, delims_.c_str()));
+        int z1 = atoi(strtok(nullptr, delims_.c_str()));
         // reading sink gCell
-        int x2 = atoi(strtok(NULL, delims_.c_str()));
-        int y2 = atoi(strtok(NULL, delims_.c_str()));
-        int z2 = atoi(strtok(NULL, delims_.c_str()));
+        int x2 = atoi(strtok(nullptr, delims_.c_str()));
+        int y2 = atoi(strtok(nullptr, delims_.c_str()));
+        int z2 = atoi(strtok(nullptr, delims_.c_str()));
         // reading the new capacity
-        int capacity = atoi(strtok(NULL, delims_.c_str()));
+        int capacity = atoi(strtok(nullptr, delims_.c_str()));
         builder_.adjustEdgeCapacity(x1, y1, z1 - 1, x2, y2, z2 - 1, capacity);
     }
 
@@ -202,8 +202,7 @@ void Parser07::adjustCapacity(RoutingRegion& builder_) {
 
 //====== Parser98 =======
 //{{{
-Parser98::~Parser98() {
-}
+Parser98::~Parser98() = default;
 
 RoutingRegion Parser98::parse() {
 
@@ -225,24 +224,24 @@ RoutingRegion Parser98::parseRoutingRegion() {
     fh_.getline(stringBuffer.data(), MAX_STRING_BUFER_LENGTH);
     // get grid size
     strtok(stringBuffer.data(), delims_.c_str());        // "grid" string
-    int x = atoi(strtok(NULL, delims_.c_str()));
-    int y = atoi(strtok(NULL, delims_.c_str()));
+    int x = atoi(strtok(nullptr, delims_.c_str()));
+    int y = atoi(strtok(nullptr, delims_.c_str()));
     RoutingRegion builder_(x, y, 1);                     // All test cases in ISPD'98 are single layer
 
     // Set vertical capacity
     fh_.getline(stringBuffer.data(), MAX_STRING_BUFER_LENGTH);
     strtok(stringBuffer.data(), delims_.c_str());        // "vertical"
-    strtok(NULL, delims_.c_str());              // "capacity"
+    strtok(nullptr, delims_.c_str());              // "capacity"
     // set the vertical capacity
-    int capacity = atoi(strtok(NULL, delims_.c_str()));
+    int capacity = atoi(strtok(nullptr, delims_.c_str()));
     builder_.setVerticalCapacity(0, capacity);
 
     // Set horizontal capacity
     fh_.getline(stringBuffer.data(), MAX_STRING_BUFER_LENGTH);
     strtok(stringBuffer.data(), delims_.c_str());        // "horizontal"
-    strtok(NULL, delims_.c_str());              // "capacity"
+    strtok(nullptr, delims_.c_str());              // "capacity"
     // set the horizontal capacity
-    capacity = atoi(strtok(NULL, delims_.c_str()));
+    capacity = atoi(strtok(nullptr, delims_.c_str()));
     builder_.setHorizontalCapacity(0, capacity);
 
     // Set minimum width
@@ -277,8 +276,8 @@ void Parser98::parseNets(RoutingRegion& builder_) {
     } while (!isalnum(stringBuffer[0]));
     // Get total net number
     strtok(stringBuffer.data(), delims_.c_str());      // "num"
-    strtok(NULL, delims_.c_str());              // "net"
-    int netNumber = atoi(strtok(NULL, delims_.c_str()));
+    strtok(nullptr, delims_.c_str());              // "net"
+    int netNumber = atoi(strtok(nullptr, delims_.c_str()));
     builder_.setNetNumber(netNumber);
 
     for (int i = 0; i < netNumber; ++i) {
@@ -293,8 +292,8 @@ void Parser98::parseANet(RoutingRegion& builder_) {
     // Get net information
     fh_.getline(stringBuffer.data(), MAX_STRING_BUFER_LENGTH);
     std::string netName = strtok(stringBuffer.data(), delims_.c_str());
-    int netSerialNumber = atoi(strtok(NULL, delims_.c_str()));
-    int pinNumber = atoi(strtok(NULL, delims_.c_str()));
+    int netSerialNumber = atoi(strtok(nullptr, delims_.c_str()));
+    int pinNumber = atoi(strtok(nullptr, delims_.c_str()));
     int minWidth = 1;
 
     if (pinNumber < MAX_PIN) {   // pin# > 1000 is a special net, we don't need to route it
@@ -302,7 +301,7 @@ void Parser98::parseANet(RoutingRegion& builder_) {
         for (int j = 0; j < pinNumber; ++j) {
             fh_.getline(stringBuffer.data(), MAX_STRING_BUFER_LENGTH);
             int x = atoi(strtok(stringBuffer.data(), delims_.c_str()));
-            int y = atoi(strtok(NULL, delims_.c_str()));
+            int y = atoi(strtok(nullptr, delims_.c_str()));
             builder_.addPin(x, y, 0);
         }
         builder_.endAddANet();                             // end of reading a net

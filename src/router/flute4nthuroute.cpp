@@ -1,8 +1,11 @@
 #include "flute4nthuroute.h"
 
 #include <cassert>
+#include <vector>
 
 #include "../flute/flute-function.h"
+#include "flute/flute-ds.h"
+#include "grdb/RoutingComponent.h"
 namespace NTHUR {
 
 Flute::Flute() {

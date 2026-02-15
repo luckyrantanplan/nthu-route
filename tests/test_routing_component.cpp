@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
 
 #include "../src/grdb/RoutingComponent.h"
-#include "../src/misc/geometry.h"
 
 namespace {
 

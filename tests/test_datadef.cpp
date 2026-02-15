@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <string>
 
 #include "../src/router/DataDef.h"
 #include "../src/misc/geometry.h"

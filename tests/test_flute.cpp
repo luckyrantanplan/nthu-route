@@ -2,7 +2,8 @@
 
 #include <cstdlib>
 
-#include "../src/flute/flute.h"
+#include "flute/flute-ds.h"
+#include "flute/flute-function.h"
 
 namespace {
 

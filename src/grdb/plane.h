@@ -80,8 +80,7 @@ Plane<VertexT, EdgeT>::Plane(const Plane& original) :
 }
 
 template<class VertexT, class EdgeT>
-Plane<VertexT, EdgeT>::~Plane() {
-}
+Plane<VertexT, EdgeT>::~Plane() = default;
 
 //template<class VertexT, class EdgeT>
 //void Plane<VertexT, EdgeT>::operator=(const Plane& original) {

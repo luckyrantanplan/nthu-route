@@ -128,8 +128,11 @@ bool FileHandler::open(AccessMode accMode) {
 
 inline
 int FileHandler::close() {
-    if (isOpen_ == false)
+    if (!isOpen_) { { {
         return -1;
+}
+}
+}
     isOpen_ = false;
     return file_->close();
 }
@@ -139,22 +142,28 @@ char* FileHandler::getline(char* buffer, int length) {
     if (isOpen_) {
         return file_->getline(buffer, length);
     } else {
-        return NULL;
+        return nullptr;
     }
 }
 
 inline
 void FileHandler::skipline() {
-    if (isOpen_)
+    if (isOpen_) { { {
         file_->skipline();
+}
+}
+}
 }
 
 inline
 int FileHandler::writeline(const char* buffer) {
-    if (isOpen_)
+    if (isOpen_) { { {
         return file_->writeline(buffer);
-    else
+    } } } else { { {
         return -1;
+}
+}
+}
 }
 } // namespace NTHUR
 #endif //INC_FILEHANDLER_H
