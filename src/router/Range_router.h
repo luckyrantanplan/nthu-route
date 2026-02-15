@@ -51,17 +51,9 @@ struct RangeRouter {
 public:
 
     struct ColorMap {
-        //This color map is used by
-
-        //expand_range()
-        //for recording which edges have expanded
-        //
+        // Used by expand_range() to record which edges have been expanded
         int expand;
-        //This color map is used by
-        //query_range_2pin()
-        //for recording if all the 2-pin nets which
-        //locate on the same tile are routed
-
+        // Used by query_range_2pin() to record if 2-pin nets on the same tile are routed
         int routeState;
 
         ColorMap() :

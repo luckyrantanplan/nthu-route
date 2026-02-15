@@ -176,7 +176,7 @@ public:
     ///@brief Get the specified edge between 2 vertices, and the edge is read-only.
     const T& edge(const Coordinate_2d& c1, const Coordinate_2d& c2) const;
 
-    const std::size_t num_elements() const;
+    std::size_t num_elements() const;
 
     ///@brief Get the specified edge
     const T& east(const Coordinate_2d& c) const;
@@ -311,7 +311,7 @@ const T& EdgePlane<T>::edge(const Coordinate_2d& c1, const Coordinate_2d& c2) co
     throw std::exception();
 }
 template<class T>
-const std::size_t EdgePlane<T>::num_elements() const {
+std::size_t EdgePlane<T>::num_elements() const {
     return edgePlane_.num_elements();
 }
 

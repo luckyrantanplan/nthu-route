@@ -47,8 +47,6 @@ void Construct_2d_tree::init_2pin_list() {
 
     netnum = rr_map.get_netNumber();
     for (i = 0; i < netnum; ++i) {
-//Two pin nets group by net id. So for fetching the 2nd net's 2-pin net,
-//you can fetch by net_2pin_list[2][i], where i is the id of 2-pin net.
         net_2pin_list.push_back(std::vector<Two_pin_element_2d>());
         bbox_2pin_list.push_back(std::vector<Two_pin_element_2d>());
     }
@@ -175,7 +173,8 @@ void Construct_2d_tree::gen_FR_congestion_map() {
 
     for (int& i : bboxRouteStateMap.all()) {
         i = -1;
-    }SPDLOG_TRACE(log_sp, "initial congestion map: calculating every edge's capacity");
+    }
+    SPDLOG_TRACE(log_sp, "initial congestion map: calculating every edge's capacity");
     congestion.init_2d_map(rr_map);
     SPDLOG_TRACE(log_sp, "initial 2-pin net container");
     init_2pin_list();
@@ -305,7 +304,6 @@ Vertex_flute_ptr Construct_2d_tree::findY(Vertex_flute& a, std::function<bool(co
                 find = *nei;
             }
         }
-        //  assert(test(find->c.y, cur->c.y) || (find->c.y == a.c.y) || (find->type == Vertex_flute::PIN));
         cur = find;
         if ((cur->c.y == a.c.y) || (cur->c.x != a.c.x)) {	//no neighboring vertex next to  a
             break;
@@ -324,7 +322,6 @@ Vertex_flute_ptr Construct_2d_tree::findX(Vertex_flute& a, std::function<bool(co
                 find = *nei;
             }
         }
-        //  assert(test(find->c.x, cur->c.x) || (find->c.x == a.c.x) || (find->type == Vertex_flute::PIN));
         cur = find;
         if (cur->c.x == a.c.x || cur->c.y != a.c.y) {	//no neighboring vertex in the right of a
             break;
@@ -583,7 +580,7 @@ void Construct_2d_tree::dfs_output_tree(Vertex_flute& node, int parent, TreeFlut
     }
 }
 
-void Construct_2d_tree::edge_shifting(TreeFlute& t, int j) {
+void Construct_2d_tree::edge_shifting(TreeFlute& t, int /*j*/) {
 
     double ori_cost = 0;            // the original cost without edge shifting
     std::vector<Vertex_flute> vertex_fl;
@@ -692,15 +689,13 @@ Construct_2d_tree::Construct_2d_tree(const RoutingParameters& routingparam,const
     /* TroyLee: End */
 
     log_sp->info("gen_FR_congestion_map ");
-    gen_FR_congestion_map();        // Generate congestion map by flute, then route all nets by L-shap pattern routing with
-// congestion information from this map. After that, apply edge shifting to the result
-// to get the initial solution.
+    gen_FR_congestion_map();
     log_sp->info(" congestion.cal_total_wirelength();");
     congestion.cal_total_wirelength();        // The report value is the sum of demand on every edge
     congestion.cal_max_overflow();
     Route_2pinnets route_2pinnets(*this, rangeRouter, congestion);
 
-    route_2pinnets.allocate_gridcell();        //question: I don't know what this for. (jalamorm, 07/10/31)
+    route_2pinnets.allocate_gridcell();
 
 //Make a 2-pin net list without group by net
     for (Two_pin_list_2d& netList : net_2pin_list) {

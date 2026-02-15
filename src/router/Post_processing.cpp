@@ -75,9 +75,8 @@ Post_processing::Post_processing(const RoutingParameters& routingparam, Congesti
 
 void Post_processing::process(Route_2pinnets& route_2pinnets) {
 
-    //Fetch from routing_parameter 
-    log_sp->info("================================================================");    //
-    log_sp->info("===                   Enter Post Processing                  ==="); //
+    log_sp->info("================================================================");
+    log_sp->info("===                   Enter Post Processing                  ===");
     log_sp->info("================================================================");
 
     int Post_processing_iteration = routing_parameter.get_iteration_p3();

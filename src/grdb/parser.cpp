@@ -49,7 +49,7 @@ RoutingRegion Parser07::parseRoutingRegion() {
     // Get grid size and layer number
     fh_.getline(stringBuffer.data(), MAX_STRING_BUFER_LENGTH);
     // get grid size
-    atoi(strtok(stringBuffer.data(), delims_.c_str()));  // "grid" string
+    strtok(stringBuffer.data(), delims_.c_str());  // "grid" string
     int x = atoi(strtok(NULL, delims_.c_str()));
     int y = atoi(strtok(NULL, delims_.c_str()));
     int layerNumber = atoi(strtok(NULL, delims_.c_str()));

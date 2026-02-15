@@ -7,11 +7,11 @@
 
 #include "MonotonicRouting.h"
 
-#include <bits/move.h>
 #include <boost/multi_array/base.hpp>
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
+#include <utility>
 #include <vector>
 
 #include "../grdb/EdgePlane.h"
@@ -167,7 +167,7 @@ bool MonotonicRouting::monotonic_pattern_route(int x1, int y1, int x2, int y2, T
 /*
  Compare two cost and return a pointer to the Monotonici_element which has smaller cost
  */
-const bool Monotonic_element::operator <(Monotonic_element& m2) const {
+bool Monotonic_element::operator <(Monotonic_element& m2) const {
     if ((total_cost - m2.total_cost) < (neg_error_bound))
         return true;
     else if ((total_cost - m2.total_cost) > (neg_error_bound))
@@ -251,7 +251,7 @@ void MonotonicRouting::compare_two_direction_congestion(int i, int j, Orientatio
     else if (choose_element == (&vertical_element))
         parent_monotonic[i][j] = dir2;
     else {
-        puts("compare has problem!!!\n");
+        fprintf(stderr, "MonotonicRouting: compare has problem\n");
         exit(0);
     }
 }

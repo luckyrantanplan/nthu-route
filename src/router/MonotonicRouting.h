@@ -33,7 +33,7 @@ public:
     int distance;
     int via_num;
 
-    const bool operator <(Monotonic_element& m2) const;
+    bool operator <(Monotonic_element& m2) const;
 };
 
 class MonotonicRouting {
