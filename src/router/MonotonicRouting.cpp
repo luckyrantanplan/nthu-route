@@ -309,7 +309,7 @@ bool MonotonicRouting::monotonicRoute(Two_pin_element_2d& two_pin, Bound& bound,
     bool find_path_flag = false;
 
     if (monotonic_enable) {
-        bool find_path_flag = monotonic_pattern_route(two_pin.pin1.x, two_pin.pin1.y, two_pin.pin2.x, two_pin.pin2.y, two_pin, two_pin.net_id, bound);
+        find_path_flag = monotonic_pattern_route(two_pin.pin1.x, two_pin.pin1.y, two_pin.pin2.x, two_pin.pin2.y, two_pin, two_pin.net_id, bound);
 
         if (find_path_flag) {
             bound_path = two_pin.path;
