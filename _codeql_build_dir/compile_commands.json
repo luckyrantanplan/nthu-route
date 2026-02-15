@@ -1,0 +1,116 @@
+[
+{
+  "directory": "/home/runner/work/nthu-route/nthu-route/_codeql_build_dir",
+  "command": "/home/runner/work/nthu-route/.codeql-scratch/dbs/cpp/working/autobuild/bin/c++  -I/home/runner/work/nthu-route/nthu-route/src -isystem /home/runner/work/nthu-route/nthu-route/src/spdlog -O3 -DNDEBUG -std=c++14 -Wall -Wextra -Wpedantic -Wnull-dereference -Wformat=2 -o CMakeFiles/NthuRoute.dir/src/grdb/RoutingComponent.cpp.o -c /home/runner/work/nthu-route/nthu-route/src/grdb/RoutingComponent.cpp",
+  "file": "/home/runner/work/nthu-route/nthu-route/src/grdb/RoutingComponent.cpp",
+  "output": "CMakeFiles/NthuRoute.dir/src/grdb/RoutingComponent.cpp.o"
+},
+{
+  "directory": "/home/runner/work/nthu-route/nthu-route/_codeql_build_dir",
+  "command": "/home/runner/work/nthu-route/.codeql-scratch/dbs/cpp/working/autobuild/bin/c++  -I/home/runner/work/nthu-route/nthu-route/src -isystem /home/runner/work/nthu-route/nthu-route/src/spdlog -O3 -DNDEBUG -std=c++14 -Wall -Wextra -Wpedantic -Wnull-dereference -Wformat=2 -o CMakeFiles/NthuRoute.dir/src/grdb/RoutingRegion.cpp.o -c /home/runner/work/nthu-route/nthu-route/src/grdb/RoutingRegion.cpp",
+  "file": "/home/runner/work/nthu-route/nthu-route/src/grdb/RoutingRegion.cpp",
+  "output": "CMakeFiles/NthuRoute.dir/src/grdb/RoutingRegion.cpp.o"
+},
+{
+  "directory": "/home/runner/work/nthu-route/nthu-route/_codeql_build_dir",
+  "command": "/home/runner/work/nthu-route/.codeql-scratch/dbs/cpp/working/autobuild/bin/c++  -I/home/runner/work/nthu-route/nthu-route/src -isystem /home/runner/work/nthu-route/nthu-route/src/spdlog -O3 -DNDEBUG -std=c++14 -Wall -Wextra -Wpedantic -Wnull-dereference -Wformat=2 -o CMakeFiles/NthuRoute.dir/src/grdb/parser.cpp.o -c /home/runner/work/nthu-route/nthu-route/src/grdb/parser.cpp",
+  "file": "/home/runner/work/nthu-route/nthu-route/src/grdb/parser.cpp",
+  "output": "CMakeFiles/NthuRoute.dir/src/grdb/parser.cpp.o"
+},
+{
+  "directory": "/home/runner/work/nthu-route/nthu-route/_codeql_build_dir",
+  "command": "/home/runner/work/nthu-route/.codeql-scratch/dbs/cpp/working/autobuild/bin/c++  -I/home/runner/work/nthu-route/nthu-route/src -isystem /home/runner/work/nthu-route/nthu-route/src/spdlog -O3 -DNDEBUG -std=c++14 -Wall -Wextra -Wpedantic -Wnull-dereference -Wformat=2 -o CMakeFiles/NthuRoute.dir/src/misc/filehandler.cpp.o -c /home/runner/work/nthu-route/nthu-route/src/misc/filehandler.cpp",
+  "file": "/home/runner/work/nthu-route/nthu-route/src/misc/filehandler.cpp",
+  "output": "CMakeFiles/NthuRoute.dir/src/misc/filehandler.cpp.o"
+},
+{
+  "directory": "/home/runner/work/nthu-route/nthu-route/_codeql_build_dir",
+  "command": "/home/runner/work/nthu-route/.codeql-scratch/dbs/cpp/working/autobuild/bin/c++  -I/home/runner/work/nthu-route/nthu-route/src -isystem /home/runner/work/nthu-route/nthu-route/src/spdlog -O3 -DNDEBUG -std=c++14 -Wall -Wextra -Wpedantic -Wnull-dereference -Wformat=2 -o CMakeFiles/NthuRoute.dir/src/router/Congestion.cpp.o -c /home/runner/work/nthu-route/nthu-route/src/router/Congestion.cpp",
+  "file": "/home/runner/work/nthu-route/nthu-route/src/router/Congestion.cpp",
+  "output": "CMakeFiles/NthuRoute.dir/src/router/Congestion.cpp.o"
+},
+{
+  "directory": "/home/runner/work/nthu-route/nthu-route/_codeql_build_dir",
+  "command": "/home/runner/work/nthu-route/.codeql-scratch/dbs/cpp/working/autobuild/bin/c++  -I/home/runner/work/nthu-route/nthu-route/src -isystem /home/runner/work/nthu-route/nthu-route/src/spdlog -O3 -DNDEBUG -std=c++14 -Wall -Wextra -Wpedantic -Wnull-dereference -Wformat=2 -o CMakeFiles/NthuRoute.dir/src/router/Construct_2d_tree.cpp.o -c /home/runner/work/nthu-route/nthu-route/src/router/Construct_2d_tree.cpp",
+  "file": "/home/runner/work/nthu-route/nthu-route/src/router/Construct_2d_tree.cpp",
+  "output": "CMakeFiles/NthuRoute.dir/src/router/Construct_2d_tree.cpp.o"
+},
+{
+  "directory": "/home/runner/work/nthu-route/nthu-route/_codeql_build_dir",
+  "command": "/home/runner/work/nthu-route/.codeql-scratch/dbs/cpp/working/autobuild/bin/c++  -I/home/runner/work/nthu-route/nthu-route/src -isystem /home/runner/work/nthu-route/nthu-route/src/spdlog -O3 -DNDEBUG -std=c++14 -Wall -Wextra -Wpedantic -Wnull-dereference -Wformat=2 -o CMakeFiles/NthuRoute.dir/src/router/DataDef.cpp.o -c /home/runner/work/nthu-route/nthu-route/src/router/DataDef.cpp",
+  "file": "/home/runner/work/nthu-route/nthu-route/src/router/DataDef.cpp",
+  "output": "CMakeFiles/NthuRoute.dir/src/router/DataDef.cpp.o"
+},
+{
+  "directory": "/home/runner/work/nthu-route/nthu-route/_codeql_build_dir",
+  "command": "/home/runner/work/nthu-route/.codeql-scratch/dbs/cpp/working/autobuild/bin/c++  -I/home/runner/work/nthu-route/nthu-route/src -isystem /home/runner/work/nthu-route/nthu-route/src/spdlog -O3 -DNDEBUG -std=c++14 -Wall -Wextra -Wpedantic -Wnull-dereference -Wformat=2 -o CMakeFiles/NthuRoute.dir/src/router/Layerassignment.cpp.o -c /home/runner/work/nthu-route/nthu-route/src/router/Layerassignment.cpp",
+  "file": "/home/runner/work/nthu-route/nthu-route/src/router/Layerassignment.cpp",
+  "output": "CMakeFiles/NthuRoute.dir/src/router/Layerassignment.cpp.o"
+},
+{
+  "directory": "/home/runner/work/nthu-route/nthu-route/_codeql_build_dir",
+  "command": "/home/runner/work/nthu-route/.codeql-scratch/dbs/cpp/working/autobuild/bin/c++  -I/home/runner/work/nthu-route/nthu-route/src -isystem /home/runner/work/nthu-route/nthu-route/src/spdlog -O3 -DNDEBUG -std=c++14 -Wall -Wextra -Wpedantic -Wnull-dereference -Wformat=2 -o CMakeFiles/NthuRoute.dir/src/router/MM_mazeroute.cpp.o -c /home/runner/work/nthu-route/nthu-route/src/router/MM_mazeroute.cpp",
+  "file": "/home/runner/work/nthu-route/nthu-route/src/router/MM_mazeroute.cpp",
+  "output": "CMakeFiles/NthuRoute.dir/src/router/MM_mazeroute.cpp.o"
+},
+{
+  "directory": "/home/runner/work/nthu-route/nthu-route/_codeql_build_dir",
+  "command": "/home/runner/work/nthu-route/.codeql-scratch/dbs/cpp/working/autobuild/bin/c++  -I/home/runner/work/nthu-route/nthu-route/src -isystem /home/runner/work/nthu-route/nthu-route/src/spdlog -O3 -DNDEBUG -std=c++14 -Wall -Wextra -Wpedantic -Wnull-dereference -Wformat=2 -o CMakeFiles/NthuRoute.dir/src/router/Main.cpp.o -c /home/runner/work/nthu-route/nthu-route/src/router/Main.cpp",
+  "file": "/home/runner/work/nthu-route/nthu-route/src/router/Main.cpp",
+  "output": "CMakeFiles/NthuRoute.dir/src/router/Main.cpp.o"
+},
+{
+  "directory": "/home/runner/work/nthu-route/nthu-route/_codeql_build_dir",
+  "command": "/home/runner/work/nthu-route/.codeql-scratch/dbs/cpp/working/autobuild/bin/c++  -I/home/runner/work/nthu-route/nthu-route/src -isystem /home/runner/work/nthu-route/nthu-route/src/spdlog -O3 -DNDEBUG -std=c++14 -Wall -Wextra -Wpedantic -Wnull-dereference -Wformat=2 -o CMakeFiles/NthuRoute.dir/src/router/MonotonicRouting.cpp.o -c /home/runner/work/nthu-route/nthu-route/src/router/MonotonicRouting.cpp",
+  "file": "/home/runner/work/nthu-route/nthu-route/src/router/MonotonicRouting.cpp",
+  "output": "CMakeFiles/NthuRoute.dir/src/router/MonotonicRouting.cpp.o"
+},
+{
+  "directory": "/home/runner/work/nthu-route/nthu-route/_codeql_build_dir",
+  "command": "/home/runner/work/nthu-route/.codeql-scratch/dbs/cpp/working/autobuild/bin/c++  -I/home/runner/work/nthu-route/nthu-route/src -isystem /home/runner/work/nthu-route/nthu-route/src/spdlog -O3 -DNDEBUG -std=c++14 -Wall -Wextra -Wpedantic -Wnull-dereference -Wformat=2 -o CMakeFiles/NthuRoute.dir/src/router/OutputGeneration.cpp.o -c /home/runner/work/nthu-route/nthu-route/src/router/OutputGeneration.cpp",
+  "file": "/home/runner/work/nthu-route/nthu-route/src/router/OutputGeneration.cpp",
+  "output": "CMakeFiles/NthuRoute.dir/src/router/OutputGeneration.cpp.o"
+},
+{
+  "directory": "/home/runner/work/nthu-route/nthu-route/_codeql_build_dir",
+  "command": "/home/runner/work/nthu-route/.codeql-scratch/dbs/cpp/working/autobuild/bin/c++  -I/home/runner/work/nthu-route/nthu-route/src -isystem /home/runner/work/nthu-route/nthu-route/src/spdlog -O3 -DNDEBUG -std=c++14 -Wall -Wextra -Wpedantic -Wnull-dereference -Wformat=2 -o CMakeFiles/NthuRoute.dir/src/router/Post_processing.cpp.o -c /home/runner/work/nthu-route/nthu-route/src/router/Post_processing.cpp",
+  "file": "/home/runner/work/nthu-route/nthu-route/src/router/Post_processing.cpp",
+  "output": "CMakeFiles/NthuRoute.dir/src/router/Post_processing.cpp.o"
+},
+{
+  "directory": "/home/runner/work/nthu-route/nthu-route/_codeql_build_dir",
+  "command": "/home/runner/work/nthu-route/.codeql-scratch/dbs/cpp/working/autobuild/bin/c++  -I/home/runner/work/nthu-route/nthu-route/src -isystem /home/runner/work/nthu-route/nthu-route/src/spdlog -O3 -DNDEBUG -std=c++14 -Wall -Wextra -Wpedantic -Wnull-dereference -Wformat=2 -o CMakeFiles/NthuRoute.dir/src/router/Range_router.cpp.o -c /home/runner/work/nthu-route/nthu-route/src/router/Range_router.cpp",
+  "file": "/home/runner/work/nthu-route/nthu-route/src/router/Range_router.cpp",
+  "output": "CMakeFiles/NthuRoute.dir/src/router/Range_router.cpp.o"
+},
+{
+  "directory": "/home/runner/work/nthu-route/nthu-route/_codeql_build_dir",
+  "command": "/home/runner/work/nthu-route/.codeql-scratch/dbs/cpp/working/autobuild/bin/c++  -I/home/runner/work/nthu-route/nthu-route/src -isystem /home/runner/work/nthu-route/nthu-route/src/spdlog -O3 -DNDEBUG -std=c++14 -Wall -Wextra -Wpedantic -Wnull-dereference -Wformat=2 -o CMakeFiles/NthuRoute.dir/src/router/Route.cpp.o -c /home/runner/work/nthu-route/nthu-route/src/router/Route.cpp",
+  "file": "/home/runner/work/nthu-route/nthu-route/src/router/Route.cpp",
+  "output": "CMakeFiles/NthuRoute.dir/src/router/Route.cpp.o"
+},
+{
+  "directory": "/home/runner/work/nthu-route/nthu-route/_codeql_build_dir",
+  "command": "/home/runner/work/nthu-route/.codeql-scratch/dbs/cpp/working/autobuild/bin/c++  -I/home/runner/work/nthu-route/nthu-route/src -isystem /home/runner/work/nthu-route/nthu-route/src/spdlog -O3 -DNDEBUG -std=c++14 -Wall -Wextra -Wpedantic -Wnull-dereference -Wformat=2 -o CMakeFiles/NthuRoute.dir/src/router/Route_2pinnets.cpp.o -c /home/runner/work/nthu-route/nthu-route/src/router/Route_2pinnets.cpp",
+  "file": "/home/runner/work/nthu-route/nthu-route/src/router/Route_2pinnets.cpp",
+  "output": "CMakeFiles/NthuRoute.dir/src/router/Route_2pinnets.cpp.o"
+},
+{
+  "directory": "/home/runner/work/nthu-route/nthu-route/_codeql_build_dir",
+  "command": "/home/runner/work/nthu-route/.codeql-scratch/dbs/cpp/working/autobuild/bin/c++  -I/home/runner/work/nthu-route/nthu-route/src -isystem /home/runner/work/nthu-route/nthu-route/src/spdlog -O3 -DNDEBUG -std=c++14 -Wall -Wextra -Wpedantic -Wnull-dereference -Wformat=2 -o CMakeFiles/NthuRoute.dir/src/router/flute4nthuroute.cpp.o -c /home/runner/work/nthu-route/nthu-route/src/router/flute4nthuroute.cpp",
+  "file": "/home/runner/work/nthu-route/nthu-route/src/router/flute4nthuroute.cpp",
+  "output": "CMakeFiles/NthuRoute.dir/src/router/flute4nthuroute.cpp.o"
+},
+{
+  "directory": "/home/runner/work/nthu-route/nthu-route/_codeql_build_dir",
+  "command": "/home/runner/work/nthu-route/.codeql-scratch/dbs/cpp/working/autobuild/bin/c++  -I/home/runner/work/nthu-route/nthu-route/src -isystem /home/runner/work/nthu-route/nthu-route/src/spdlog -O3 -DNDEBUG -std=c++14 -Wall -Wextra -Wpedantic -Wnull-dereference -Wformat=2 -o CMakeFiles/NthuRoute.dir/src/router/parameter.cpp.o -c /home/runner/work/nthu-route/nthu-route/src/router/parameter.cpp",
+  "file": "/home/runner/work/nthu-route/nthu-route/src/router/parameter.cpp",
+  "output": "CMakeFiles/NthuRoute.dir/src/router/parameter.cpp.o"
+},
+{
+  "directory": "/home/runner/work/nthu-route/nthu-route/_codeql_build_dir",
+  "command": "/home/runner/work/nthu-route/.codeql-scratch/dbs/cpp/working/autobuild/bin/c++  -I/home/runner/work/nthu-route/nthu-route/src -isystem /home/runner/work/nthu-route/nthu-route/src/spdlog -O3 -DNDEBUG -std=c++14 -Wall -Wextra -Wpedantic -Wnull-dereference -Wformat=2 -w -o CMakeFiles/NthuRoute.dir/src/flute/flute.cpp.o -c /home/runner/work/nthu-route/nthu-route/src/flute/flute.cpp",
+  "file": "/home/runner/work/nthu-route/nthu-route/src/flute/flute.cpp",
+  "output": "CMakeFiles/NthuRoute.dir/src/flute/flute.cpp.o"
+}
+]

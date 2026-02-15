@@ -85,3 +85,55 @@ install(TARGETS NthuRoute DESTINATION bin)
 # Copy data files needed at runtime
 configure_file(${CMAKE_SOURCE_DIR}/POWV9.dat ${CMAKE_BINARY_DIR}/POWV9.dat COPYONLY)
 configure_file(${CMAKE_SOURCE_DIR}/POST9.dat ${CMAKE_BINARY_DIR}/POST9.dat COPYONLY)
+
+# --- Tests ---
+find_package(GTest QUIET)
+if(GTest_FOUND)
+    enable_testing()
+
+    # Library of project sources (without Main.cpp) for tests to link against
+    set(LIB_SOURCES ${PROJECT_SOURCES})
+    list(REMOVE_ITEM LIB_SOURCES src/router/Main.cpp)
+
+    add_executable(NthuRouteTests
+        tests/test_geometry.cpp
+        tests/test_routing_component.cpp
+        tests/test_datadef.cpp
+        tests/test_routing_region.cpp
+        tests/test_edge_plane.cpp
+        ${LIB_SOURCES}
+        ${THIRDPARTY_SOURCES}
+    )
+
+    target_include_directories(NthuRouteTests PRIVATE
+        ${CMAKE_SOURCE_DIR}/src
+        ${Boost_INCLUDE_DIRS}
+    )
+
+    target_include_directories(NthuRouteTests SYSTEM PRIVATE
+        ${CMAKE_SOURCE_DIR}/src/spdlog
+    )
+
+    target_link_libraries(NthuRouteTests PRIVATE
+        GTest::GTest
+        GTest::Main
+        Boost::boost
+        ZLIB::ZLIB
+        pthread
+    )
+
+    target_compile_options(NthuRouteTests PRIVATE
+        -Wall
+        -Wextra
+        -Wpedantic
+        -Wnull-dereference
+        -Wformat=2
+    )
+
+    set_source_files_properties(${THIRDPARTY_SOURCES} PROPERTIES
+        COMPILE_FLAGS "-w"
+    )
+
+    include(GoogleTest)
+    gtest_discover_tests(NthuRouteTests)
+endif()

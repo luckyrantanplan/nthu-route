@@ -64,6 +64,16 @@ cmake -B build -DCMAKE_BUILD_TYPE=Debug
 cmake --build build -j$(nproc)
 ```
 
+### Running Tests
+
+Tests use [Google Test](https://github.com/google/googletest). Install it (`sudo apt-get install libgtest-dev` on Ubuntu), then:
+
+```bash
+cmake -B build -DCMAKE_BUILD_TYPE=Debug
+cmake --build build -j$(nproc)
+cd build && ctest --output-on-failure
+```
+
 ### Install (optional)
 
 ```bash
