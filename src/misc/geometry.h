@@ -34,15 +34,9 @@ public:
             x { x }, y { y } {
     }
 
-    Coordinate_2d(const Coordinate_2d& c) :
-            x { c.x }, y { c.y } {
-    }
+    Coordinate_2d(const Coordinate_2d& c)  = default;
 
-    Coordinate_2d& operator=(const Coordinate_2d& other) {
-        x = other.x;
-        y = other.y;
-        return *this;
-    }
+    Coordinate_2d& operator=(const Coordinate_2d& other) = default;
 
     bool operator==(const Coordinate_2d& other) const {
         return (x == other.x && y == other.y);

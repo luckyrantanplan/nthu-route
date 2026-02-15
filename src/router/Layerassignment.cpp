@@ -1,25 +1,25 @@
 #include "Layerassignment.h"
 
+#include <algorithm>
 #include <boost/range/combine.hpp>
 #include <boost/range/detail/combine_cxx11.hpp>
-#include <boost/range/iterator_range_core.hpp>
 #include <boost/tuple/detail/tuple_basic.hpp>
-#include <sys/types.h>
 #include <chrono>
 #include <cstddef>
+#include <cstdint>
 #include <cstdlib>
 #include <queue>
 #include <stack>
 #include <utility>
+#include <vector>
 
 #include "../grdb/EdgePlane.h"
 #include "../grdb/RoutingComponent.h"
-#include "../grdb/RoutingRegion.h"
-#include "../spdlog/details/logger_impl.h"
 #include "../spdlog/details/spdlog_impl.h"
-#include "../spdlog/logger.h"
 #include "Congestion.h"
 #include "DataDef.h"
+#include "misc/geometry.h"
+#include "router/OutputGeneration.h"
 
 namespace NTHUR {
 

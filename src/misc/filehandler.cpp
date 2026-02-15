@@ -5,6 +5,7 @@
 // $Revision: 12 $
 
 #include "filehandler.h"
+#include <zlib.h>
 #include <cstring>
 #include <cassert>
 #include <cstdio>
@@ -20,7 +21,7 @@ FileHandler::FileHandler(const char* fname, FileType ftype) :
     //File FileType is auto, then look at the file extension to get real FileType
     if (ftype == AutoFileType) {
         const char* ext = strrchr(fname, '.');
-        if (ext != NULL && (strcmp(ext, ".gz") == 0)) {
+        if (ext != nullptr && (strcmp(ext, ".gz") == 0)) {
             ftype = GzipFileType;
         } else {
             ftype = NormalFileType;
@@ -43,25 +44,20 @@ FileHandler::~FileHandler() {
     delete file_;
 }
 
-File::File() {
-}
+File::File() = default;
 
-File::~File() {
-}
+File::~File() = default;
 
 GzipFile::GzipFile() :
-        gzf_(NULL) {
+        gzf_(nullptr) {
 }
 
-GzipFile::~GzipFile() {
-}
+GzipFile::~GzipFile() = default;
 
 bool GzipFile::open(const char* fname, FileHandler::AccessMode accMode) {
     const char* gzMode = (accMode == FileHandler::ReadAccessMode) ? "rb" : "wb";
     gzf_ = gzopen(fname, gzMode);
-    if (gzf_ == NULL)
-        return false;
-    return true;
+    return gzf_ != NULL;
 }
 
 int GzipFile::close() {
@@ -87,18 +83,15 @@ int GzipFile::writeline(const char* buffer) {
 }
 
 NormalFile::NormalFile() :
-        fd_(NULL) {
+        fd_(nullptr) {
 }
 
-NormalFile::~NormalFile() {
-}
+NormalFile::~NormalFile() = default;
 
 bool NormalFile::open(const char* fname, FileHandler::AccessMode accMode) {
     const char* Mode = (accMode == FileHandler::ReadAccessMode) ? "r" : "w";
     fd_ = fopen(fname, Mode);
-    if (fd_ == NULL)
-        return false;
-    return true;
+    return fd_ != NULL;
 }
 
 int NormalFile::close() {
@@ -113,7 +106,9 @@ void NormalFile::skipline() {
     static char buffer[MAX_BUFFER_LENGTH_FOR_SKIP_LINE];
     do {
         buffer[MAX_BUFFER_LENGTH_FOR_SKIP_LINE - 2] = '\0';
-        if (fgets(buffer, MAX_BUFFER_LENGTH_FOR_SKIP_LINE, fd_) == nullptr) break;
+        if (fgets(buffer, MAX_BUFFER_LENGTH_FOR_SKIP_LINE, fd_) == nullptr) {
+            break;
+        }
     } while (buffer[MAX_BUFFER_LENGTH_FOR_SKIP_LINE - 2] != '\0' && buffer[MAX_BUFFER_LENGTH_FOR_SKIP_LINE - 2] != '\n');
 }
 

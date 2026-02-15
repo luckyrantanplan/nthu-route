@@ -9,6 +9,7 @@
  * Global Variable Begin
  * ********************/
 #include "DataDef.h"
+#include <cstdlib>
 
 namespace NTHUR {
 

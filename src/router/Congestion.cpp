@@ -7,23 +7,21 @@
 
 #include "Congestion.h"
 
-#include <boost/range/combine.hpp>
-#include <boost/range/detail/combine_cxx11.hpp>
-#include <boost/range/iterator_range_core.hpp>
-#include <boost/tuple/detail/tuple_basic.hpp>
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
-#include <iostream>
 #include <limits>
+#include <string>
 #include <unordered_map>
 #include <utility>
+#include <vector>
 
-#include "../grdb/plane.h"
 #include "../grdb/RoutingRegion.h"
 #include "../spdlog/details/spdlog_impl.h"
-#include "../spdlog/logger.h"
 #include "../spdlog/spdlog.h"
+#include "grdb/EdgePlane3d.h"
+#include "misc/geometry.h"
+#include "router/DataDef.h"
 
 namespace NTHUR {
 
@@ -51,7 +49,7 @@ double Congestion::get_cost_2d(const Coordinate_2d& c1, const Coordinate_2d& c2,
 //If it have passed the edge before, then the cost is 0.
     Edge_2d& edge = congestionMap2d.edge(c1, c2);
 
-    if (edge.lookupNet(net_id) == false) {
+    if (!edge.lookupNet(net_id)) {
         distance = 1;
 
         switch (used_cost_flag) {
@@ -106,10 +104,11 @@ void Congestion::pre_evaluate_congestion_cost_all(Edge_2d& edge) const {
         double cong = (edge.cur_cap + inc) / (edge.max_cap * (1.0 - ((edge.history - 1) / (cur_iter * (1.5 + 3 * factor)))));
         edge.cost = WL_Cost + (edge.history) * pow(cong, exponent);
     } else {
-        if (edge.isFull())
+        if (edge.isFull()) {
             edge.cost = 1.0;
-        else
+        } else {
             edge.cost = 0.0;
+}
     }
 }
 
@@ -143,11 +142,13 @@ bool Congestion::check_path_no_overflow(const std::vector<Coordinate_2d>& path, 
             int inc = 1;
             //If there is another 2-pin net from the same net is using the specified edge,
             //then we don't need to increase a demand on it. We can use the edge directly
-            if (edge.lookupNet(net_id))
+            if (edge.lookupNet(net_id)) {
                 inc = 0;
+}
 
-            if (edge.cur_cap + inc > edge.max_cap)
+            if (edge.cur_cap + inc > edge.max_cap) {
                 return false;
+}
         }
     }
     return true;
@@ -241,9 +242,9 @@ void Congestion::update_congestion_map_insert_two_pin_net(Two_pin_element_2d& el
         Edge_2d& edge = congestionMap2d.edge(element.path[i], element.path[i + 1]);
         std::pair<RoutedNetTable::iterator, bool> insert_result = edge.used_net.insert(std::pair<const int, int>(element.net_id, 1));
 
-        if (!insert_result.second)
+        if (!insert_result.second) {
             ++((insert_result.first)->second);
-        else {
+        } else {
             ++edge.cur_cap;
 
             if (used_cost_flag != FASTROUTE_COST) {
@@ -260,7 +261,8 @@ void Congestion::update_congestion_map_remove_two_pin_net(const std::vector<Coor
     for (int i = path.size() - 2; i >= 0; --i) {
         Edge_2d& edge = congestionMap2d.edge(path[i], path[i + 1]);
         RoutedNetTable::iterator find_result = edge.used_net.find(net_id);
-        if (find_result == edge.used_net.end()) continue;
+        if (find_result == edge.used_net.end()) { continue;
+}
 
         --(find_result->second);
         if (find_result->second == 0) {
@@ -306,8 +308,9 @@ void Congestion::calculate_cap() const {
     for (const Edge_2d& edge : congestionMap2d.all()) {
         if (edge.isOverflow()) {
             overflow += (edge.overUsage() * 2);
-            if (max < edge.overUsage() * 2)
+            if (max < edge.overUsage() * 2) {
                 max = edge.overUsage() * 2;
+}
         }
     }
     log_sp->info("2D sum overflow = {}", overflow); //

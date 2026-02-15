@@ -119,9 +119,7 @@ EdgePlane3d<T>::EdgePlane3d(const EdgePlane3d& original) :
 }
 
 template<class T>
-EdgePlane3d<T>::~EdgePlane3d() {
-
-}
+EdgePlane3d<T>::~EdgePlane3d() = default;
 
 template<class T>
 inline

@@ -1,8 +1,14 @@
 #include "Range_router.h"
 
+#include <boost/multi_array.hpp>
+#include <boost/multi_array/base.hpp>
 #include <boost/multi_array/multi_array_ref.hpp>
 #include <sys/types.h>
 #include <algorithm>
+#include <cstdint>
+#include <functional>
+#include <string>
+#include <vector>
 
 #include "../grdb/EdgePlane.h"
 #include "../grdb/RoutingRegion.h"
@@ -12,13 +18,12 @@
 
 //#define SPDLOG_TRACE_ON
 #include "../spdlog/spdlog.h"
+#include "misc/geometry.h"
+#include "router/MonotonicRouting.h"
 
 bool NTHUR::RangeRouter::double_equal(double a, double b) {
     double diff = a - b;
-    if (diff > 0.00001 || diff < -0.00001)
-        return false;
-    else
-        return true;
+    return !(diff > 0.00001 || diff < -0.00001);
 }
 
 /*sort grid_edge in decending order*/
@@ -212,7 +217,7 @@ void NTHUR::RangeRouter::range_router(Two_pin_element_2d& two_pin, int version) 
         if (version == 2) {
             two_pin.done = construct_2d_tree.done_iter;
         }
-        if ((find_path_flag == false) || !congestion.check_path_no_overflow(bound_path, two_pin.net_id, true)) {
+        if ((!find_path_flag) || !congestion.check_path_no_overflow(bound_path, two_pin.net_id, true)) {
             Coordinate_2d start;
             Coordinate_2d end;
 
@@ -229,7 +234,7 @@ void NTHUR::RangeRouter::range_router(Two_pin_element_2d& two_pin, int version) 
 
             find_path_flag = construct_2d_tree.mazeroute_in_range.mm_maze_route_p(two_pin, bound.cost, bound.distance, bound.via_num, start, end, version);
 
-            if (find_path_flag == false) {
+            if (!find_path_flag) {
                 two_pin.path.insert(two_pin.path.begin(), bound_path.begin(), bound_path.end());
             }
         }
@@ -324,8 +329,9 @@ void NTHUR::RangeRouter::specify_all_range(boost::multi_array<Point_fc, 2>& grid
     sort(twopin_list.begin(), twopin_list.end(), [&](const Two_pin_element_2d *a, const Two_pin_element_2d *b) {
         return Two_pin_element_2d::comp_stn_2pin(*a,*b);});
     for (int i = 0; i < (int) twopin_list.size(); ++i) {
-        if (twopin_list[i]->boxSize() == 1)
+        if (twopin_list[i]->boxSize() == 1) {
             break;
+}
         range_router(*twopin_list[i], 2);
     }
 

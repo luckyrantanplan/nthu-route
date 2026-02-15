@@ -7,9 +7,7 @@
 #include "../grdb/parser.h"
 #include "../grdb/RoutingRegion.h"
 #include "../misc/filehandler.h"
-#include "../spdlog/details/logger_impl.h"
 #include "../spdlog/details/spdlog_impl.h"
-#include "../spdlog/logger.h"
 #include "DataDef.h"
 
 namespace NTHUR {
@@ -153,9 +151,9 @@ void ParameterAnalyzer::analyze2() {
     paraNO = 8;
     parameterSet.setSet();
     int long_option_index = 0;
-    struct option long_option[] = { { "p2-max-iteration", 1, 0, 1 }, { "p3-max-iteration", 1, 0, 2 }, { "overflow-threshold", 1, 0, 3 }, { "p3-init-box-size", 1, 0, 4 }, { "p3-box-expand-size", 1, 0,
-            5 }, { "p2-boxsize-inc", 1, 0, 6 }, { "p2-box-expand-size", 1, 0, 7 }, { "monotonic-routing", 1, 0, 8 }, { "simple", 0, 0, 9 }, { "input", 1, 0, 'i' }, { "output", 1, 0, 'o' }, {
-            "p2-init-box-size", 1, 0, 6 }, { "help", 0, 0, 'h' }, { "version", 0, 0, 'v' }, { 0, 0, 0, 0 } };
+    struct option long_option[] = { { "p2-max-iteration", 1, nullptr, 1 }, { "p3-max-iteration", 1, nullptr, 2 }, { "overflow-threshold", 1, nullptr, 3 }, { "p3-init-box-size", 1, nullptr, 4 }, { "p3-box-expand-size", 1, nullptr,
+            5 }, { "p2-boxsize-inc", 1, nullptr, 6 }, { "p2-box-expand-size", 1, nullptr, 7 }, { "monotonic-routing", 1, nullptr, 8 }, { "simple", 0, nullptr, 9 }, { "input", 1, nullptr, 'i' }, { "output", 1, nullptr, 'o' }, {
+            "p2-init-box-size", 1, nullptr, 6 }, { "help", 0, nullptr, 'h' }, { "version", 0, nullptr, 'v' }, { nullptr, 0, nullptr, 0 } };
     while ((cmd = getopt_long(argc, argv, "hi:I:o:p:v", long_option, &long_option_index)) != -1) {
         string parameter;
         bool enable;
@@ -203,10 +201,11 @@ void ParameterAnalyzer::analyze2() {
             cout << "Monotonic Routing ";
             enable = atoi(parameter.c_str()) == 1;
             routingParam.set_monotonic_en(enable);
-            if (enable)
+            if (enable) {
                 cout << "Enabled!" << endl;
-            else
+            } else {
                 cout << "Disabled!" << endl;
+}
             break;
         case 9:
             cout << "Simple Mode enable - Routing Parameter Auto Fitting!" << endl;
@@ -243,7 +242,7 @@ void ParameterAnalyzer::analyze2() {
             break;
         }
     }
-    if (defineOutput != true) {
+    if (!defineOutput) {
         this->outputFileName.append(this->inputFileName + ".output");
     }
 }
@@ -392,7 +391,7 @@ void ParameterAnalyzer::analyzeInput() {
         this->type = 0;
     }
 
-    if (usePredefine == true) {
+    if (usePredefine) {
         this->inputFileName.insert(0, TEST_BENCH_DIR);
     }
 }

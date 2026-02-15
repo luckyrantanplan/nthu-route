@@ -17,6 +17,7 @@
 #include "../grdb/EdgePlane.h"
 #include "Congestion.h"
 #include "DataDef.h"
+#include "misc/geometry.h"
 
 namespace NTHUR {
 
@@ -31,8 +32,7 @@ MonotonicRouting::MonotonicRouting(Congestion& congestion, bool enable) :
 
 }
 
-MonotonicRouting::~MonotonicRouting() {
-}
+MonotonicRouting::~MonotonicRouting() = default;
 
 void MonotonicRouting::monotonic_routing_algorithm(int x1, int y1, int x2, int y2, OrientationType dir, int net_id, Bound& bound) {
 
@@ -62,10 +62,12 @@ void MonotonicRouting::monotonic_routing_algorithm(int x1, int y1, int x2, int y
 
             if (!bound.flag || (bound.flag && smaller_than_lower_bound(ele, bound))) {
                 parent_monotonic[i][y1] = LEFT;
-            } else
+            } else {
                 parent_monotonic[i][y1] = -2;
-        } else
+}
+        } else {
             parent_monotonic[i][y1] = -2;
+}
     }
 
 //If source is in the left-top corner
@@ -79,10 +81,12 @@ void MonotonicRouting::monotonic_routing_algorithm(int x1, int y1, int x2, int y
                 cong_monotonic[x1][j].via_num = cong_monotonic[x1][j - 1].via_num;
                 if (!bound.flag || (bound.flag && smaller_than_lower_bound(cong_monotonic[x1][j], bound))) {
                     parent_monotonic[x1][j] = dir;
-                } else
+                } else {
                     parent_monotonic[x1][j] = dir;
-            } else
+}
+            } else {
                 parent_monotonic[x1][j] = -2;
+}
         }
 
 //If source is in the left-bottom corner
@@ -96,23 +100,27 @@ void MonotonicRouting::monotonic_routing_algorithm(int x1, int y1, int x2, int y
                 cong_monotonic[x1][j].via_num = cong_monotonic[x1][j + 1].via_num;
                 if (!bound.flag || (bound.flag && smaller_than_lower_bound(cong_monotonic[x1][j], bound))) {
                     parent_monotonic[x1][j] = dir;
-                } else
+                } else {
                     parent_monotonic[x1][j] = -2;
-            } else
+}
+            } else {
                 parent_monotonic[x1][j] = -2;
+}
         }
     }
 
     for (int i = x1 + 1; i <= x2; ++i) {
 //If source is in the left-bottom corner
         if (dir == BACK) {
-            for (int j = y1 + 1; j <= y2; ++j)
+            for (int j = y1 + 1; j <= y2; ++j) {
                 compare_two_direction_congestion(i, j, LEFT, i - 1, dir, j - 1, net_id, bound);
+}
 
             //If source is in the left-top corner
         } else {
-            for (int j = y1 - 1; j >= y2; --j)
+            for (int j = y1 - 1; j >= y2; --j) {
                 compare_two_direction_congestion(i, j, LEFT, i - 1, dir, j + 1, net_id, bound);
+}
         }
     }
 }
@@ -126,12 +134,13 @@ void MonotonicRouting::traverse_parent_monotonic(int x1, int y1, int x2, int y2,
         two_pin_monotonic_path.path.push_back(Coordinate_2d(i, j));
 
 //Update the coordinate of tracing cell
-        if (parent_monotonic[i][j] == LEFT)
+        if (parent_monotonic[i][j] == LEFT) {
             --i;
-        else if (parent_monotonic[i][j] == FRONT)
+        } else if (parent_monotonic[i][j] == FRONT) {
             ++j;
-        else
+        } else {
             --j;
+}
     }
 
 //push the source to list
@@ -145,15 +154,17 @@ bool MonotonicRouting::monotonic_pattern_route(int x1, int y1, int x2, int y2, T
         std::swap(x1, x2);
         std::swap(y1, y2);
     }
-    if (y1 <= y2) //s->t RIGHT and FRONT (source is in the left-bottom corner)
+    if (y1 <= y2) { //s->t RIGHT and FRONT (source is in the left-bottom corner)
         monotonic_routing_algorithm(x1, y1, x2, y2, BACK, net_id, bound);
 // use x1,y+1.edge_list[back]
-    else if (y1 > y2) //s->t RIGHT and BACK (source is in the left-top corner)
+    } else if (y1 > y2) { //s->t RIGHT and BACK (source is in the left-top corner)
         monotonic_routing_algorithm(x1, y1, x2, y2, FRONT, net_id, bound);
+}
 
 //If there is no solution for this 2-pin net, return false
-    if (parent_monotonic[x2][y2] == -2)
+    if (parent_monotonic[x2][y2] == -2) {
         return false;
+}
 
 //travese parent_monotonic to find path in two_pin_monotonic_path
     traverse_parent_monotonic(x1, y1, x2, y2, two_pin_monotonic_path);
@@ -168,25 +179,22 @@ bool MonotonicRouting::monotonic_pattern_route(int x1, int y1, int x2, int y2, T
  Compare two cost and return a pointer to the Monotonici_element which has smaller cost
  */
 bool Monotonic_element::operator <(Monotonic_element& m2) const {
-    if ((total_cost - m2.total_cost) < (neg_error_bound))
+    if ((total_cost - m2.total_cost) < (neg_error_bound)) {
         return true;
-    else if ((total_cost - m2.total_cost) > (neg_error_bound))
+    } else if ((total_cost - m2.total_cost) > (neg_error_bound)) {
         return false;
-    else {
-        if ((max_cost - m2.max_cost) < (neg_error_bound))
+    } else {
+        if ((max_cost - m2.max_cost) < (neg_error_bound)) {
             return true;
-        else if ((max_cost - m2.max_cost) > (neg_error_bound))
+        } else if ((max_cost - m2.max_cost) > (neg_error_bound)) {
             return false;
-        else {
-            if (distance < m2.distance)
+        } else {
+            if (distance < m2.distance) {
                 return true;
-            else if (distance > m2.distance)
+            } else if (distance > m2.distance) {
                 return false;
-            else {
-                if (via_num <= m2.via_num)
-                    return true;
-                else
-                    return false;
+            } else {
+                return via_num <= m2.via_num;
             }
         }
     }
@@ -204,18 +212,18 @@ bool MonotonicRouting::direction_congestion(Coordinate_2d pre, int net_id, int d
             vertical_element.via_num = cong_monotonic[pre.x][pre.y].via_num + congestion.via_cost;
             if (distance != 0) {
                 vertical_element.distance += congestion.via_cost;
-                if (congestion.used_cost_flag == HISTORY_COST)
+                if (congestion.used_cost_flag == HISTORY_COST) {
                     vertical_element.total_cost += congestion.via_cost;
+}
             }
-        } else
+        } else {
             vertical_element.via_num = cong_monotonic[pre.x][pre.y].via_num;
+}
 
-        if (!bound.flag || (bound.flag && smaller_than_lower_bound(vertical_element, bound))) {
-            right_flag = true;
-        } else
-            right_flag = false;
-    } else
+        right_flag = !bound.flag || (bound.flag && smaller_than_lower_bound(vertical_element, bound));
+    } else {
         right_flag = false;
+}
 
     return right_flag;
 }
@@ -239,33 +247,34 @@ void MonotonicRouting::compare_two_direction_congestion(int i, int j, Orientatio
         } else {
             choose_element = &vertical_element;
         }
-    } else if (left_flag)
+    } else if (left_flag) {
         choose_element = &left_element;
-    else
+    } else {
         choose_element = &vertical_element;
+}
 
     cong_monotonic[i][j] = *choose_element;
 
-    if (choose_element == (&left_element))
+    if (choose_element == (&left_element)) {
         parent_monotonic[i][j] = dir1;
-    else if (choose_element == (&vertical_element))
+    } else if (choose_element == (&vertical_element)) {
         parent_monotonic[i][j] = dir2;
-    else {
+    } else {
         fprintf(stderr, "MonotonicRouting: compare has problem\n");
         exit(0);
     }
 }
 bool MonotonicRouting::smaller_than_lower_bound(const Monotonic_element& m, Bound& bound) {
-    if ((m.total_cost - bound.cost) < neg_error_bound)
+    if ((m.total_cost - bound.cost) < neg_error_bound) {
         return true;
-    else if ((m.total_cost - bound.cost) > error_bound)
+    } else if ((m.total_cost - bound.cost) > error_bound) {
         return false;
-    else {
-        if (m.distance < bound.distance)
+    } else {
+        if (m.distance < bound.distance) {
             return true;
-        else if (m.distance > bound.distance)
+        } else if (m.distance > bound.distance) {
             return false;
-        else {
+        } else {
             return (m.via_num < bound.via_num);
         }
     }

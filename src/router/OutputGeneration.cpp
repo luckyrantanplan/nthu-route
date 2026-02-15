@@ -7,16 +7,17 @@
 
 #include "OutputGeneration.h"
 #include <boost/range/combine.hpp>
-#include <boost/range/iterator_range_core.hpp>
+#include <boost/range/detail/combine_cxx11.hpp>
 #include <algorithm>
 #include <cstddef>
-#include <limits>
+#include <cstdint>
+#include <ostream>
 #include <utility>
+#include <vector>
 
-#include "../grdb/EdgePlane.h"
-#include "../grdb/plane.h"
 #include "../grdb/RoutingRegion.h"
 #include "../spdlog/spdlog.h"
+#include "misc/geometry.h"
 
 namespace NTHUR {
 

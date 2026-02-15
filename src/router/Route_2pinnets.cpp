@@ -2,28 +2,24 @@
 
 #include <boost/multi_array/base.hpp>
 #include <boost/multi_array/multi_array_ref.hpp>
-#include <boost/multi_array/subarray.hpp>
-#include <boost/range/iterator_range_core.hpp>
 #include <stdlib.h>
+#include <sys/types.h>
 #include <algorithm>
+#include <cstdint>
 #include <cstdio>
-#include <iostream>
-#include <iterator>
-#include <queue>
 #include <stack>
+#include <unordered_map>
 #include <utility>
+#include <vector>
 
-#include "../flute/flute-ds.h"
 #include "flute4nthuroute.h"
 #include "../grdb/EdgePlane.h"
 #include "../grdb/RoutingComponent.h"
 #include "../grdb/RoutingRegion.h"
+#include "router/DataDef.h"
 
 #define SPDLOG_TRACE_ON
-#include "../spdlog/common.h"
-#include "../spdlog/details/logger_impl.h"
 #include "../spdlog/details/spdlog_impl.h"
-#include "../spdlog/logger.h"
 #include "Congestion.h"
 #include "Construct_2d_tree.h"
 #include "Range_router.h"

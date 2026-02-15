@@ -1,7 +1,8 @@
 #include "RoutingComponent.h"
-#include "../misc/geometry.h"
 
 #include <climits>
+#include <string>
+#include <vector>
 
 namespace NTHUR {
 

@@ -1,15 +1,13 @@
 #include "MM_mazeroute.h"
 
-#include <boost/heap/detail/stable_heap.hpp>
 #include <boost/multi_array/base.hpp>
 #include <boost/multi_array/multi_array_ref.hpp>
-#include <boost/multi_array/subarray.hpp>
 #include <sys/types.h>
 #include <cassert>
 #include <cstdio>
-#include <iostream>
-#include <iterator>
 #include <stack>
+#include <unordered_map>
+#include <vector>
 
 #include "../flute/flute-ds.h"
 #include "flute4nthuroute.h"
@@ -17,9 +15,10 @@
 #include "../grdb/RoutingRegion.h"
 #include "../spdlog/common.h"
 #include "../spdlog/details/spdlog_impl.h"
-#include "../spdlog/logger.h"
 #include "Congestion.h"
 #include "Construct_2d_tree.h"
+#include "misc/geometry.h"
+#include "router/DataDef.h"
 
 #define SPDLOG_TRACE_ON
 #include "../spdlog/spdlog.h"
@@ -136,8 +135,9 @@ void Multisource_multisink_mazeroute::find_subtree(Vertex_mmm& v, int mode) {
         mmm_map[v.coor.x][v.coor.y].dst = dst_counter;
     }
     for (Vertex_mmm * neighbor : v.neighbor) {
-        if (neighbor->visit != visit_counter)
+        if (neighbor->visit != visit_counter) {
             find_subtree(*neighbor, mode);
+}
     }
 }
 
@@ -322,7 +322,7 @@ bool Multisource_multisink_mazeroute::mm_maze_route_p(Two_pin_element_2d &ieleme
                     }
                 }
 
-                if (needUpdate == true) {
+                if (needUpdate) {
                     next_pos.parent = &cur_pos;
                     next_pos.reachCost = reachCost;
                     next_pos.distance = total_distance;
@@ -371,16 +371,16 @@ void Multisource_multisink_mazeroute::putNetOnColorMap() {
 }
 
 bool Multisource_multisink_mazeroute::smaller_than_lower_bound(double total_cost, int distance, int via_num, double bound_cost, int bound_distance, int bound_via_num) {
-    if ((total_cost - bound_cost) < neg_error_bound)
+    if ((total_cost - bound_cost) < neg_error_bound) {
         return true;
-    else if ((total_cost - bound_cost) > error_bound)
+    } else if ((total_cost - bound_cost) > error_bound) {
         return false;
-    else {
-        if (distance < bound_distance)
+    } else {
+        if (distance < bound_distance) {
             return true;
-        else if (distance > bound_distance)
+        } else if (distance > bound_distance) {
             return false;
-        else {
+        } else {
             return (via_num < bound_via_num);
         }
     }
