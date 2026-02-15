@@ -104,9 +104,10 @@ void Multisource_multisink_mazeroute::adjust_twopin_element() {
 
     vector<Vertex_mmm>& vect = net_tree[net_id];
     for (vector<Vertex_mmm>::iterator it = vect.begin(); it != vect.end() && (v1 == nullptr || v2 == nullptr); ++it) {
-        if (it->coor == new_pin1) {
+        if (v1 == nullptr && it->coor == new_pin1) {
             v1 = &(*it);
-        } else if (it->coor == new_pin2) {
+        }
+        if (v2 == nullptr && it->coor == new_pin2) {
             v2 = &(*it);
         }
     }
@@ -194,10 +195,11 @@ void Multisource_multisink_mazeroute::setup_pqueue() {
     pin1_v = nullptr;
     pin2_v = nullptr;
     for (Vertex_mmm& vert : vertexV) {
-        if (vert.coor == element->pin1) {
+        if (pin1_v == nullptr && vert.coor == element->pin1) {
             pin1_v = &vert;
             pin1_v->visit = visit_counter;
-        } else if (vert.coor == element->pin2) {
+        }
+        if (pin2_v == nullptr && vert.coor == element->pin2) {
             pin2_v = &vert;
             pin2_v->visit = visit_counter;
         }
