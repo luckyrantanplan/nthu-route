@@ -167,5 +167,5 @@ The post-processing stage performs final refinement:
 
 - Yen-Jung Chang, Yu-Ting Lee, and Ting-Chi Wang, "NTHU-Route 2.0: A Fast and Stable Global Router," ICCAD 2008.
 - Jhih-Rong Gao, Pei-Ci Wu, and Ting-Chi Wang, "A New Global Router for Modern Designs," ASP-DAC 2008.
-- Tsung-Hsien Lee and Ting-Chi Wang, "Congestion-Constrained Layer Assignment for Via Minimization in Global Routing," IEEE TCAD 2008.
+- Tsung-Hsien Lee and Ting-Chi Wang, "Congestion-Constrained Layer Assignment for Via Minimization in Global Routing," IEEE Transactions on Computer-Aided Design of Integrated Circuits and Systems, 2008.
 - T.-H. Lee and T.-C. Wang, "Robust Layer Assignment for Via Optimization in Multi-layer Global Routing," ISPD 2009.
