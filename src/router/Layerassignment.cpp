@@ -192,7 +192,7 @@ void Layer_assignment::VertexCost::addCost(const Coordinate_2d& o, const Element
     }
     via_cost = 0;
     for (const Coordinate_3d& c : e.choice) {
-        via_cost += l.layerInfo_map.vertex(c.xy()).klat[c.z].via_cost; // does not understand this
+        via_cost += l.layerInfo_map.vertex(c.xy()).klat[c.z].via_cost;
     }
     via_cost += (interval.length() * l.global_via_cost);
 
@@ -247,12 +247,12 @@ std::vector<Coordinate_3d> Layer_assignment::rec_count(const Coordinate_3d& o, K
 
             }
 
-        }     // current e.val is >   min : we do nothing
+        }
     }
     klatNode.via_cost = vertexCost.via_cost;
     klatNode.via_overflow = vertexCost.cost;
     klatNode.val = vertexCost.cost;
-    return vertexCost.vertices;  // vertices is empty !!!! should fill it correctly (perhaps with ElementStack choice ? )
+    return vertexCost.vertices;
 }
 
 void Layer_assignment::DP(const Coordinate_3d& c, const Coordinate_3d& parent) {
@@ -309,10 +309,6 @@ int Layer_assignment::klat(int net_id) { //SOLAC + APEC
     DP(start, start);
 
     update_path_for_klat(start);
-    /*
-     log_sp->info("update_path_for_klat  ");
-     plotNet(net_id);
-     log_sp->info("end update_path_for_klat  ");*/
     return layerInfo_map.vertex(start).klat[0].val;
 }
 

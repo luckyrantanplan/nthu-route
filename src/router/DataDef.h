@@ -16,7 +16,7 @@
 
 #include "../misc/geometry.h"
 
-//If wanna run IBM testcase, please enable this define
+// Enable this define to run IBM test cases
 //#define IBM_CASE
 
 namespace NTHUR {

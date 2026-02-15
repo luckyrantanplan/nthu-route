@@ -1,5 +1,5 @@
 /*
- * Bom.cpp
+ * Congestion.cpp
  *
  *  Created on: Nov 29, 2017
  *      Author: florian
@@ -75,7 +75,6 @@ double Congestion::get_cost_2d(const Coordinate_2d& c1, const Coordinate_2d& c2,
     }
 }
 
-/*==================DEBUG FUNCTION================================*/
 //Obtain the max. overflow and total overflowed value of edges of every gCell
 int Congestion::cal_max_overflow() {
     int max_2d_of = 0;       //max. overflow (2D)
@@ -97,10 +96,9 @@ int Congestion::cal_max_overflow() {
 
     return dif_curmax;
 }
-/* *NOTICE*
- * You can create many different cost function for difference case easily,
- * just reassign function pointer pre_evaluate_congestion_cost_fp to your
- * function in *route/route.cpp* .                                        */
+
+// Cost function implementation. The function pointer pre_evaluate_congestion_cost_fp
+// in Route.cpp selects which variant to use at runtime.
 
 void Congestion::pre_evaluate_congestion_cost_all(Edge_2d& edge) const {
     static const int inc = 1;
@@ -124,7 +122,8 @@ void Congestion::pre_evaluate_congestion_cost() {
             ++edge.history;
         }
 
-    }SPDLOG_TRACE(log_sp, "pre_evaluate_congestion_cost gridEdge \n{}", congestionMap2d.toString());
+    }
+    SPDLOG_TRACE(log_sp, "pre_evaluate_congestion_cost gridEdge \n{}", congestionMap2d.toString());
 }
 
 //Check if the specified edge is not overflowed
@@ -160,13 +159,15 @@ int Congestion::find_overflow_max(int max_zz) const {
         if (edge.overUsage() > overflow_max) {
             overflow_max = edge.overUsage();
         }
-    }SPDLOG_TRACE(log_sp, "2D maximum overflow = {}", overflow_max);
+    }
+    SPDLOG_TRACE(log_sp, "2D maximum overflow = {}", overflow_max);
 
     if (overflow_max % max_zz) {
         overflow_max = ((overflow_max / max_zz) * 2) + 2;
     } else {
         overflow_max = ((overflow_max / max_zz) * 2);
-    }SPDLOG_TRACE(log_sp, "overflow max = = {}", overflow_max);
+    }
+    SPDLOG_TRACE(log_sp, "overflow max = = {}", overflow_max);
 
     return overflow_max;
 }

@@ -171,8 +171,9 @@ void NTHUR::RangeRouter::expand_range(Coordinate_2d c1, Coordinate_2d c2, int in
         });
         r.expand(1);
         SPDLOG_TRACE(log_sp, "r after  r.expand(1): {}", r.toString());
-    }                                // end of while loop
-    SPDLOG_TRACE(log_sp, "r: {} bound: {}", r.toString(), bound.toString());SPDLOG_TRACE(log_sp, "printIfBound:{}", printIfBound(r, bound, interval_index, c1, c2));
+    }
+    SPDLOG_TRACE(log_sp, "r: {} bound: {}", r.toString(), bound.toString());
+    SPDLOG_TRACE(log_sp, "printIfBound:{}", printIfBound(r, bound, interval_index, c1, c2));
 
     r.expand(congestion.cur_iter / 10); // extraExpandRange
     bound.clip(r);

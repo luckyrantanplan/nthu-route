@@ -7,11 +7,11 @@
 
 #include "MonotonicRouting.h"
 
-#include <bits/move.h>
 #include <boost/multi_array/base.hpp>
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
+#include <utility>
 #include <vector>
 
 #include "../grdb/EdgePlane.h"
@@ -251,7 +251,7 @@ void MonotonicRouting::compare_two_direction_congestion(int i, int j, Orientatio
     else if (choose_element == (&vertical_element))
         parent_monotonic[i][j] = dir2;
     else {
-        puts("compare has problem!!!\n");
+        fprintf(stderr, "MonotonicRouting: compare has problem\n");
         exit(0);
     }
 }
