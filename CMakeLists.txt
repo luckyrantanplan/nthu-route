@@ -12,13 +12,9 @@ find_package(Boost REQUIRED)
 # Find zlib (required for gzip file handling)
 find_package(ZLIB REQUIRED)
 
-# Third-party sources (warnings suppressed)
-set(THIRDPARTY_SOURCES
-    src/flute/flute.cpp
-)
-
 # Project sources
 set(PROJECT_SOURCES
+    src/flute/flute.cpp
     src/grdb/RoutingComponent.cpp
     src/grdb/RoutingRegion.cpp
     src/grdb/parser.cpp
@@ -39,7 +35,7 @@ set(PROJECT_SOURCES
     src/router/parameter.cpp
 )
 
-add_executable(NthuRoute ${PROJECT_SOURCES} ${THIRDPARTY_SOURCES})
+add_executable(NthuRoute ${PROJECT_SOURCES})
 
 target_include_directories(NthuRoute PRIVATE
     ${CMAKE_SOURCE_DIR}/src
@@ -64,11 +60,6 @@ target_compile_options(NthuRoute PRIVATE
     -Wpedantic
     -Wnull-dereference
     -Wformat=2
-)
-
-# Suppress warnings for third-party source files
-set_source_files_properties(${THIRDPARTY_SOURCES} PROPERTIES
-    COMPILE_FLAGS "-w"
 )
 
 # Default build type
@@ -101,8 +92,8 @@ if(GTest_FOUND)
         tests/test_datadef.cpp
         tests/test_routing_region.cpp
         tests/test_edge_plane.cpp
+        tests/test_flute.cpp
         ${LIB_SOURCES}
-        ${THIRDPARTY_SOURCES}
     )
 
     target_include_directories(NthuRouteTests PRIVATE
@@ -128,10 +119,6 @@ if(GTest_FOUND)
         -Wpedantic
         -Wnull-dereference
         -Wformat=2
-    )
-
-    set_source_files_properties(${THIRDPARTY_SOURCES} PROPERTIES
-        COMPILE_FLAGS "-w"
     )
 
     include(GoogleTest)
