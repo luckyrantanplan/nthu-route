@@ -114,7 +114,7 @@ void NormalFile::skipline() {
     do {
         //make sure the (lenth-1)nd char is NULL char (for while loop)
         buffer[MAX_BUFFER_LENGTH_FOR_SKIP_LINE - 2] = '\0';
-        fgets(buffer, MAX_BUFFER_LENGTH_FOR_SKIP_LINE, fd_);
+        if (fgets(buffer, MAX_BUFFER_LENGTH_FOR_SKIP_LINE, fd_) == nullptr) break;
         //while the (lenth-1)nd char is not NULL or new line, keep reading
     } while (buffer[MAX_BUFFER_LENGTH_FOR_SKIP_LINE - 2] != '\0' && buffer[MAX_BUFFER_LENGTH_FOR_SKIP_LINE - 2] != '\n');
 }

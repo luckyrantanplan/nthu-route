@@ -583,7 +583,7 @@ void Construct_2d_tree::dfs_output_tree(Vertex_flute& node, int parent, TreeFlut
     }
 }
 
-void Construct_2d_tree::edge_shifting(TreeFlute& t, int j) {
+void Construct_2d_tree::edge_shifting(TreeFlute& t, int /*j*/) {
 
     double ori_cost = 0;            // the original cost without edge shifting
     std::vector<Vertex_flute> vertex_fl;

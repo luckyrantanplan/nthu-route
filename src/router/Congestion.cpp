@@ -259,6 +259,7 @@ void Congestion::update_congestion_map_remove_two_pin_net(const std::vector<Coor
     for (int i = path.size() - 2; i >= 0; --i) {
         Edge_2d& edge = congestionMap2d.edge(path[i], path[i + 1]);
         RoutedNetTable::iterator find_result = edge.used_net.find(net_id);
+        if (find_result == edge.used_net.end()) continue;
 
         --(find_result->second);
         if (find_result->second == 0) {

@@ -45,7 +45,7 @@ void NTHUR::RangeRouter::define_interval() {
         ele.grid_edge_vector.clear();
     }
 
-    SPDLOG_TRACE(print_interval());
+    (void)0; // SPDLOG_TRACE(log_sp, print_interval());
 
 }
 

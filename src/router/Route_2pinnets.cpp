@@ -215,7 +215,8 @@ void Route_2pinnets::bfs_for_find_two_pin_list(Coordinate_2d start_coor, int net
             for (std::size_t i = 1; i < neighbors.size(); ++i) {
                 stack.emplace(path);
                 stack.top().emplace_back(neighbors.at(i));
-            }  // no break on purpose !!!
+            }  // fallthrough on purpose
+            // fall through
         case 1:
             path.emplace_back(neighbors.at(0));
             break;

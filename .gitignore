@@ -1,0 +1,30 @@
+# Build directories
+build/
+cmake-build-*/
+out/
+
+# Compiled binaries
+*.o
+*.obj
+*.exe
+*.out
+*.a
+*.so
+*.dylib
+
+# IDE files
+.project
+.cproject
+.settings/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Distribution archives
+*.tar.gz

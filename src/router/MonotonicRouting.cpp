@@ -167,7 +167,7 @@ bool MonotonicRouting::monotonic_pattern_route(int x1, int y1, int x2, int y2, T
 /*
  Compare two cost and return a pointer to the Monotonici_element which has smaller cost
  */
-const bool Monotonic_element::operator <(Monotonic_element& m2) const {
+bool Monotonic_element::operator <(Monotonic_element& m2) const {
     if ((total_cost - m2.total_cost) < (neg_error_bound))
         return true;
     else if ((total_cost - m2.total_cost) > (neg_error_bound))

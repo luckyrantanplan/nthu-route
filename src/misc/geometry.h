@@ -38,6 +38,12 @@ public:
             x { c.x }, y { c.y } {
     }
 
+    Coordinate_2d& operator=(const Coordinate_2d& other) {
+        x = other.x;
+        y = other.y;
+        return *this;
+    }
+
     bool operator==(const Coordinate_2d& other) const {
         return (x == other.x && y == other.y);
     }

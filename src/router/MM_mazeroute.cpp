@@ -78,7 +78,7 @@ void Multisource_multisink_mazeroute::adjust_twopin_element() {
     element->pin1 = new_pin1;
     element->pin2 = new_pin2;
 
-    int flag = 0;
+    int flag __attribute__((unused)) = 0;
     for (auto it = pin1_v->neighbor.begin(); it != pin1_v->neighbor.end(); ++it) {
         if ((*it) == pin2_v) {
             pin1_v->neighbor.erase(it);

@@ -325,7 +325,7 @@ bool Layer_assignment::comp_temp_net_order(int p, int q) {
 
 void Layer_assignment::init_union(const Coordinate_2d& c1, const Coordinate_2d& c2) {
     const Edge_2d& edgeWest = congestion.congestionMap2d.edge(c1, c2);
-    for (const std::pair<int, int>& iter : edgeWest.used_net) {
+    for (const auto& iter : edgeWest.used_net) {
         ++average_order[iter.first].times;
     }
 }
